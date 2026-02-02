@@ -2,36 +2,61 @@ const logger = require('../utils/logger');
 const pool = require('../db');
 const {
 	createRunningTest,
-	insertMockDataInstantTestResults,
 	deleteRunningTest,
     getRunningTestsByUbaSN,
     changeTestStatus,
+    getRunningTestByIdWithJoins
 } = require('./runningTestService');
-const {status, ubaChannels, RUNNING_TEST_ACTIONS, TEST_ROUTINE_CHANNELS} = require('../utils/constants');
-const { createUbaDevice, deleteUbaDevice, } = require('./ubaDeviceService');
-const { createReport, createReportData } = require('./reportService');
+const {status, ubaChannels, TEST_ROUTINE_CHANNELS} = require('../utils/constants');
+const { createUbaDevice, deleteUbaDevice, getUbaDeviceByUbaSN, } = require('./ubaDeviceService');
+const { createReport, createTestResultsFile, updateReport} = require('./reportService');
+const { sendConnectionPendingTaskToUba, UI_FLOWS, UBA_DEVICE_ACTIONS, } = require('../utils/ubaCommunicatorHelper');
+const { formatSecondsToHHMMSS } = require('../utils/helper');
 
-const createReportAndData = async (body) => {
+const createReportAndTestResult = async (body) => {
     let connection;
     try {
         connection = await pool.getConnection();
         await connection.beginTransaction();
-        logger.info(`createReportAndData`);
-        const id = await createReport(connection, body);
-        logger.info(`createReportAndData finished createReport`, {id: id});
-        await createReportData(connection, id, body);
-        logger.info(`createReportAndData finished createRunningTest`);
+        logger.info(`createReportAndTestResult`);
+        addTimeOfTest(body);
+        const id = await createReport(body, connection);
+        logger.info(`createReportAndTestResult finished createReport`, {id: id});
+        await createTestResultsFile(id, body);
+        logger.info(`createReportAndTestResult finished createTestResultsFile`);
         await connection.commit();// Commit if all functions succeed
         return id;
     } catch (error) {
         if (connection) await connection.rollback(); // Rollback on error
-        logger.error('createReportAndData Transaction error:', error);
+        logger.error('createReportAndTestResult Transaction error:', error);
         throw error;
     } finally {
         if (connection) connection.release(); // Release connection back to the pool
     }
 };
 
+const updateReportAndTestResult = async (id, body) => {
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+        logger.info(`updateReportAndTestResult`);
+        addTimeOfTest(body);
+        await updateReport(id, body, connection);
+        logger.info(`updateReportAndTestResult finished updateReport`, id);
+        if(body.testResults) await createTestResultsFile(id, body);
+        logger.info(`updateReportAndTestResult finished createTestResultsFile`);
+        await connection.commit();// Commit if all functions succeed
+    } catch (error) {
+        if (connection) await connection.rollback(); // Rollback on error
+        logger.error('updateReportAndTestResult Transaction error:', error);
+        throw error;
+    } finally {
+        if (connection) connection.release(); // Release connection back to the pool
+    }
+};
+
+//this can run a batch of tests, and create a report for each test
 const runTest = async (body) => {
     let connection;
     try {
@@ -42,10 +67,18 @@ const runTest = async (body) => {
         logger.info(`runTest finished deleteRunningTest`, {ubaSNs: body?.ubaSNs});
         const ids = await createRunningTest(connection, body?.ubaSNs, body, status.PENDING_RUNNING);
         logger.info(`runTest finished createRunningTest`, {ids: ids});
-        //TODO!!! this is only for mock and need to be removed
-        const errorEnum = await insertMockDataInstantTestResults(connection, ids);
+        
+        for (const value of ids) {
+            const runningTest = await getRunningTestByIdWithJoins(value, connection);
+            const { id, ...withoutId } = runningTest;
+            const reportId = await createReport({ ...withoutId }, connection);
+            logger.info(`runTest finished createReport`, {reportId: reportId});
+            await createTestResultsFile(reportId, { testResults: [] }, false);//will create an empty file in file system
+            logger.info(`runTest finished createTestResultsFile`, {reportId: reportId});
+        }
+        
         await connection.commit();// Commit if all functions succeed
-        return {ids, errorEnum};
+        return {ids};
     } catch (error) {
         if (connection) await connection.rollback(); // Rollback on error
         logger.error('runTest Transaction error:', error);
@@ -84,6 +117,9 @@ const createUbaAndTest = async (body) => {
         const ids = await createRunningTest(connection, ubaSNs, { ...body, }, status.STANDBY);
         logger.info(`uba-devices finished to createRunningTest`);
         await connection.commit();// Commit if all functions succeed
+
+        sendConnectionPendingTaskToUba( body.machineMac, body.address, body.comPort, undefined, undefined, body.name, UBA_DEVICE_ACTIONS.ADD_TO_WATCH_LIST, UI_FLOWS.ADD_UBA_DEVICE );
+
         return ids;
     } catch (error) {
         if (connection) await connection.rollback(); // Rollback on error
@@ -99,9 +135,7 @@ const deleteUbaDeviceAndTest = async (serial) => {
     try {
         connection = await pool.getConnection();
         await connection.beginTransaction();
-        //const uba = await getUbaDevice(connection, serial);
-        //logger.info(`getUbaDevice`,{uba});
-
+        const ubaDevice = await getUbaDeviceByUbaSN(serial, connection);
         ubaSNs = [
 			{
 				ubaSN: serial,
@@ -119,6 +153,9 @@ const deleteUbaDeviceAndTest = async (serial) => {
 		await deleteUbaDevice(serial, connection);
 
         await connection.commit();// Commit if all functions succeed
+
+        sendConnectionPendingTaskToUba( ubaDevice.machineMac, ubaDevice.address, ubaDevice.comPort, undefined, undefined, undefined, UBA_DEVICE_ACTIONS.REMOVE_FROM_WATCH_LIST, UI_FLOWS.DELETE_UBA_DEVICE );
+
     } catch (error) {
         if (connection) await connection.rollback(); // Rollback on error
         logger.error('deleteUbaDeviceAndTest Transaction error:', error);
@@ -128,19 +165,18 @@ const deleteUbaDeviceAndTest = async (serial) => {
     }
 };
 
-const actionOnRunningTest = async (runningTestID, testRoutineChannels, ubaSN, runningTestAction) => {
+const changeRunningTestStatus = async (runningTestID, testRoutineChannels, ubaSN, statusToSet) => {
     let connection;
-    const statusToSet = runningTestAction === RUNNING_TEST_ACTIONS.PAUSE ? status.PENDING_PAUSE : (runningTestAction === RUNNING_TEST_ACTIONS.RESUME) ? status.PENDING_RUNNING : (runningTestAction === RUNNING_TEST_ACTIONS.STOP) ? status.PENDING_STOP : (runningTestAction === RUNNING_TEST_ACTIONS.CONFIRM) ? status.PENDING_STANDBY : undefined;
-
-    if(!statusToSet){
-        logger.error(`Invalid runningTestAction ${runningTestAction}`);
-        throw new Error(`Invalid action ${runningTestAction}`);
+    
+    if(statusToSet === undefined){
+        logger.error(`Invalid statusToSet ${statusToSet}`);
+        throw new Error(`Invalid statusToSet ${statusToSet}`);
     }
     if(!runningTestID || !ubaSN) {
         logger.error(`mandatory fields runningTestID ${runningTestID}, ubaSN ${ubaSN}`);
         throw new Error(`mandatory fields runningTestID ${runningTestID}, ubaSN ${ubaSN}`);
     }
-    logger.info(`actionOnRunningTest`, {runningTestID, testRoutineChannels, ubaSN, runningTestAction});
+    logger.info(`changeRunningTestStatus`, {runningTestID, testRoutineChannels, ubaSN, statusToSet});
     
     try {
         connection = await pool.getConnection();
@@ -162,21 +198,6 @@ const actionOnRunningTest = async (runningTestID, testRoutineChannels, ubaSN, ru
 
         await connection.commit();// Commit if all functions succeed
 
-        //TODO!!! remove the setTimeout, this is only for presentation
-        if(process.env.TEST_ENV) return;
-        setTimeout(async () => {
-			try {
-				const statusToSetPhase2 = runningTestAction === RUNNING_TEST_ACTIONS.PAUSE ? status.PAUSED : (runningTestAction === RUNNING_TEST_ACTIONS.RESUME) ? status.RUNNING : (runningTestAction === RUNNING_TEST_ACTIONS.STOP) ? status.STOPPED : (runningTestAction === RUNNING_TEST_ACTIONS.CONFIRM) ? status.STANDBY : undefined;
-                promises = [];
-                for (let index = 0; index < runningTestIDs.length; index++) {
-                    promises.push(changeTestStatus(runningTestIDs[index], statusToSetPhase2));
-                }
-                await Promise.all(promises);
-			} catch (error) {
-				logger.error('Error changing status to ' + statusToSetPhase2, error);
-			}
-		}, 7000);
-
     } catch (error) {
         if (connection) await connection.rollback(); // Rollback on error
         logger.error('resumeRunningTest Transaction error:', error);
@@ -186,10 +207,16 @@ const actionOnRunningTest = async (runningTestID, testRoutineChannels, ubaSN, ru
     }
 };
 
+const addTimeOfTest = (body) => {
+    const timeOfTest = body?.testResults && body?.testResults.length > 0 ? formatSecondsToHHMMSS(body.testResults[body.testResults.length - 1].timestamp) : undefined;
+    body.timeOfTest = timeOfTest;
+};
+
 module.exports = {
     runTest,
     createUbaAndTest,
     deleteUbaDeviceAndTest,
-    actionOnRunningTest,
-    createReportAndData,
+    changeRunningTestStatus,
+    createReportAndTestResult,
+    updateReportAndTestResult,
 };

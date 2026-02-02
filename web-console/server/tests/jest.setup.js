@@ -19,7 +19,7 @@ module.exports = async () => {
     process.env.DB_CONFIGURATION_USER = container.getUsername();
     process.env.DB_CONFIGURATION_HOST = container.getHost();
     process.env.DB_CONFIGURATION_PASSWORD = container.getUserPassword();
-    process.env.TEST_ENV = true;
+    process.env.TEST_ENV = true;// Set the environment variable to indicate test mode, currently isnt in use
     
     const server = require('../bin/www');
     global.__SERVER__ = server;

@@ -8,12 +8,13 @@ import Divider from '@mui/material/Divider';
 import Chip from '@mui/material/Chip';
 import {useAuthDispatch,} from 'src/store/AuthProvider';
 import {useUbaDevicesDispatch,} from 'src/store/UbaDevicesProvider';
-import {ubaChannel, statusCodes, getKeyByValue} from 'src/constants/unsystematic';
+import {ubaChannel, statusCodes, getKeyByValue, getErrorMessage} from 'src/constants/unsystematic';
 import {getVoltage, getChargeCurrent, getTemperature, } from '../utils';
 import {getActions} from '../Actions';
 import { useTestRoutinesDispatch, } from 'src/store/TestRoutinesProvider';
-import {getText} from 'src/services/string-definitions';
-
+import {getText, getDate} from 'src/services/string-definitions';
+import Tooltip from '@mui/material/Tooltip';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 
 export default function UbaCard({row}) {
 
@@ -35,17 +36,17 @@ export default function UbaCard({row}) {
 			sx = {};
 		}
 		return (
-			<Grid item lg={size} sx={sx} >
+			<Grid item lg={size} sx={sx} title={row?.[channelIndex]?.lastInstantResultsTimestamp ? getDate(row?.[channelIndex]?.lastInstantResultsTimestamp) : undefined}>
 				 <Stack direction="row" spacing={2} justifyContent="space-between">
 					<Box>
 						Ch-{row?.[channelIndex]?.parallelRun ? getText('common.AB') : row?.[channelIndex]?.channel}
 					</Box>
-					<Box>
+					<Box sx={{ color: !row?.[channelIndex]?.ubaDeviceConnectedTimeAgoMs || row?.[channelIndex]?.ubaDeviceConnectedTimeAgoMs > 120000 ? 'red' : (row?.[channelIndex]?.ubaDeviceConnectedTimeAgoMs > 60000 ? 'orange' : 'green'), }}>
 						{getVoltage(row?.[channelIndex]?.voltage)}
 					</Box>
 				 </Stack>
 				
-				 <Stack direction="row" spacing={2} justifyContent="space-between">
+				 <Stack direction="row" spacing={2} justifyContent="space-between" sx={{ color: !row?.[channelIndex]?.ubaDeviceConnectedTimeAgoMs || row?.[channelIndex]?.ubaDeviceConnectedTimeAgoMs > 120000 ? 'red' : (row?.[channelIndex]?.ubaDeviceConnectedTimeAgoMs > 60000 ? 'orange' : 'green'), }}>
 				 	<Box>
 						{getChargeCurrent(row?.[channelIndex]?.current)}
 					</Box>
@@ -71,9 +72,10 @@ export default function UbaCard({row}) {
 							fontWeight: 'bold',
 							}}
 					/>
+					{row?.[channelIndex].error > 0 ? <Tooltip title={getErrorMessage(row?.[channelIndex].error)}><ErrorOutlineIcon color="error" sx={{ width: 20, height: 20, marginTop:0.2, paddingLeft: 0 }} /></Tooltip> : null}
 				</Stack>
 				<Stack direction="row" justifyContent="space-around">
-					{getActions(row?.[channelIndex], authDispatch, ubaDevicesDispatch, testRoutinesDispatch, true)}
+					{getActions(row?.[channelIndex], authDispatch, ubaDevicesDispatch, testRoutinesDispatch)}
 				</Stack>
 			</Grid>
 		);

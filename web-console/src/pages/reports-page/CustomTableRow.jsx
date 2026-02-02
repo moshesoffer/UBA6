@@ -74,12 +74,15 @@ export default function CustomTableRow(props) {
 			</TableCell>
 
 			<TableCell>
-				<IconButton size="small" color="primary" onClick={handleDownloadClick}>
-					<CloudDownloadIcon/>
-				</IconButton>
 				<IconButton size="small" color="primary" onClick={handleEditClick}>
 					<BorderColorIcon/>
 				</IconButton>
+				{
+					row?.status === statusCodes.FINISHED &&
+						<IconButton size="small" color="primary" onClick={handleDownloadClick}>
+							<CloudDownloadIcon/>
+						</IconButton>
+				}
 			</TableCell>
 
 			<DownloadReport p={0} actionName={['download.report',]}/>

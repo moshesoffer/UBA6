@@ -11,7 +11,6 @@ exports.getMachines = async (req, res) => {
 	}
 };
 
-//currently not in use
 exports.createMachine = async (req, res) => {
 	try {
 		await createMachine(req.body);
@@ -22,7 +21,6 @@ exports.createMachine = async (req, res) => {
 	}
 };
 
-//currently not in use
 exports.updateMachine = async (req, res) => {
 	try {
 		await updateMachine(req.params?.mac, req.body);
@@ -33,14 +31,13 @@ exports.updateMachine = async (req, res) => {
 	}
 };
 
-//currently not in use
 exports.deleteMachine = async (req, res) => {
 	try {
 		await deleteMachine(req.params?.mac);
-		res.status(204).json( { success: true } );
+		res.status(204).end();
 	} catch (error) {
 		logger.error('deleteMachine', error);
-		res.sendStatus(500);
+		return res.status(400).json({ error: error.message });
 	}
 };
 

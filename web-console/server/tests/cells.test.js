@@ -2,7 +2,7 @@ const mysql = require('mysql2/promise');
 const request = require('supertest');
 const runSchema = require('./prepareDb');
 const { cellModel } = require('../models');
-
+const { clearMemInServer } = require('./testHelper');
 const { APIS } = require('../utils/constants');
 
 describe('Cell API Tests', () => {
@@ -48,6 +48,9 @@ describe('Cell API Tests', () => {
         if(connection) await connection.end();
         await new Promise(resolve => setTimeout(resolve, 500));//waiting for winston server logs to finish
     });
+    afterEach(async () => {
+        await clearMemInServer();
+    });
 
     test('add a new cell - fail', async () => {
         const { chargeOption, ...cellWithoutChargeOption } = cellToAdd;
@@ -79,7 +82,17 @@ describe('Cell API Tests', () => {
         response = await request(global.__SERVER__).get(APIS.cellsApi);
         delete newObj.ignoredParam;
         newObj.itemPN = cellToAdd.itemPN;
-        expect(response.body[0]).toEqual(newObj);
+
+        newObj.minVoltage = Number(newObj.minVoltage);
+        newObj.nomVoltage = Number(newObj.nomVoltage);
+        newObj.maxVoltage = Number(newObj.maxVoltage);
+        newObj.minCapacity = Number(newObj.minCapacity);
+        newObj.nomCapacity = Number(newObj.nomCapacity);
+        newObj.minTemp = Number(newObj.minTemp);
+        newObj.maxTemp = Number(newObj.maxTemp);
+
+        const { createdTime, modifiedTime, ...restExpected } = response.body[0];
+        expect(restExpected).toEqual(newObj);
         expect(response.body[0].chemistry).toBe(newObj.chemistry);
     });
 
@@ -111,5 +124,94 @@ describe('Cell API Tests', () => {
         let response = await request(global.__SERVER__)
             .delete(APIS.cellsApi + "/" + 'notexist');
         expect(response.status).toBe(500);//cell not exists
+    });
+
+    // co-pilot-missing-required-fields
+    test('co-pilot-missing-required-fields', async () => {
+        for (const field of cellModel.createProperties) {
+            const cellCopy = { ...cellToAdd };
+            delete cellCopy[field];
+            const response = await request(global.__SERVER__)
+                .post(APIS.cellsApi)
+                .send(cellCopy);
+            expect(response.status).toBe(500);
+        }
+    });
+
+    // co-pilot-invalid-data-types
+    test('co-pilot-invalid-data-types', async () => {
+        const invalidCell = { ...cellToAdd, minVoltage: 'not-a-number' };
+        const response = await request(global.__SERVER__)
+            .post(APIS.cellsApi)
+            .send(invalidCell);
+        expect(response.status).toBe(500);
+    });
+
+    // co-pilot-extra-unknown-fields
+    test('co-pilot-extra-unknown-fields', async () => {
+        const cellWithExtra = { ...cellToAdd, extraField: 'shouldBeIgnored', itemPN: 'new 123' };
+        const response = await request(global.__SERVER__)
+            .post(APIS.cellsApi)
+            .send(cellWithExtra);
+        expect([201]).toContain(response.status);
+    });
+
+    // co-pilot-empty-payload
+    test('co-pilot-empty-payload', async () => {
+        const response = await request(global.__SERVER__)
+            .post(APIS.cellsApi)
+            .send({});
+        expect(response.status).toBe(500);
+    });
+
+    // co-pilot-boundary-values
+    test('co-pilot-boundary-values', async () => {
+        const minCell = { ...cellToAdd, minVoltage: '0', maxVoltage: '1000', itemPN: 'new 1234' };
+        const response = await request(global.__SERVER__)
+            .post(APIS.cellsApi)
+            .send(minCell);
+        expect([201]).toContain(response.status); 
+    });
+
+    // co-pilot-duplicate-primary-key
+    test('co-pilot-duplicate-primary-key', async () => {
+        await request(global.__SERVER__).post(APIS.cellsApi).send(cellToAdd);
+        const response = await request(global.__SERVER__).post(APIS.cellsApi).send(cellToAdd);
+        expect([409, 500]).toContain(response.status); // 409 if unique constraint, 500 if generic error
+    });
+
+    // co-pilot-get-nonexistent-cell
+    test('co-pilot-get-nonexistent-cell', async () => {
+        const response = await request(global.__SERVER__).get(APIS.cellsApi + '/notexist');
+        expect([301, 404, 500]).toContain(response.status);
+    });
+
+    // co-pilot-not-null-constraint
+    test('co-pilot-not-null-constraint', async () => {
+        for (const field of cellModel.createProperties) {
+            const cellCopy = { ...cellToAdd };
+            delete cellCopy[field];
+            const response = await request(global.__SERVER__)
+                .post(APIS.cellsApi)
+                .send(cellCopy);
+            expect(response.status).toBe(500);
+        }
+    });
+
+    // co-pilot-varchar-max-length
+    test('co-pilot-varchar-max-length', async () => {
+        const longString = 'x'.repeat(1000); // Exceeds varchar(64)
+        const tooLong = { ...cellToAdd, chemistry: longString, manufacturer: longString, itemPN: longString };
+        const response = await request(global.__SERVER__)
+            .post(APIS.cellsApi)
+            .send(tooLong);
+        expect(response.status).toBe(500);
+    });
+
+    // co-pilot-unique-constraint
+    test('co-pilot-unique-constraint', async () => {
+        await request(global.__SERVER__).post(APIS.cellsApi).send(cellToAdd);
+        const response = await request(global.__SERVER__).post(APIS.cellsApi).send(cellToAdd);
+        expect([409, 500]).toContain(response.status);
     });
 });

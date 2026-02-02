@@ -13,13 +13,11 @@ import TimelineIcon from '@mui/icons-material/Timeline';
 import { getText, } from 'src/services/string-definitions';
 import { setModal, } from 'src/actions/Auth';
 import { setCurrentUba, setState, setSelectedDevices} from 'src/actions/UbaDevices';
-import { statusCodes, pageStateList, isStatusInPending} from 'src/constants/unsystematic';
+import { statusCodes, pageStateList, isStatusInPending, } from 'src/constants/unsystematic';
 import {pauseRunningTest, stopRunningTest, resumeRunningTest, getGraphData, confirmRunningTest} from 'src/action-creators/TestRoutines';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import Tooltip from '@mui/material/Tooltip';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 
-export const getActions = (row, authDispatch, ubaDevicesDispatch, testRoutinesDispatch, showIfHasError) => {
+export const getActions = (row, authDispatch, ubaDevicesDispatch, testRoutinesDispatch) => {
     if (isStatusInPending(row?.status)) {
         return (
             <Box sx={{ textAlign: 'center' }}>
@@ -84,7 +82,6 @@ export const getActions = (row, authDispatch, ubaDevicesDispatch, testRoutinesDi
                 <IconButton title={getText('common.VIEW_GRAPH')} aria-label="graph details" onClick={() => handleGraphOpening(row, authDispatch, ubaDevicesDispatch, testRoutinesDispatch)} >
                     <TimelineIcon color="primary" />
                 </IconButton>
-                {showIfHasError && row?.status === statusCodes.ABORTED && row?.error > 0 ? <Tooltip title={row?.error}><ErrorOutlineIcon color="error" /></Tooltip> : null}
             </ButtonGroup>
         );
     }

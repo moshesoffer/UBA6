@@ -1,6 +1,6 @@
 import {setNotification,} from 'src/actions/Auth';
 import {setMachineSettings, setCellSettings,} from 'src/actions/Settings';
-import {postData,} from 'src/utils/httpRequests';
+import {postData,postData2} from 'src/utils/httpRequests';
 import {handleRequestError,} from 'src/utils/helper';
 import {validateArray,} from 'src/utils/validators';
 
@@ -56,6 +56,20 @@ export const deleteCell = async (authDispatch, settingsDispatch, itemPN) => {
 	try {
 		await postData(authDispatch, `cells/${itemPN}`, 'DELETE');
 		getCells(authDispatch, settingsDispatch);
+	} catch (error) {
+		const preparedMessage = handleRequestError(error);
+		authDispatch(setNotification({message: preparedMessage,}));
+	}
+}
+
+export const deleteMachine = async (authDispatch, settingsDispatch, machineMac) => {
+	try {
+		const res = await postData2(authDispatch, `machines/${machineMac}`, 'DELETE');
+		if(res?.error) {
+			authDispatch(setNotification({message: res.error,}));
+			return;
+		}
+		getMachines(authDispatch, settingsDispatch);
 	} catch (error) {
 		const preparedMessage = handleRequestError(error);
 		authDispatch(setNotification({message: preparedMessage,}));

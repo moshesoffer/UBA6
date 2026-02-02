@@ -9,7 +9,7 @@ import {getMachines} from './Settings';
 export const getReports = async (authDispatch, reportsDispatch, settingsDispatch, metadata) => {
 	try {
 		getMachines(authDispatch, settingsDispatch);
-		const response = await postData(authDispatch, 'reports', 'POST', metadata);
+		const response = await postData(authDispatch, 'reports/search', 'POST', metadata);
 		if (!validateArray(response?.rows, false)) {
 			throw new Error('Invalid response. reports is missing.');
 		}
@@ -35,7 +35,7 @@ export const updateReport = async (authDispatch, reportsDispatch, settingsDispat
 
 export const getReportData = async (authDispatch, reportsDispatch, ids) => {
 	try {
-		const response = await postData(authDispatch, 'reports-graph', 'POST', ids);
+		const response = await postData(authDispatch, 'test-results/search', 'POST', ids);
 		if (!validateArray(response, false)) {
 			throw new Error('Invalid response. Graph Data is missing.');
 		}

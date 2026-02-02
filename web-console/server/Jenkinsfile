@@ -10,7 +10,7 @@ pipeline {
     environment {
         MY_GIT_REPO = 'https://shacharsatpet@bitbucket.org/amicell1/web-console.git'
         ARTIFACT_ID = 'web-console-artifact'
-        AWS_REPO_NAME = 'amicell-web-console'
+        AWS_REPO_NAME = 'amicell-node'
 
         AWS_DEV_ACCOUNT = '341022751600.dkr.ecr.us-east-1.amazonaws.com'
         SLACK_CHANNEL = '#amicell-build'
@@ -47,28 +47,31 @@ pipeline {
         stage ('Clean install and build inside docker') {
             agent {
                 docker {
-                    image 'node:16-buster'
+                    image 'node:20-buster'
                 }
             }
             steps {
-                echo "${HOME}======== Maven Deploy ========${WORKSPACE}"
-                dir('web-console') {
-                    echo "======== Clean & Install ========"
-                    sh "pwd"
-                    sh "npm run clean"
-                    sh "ls -rtl"
-                    sh "npm install"
-                    echo "======== Build ========"
-                    sh "npm run build"
-                    sh "ls -rtl"
-                }
+                echo "${HOME}======== Clean & Install ========${WORKSPACE}"
+                sh "pwd"
+                sh "npm run clean"
+                sh "ls -al"
+                sh '''
+                    mkdir -p .npm-cache
+                    export NPM_CONFIG_CACHE=$(pwd)/.npm-cache
+                    npm install
+                '''
+                echo "======== Build ========"
+                sh "npm run build"
+                sh "ls -al"
             }
         }
         stage('Build') {
             agent any
             steps {
                 echo "======== Build docker image ========"
-                dir('web-console') {
+                dir('server') {
+                    sh "pwd"
+                    sh "ls -al"
                     sh """
                     docker run --privileged --rm tonistiigi/binfmt --install arm64
                     docker buildx build --load --platform linux/arm64 -t ${env.INTERNAL_DOCKER_IMAGE} .

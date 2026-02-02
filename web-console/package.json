@@ -13,6 +13,7 @@
 		"rm:all": "rm -rf node_modules .next out dist build",
 		"re:start-npm": "npm run rm:all && npm install && npm run dev",
 		"re:build-npm": "npm run rm:all && npm install && npm run build",
+		"clean": "rm -rf out node_modules .next dist build server/node_modules server/build server/dist",
 		"dev:host": "vite --host",
 		"vite:start": "vite",
 		"vite:build": "vite build"

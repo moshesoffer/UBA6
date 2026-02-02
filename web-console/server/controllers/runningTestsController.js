@@ -1,10 +1,10 @@
 const logger = require('../utils/logger');
-const {status,RUNNING_TEST_ACTIONS} = require('../utils/constants');
-const {runTest, actionOnRunningTest,} = require('../services/transactionsService');
+const {status,} = require('../utils/constants');
+const {runTest, changeRunningTestStatus,} = require('../services/transactionsService');
 const {
-	changeTestStatus,
-	getInstantTestResultsGraphData,
-	addInstantTestResults
+	getInstantTestResults,
+	addInstantTestResults,
+	getPendingRunningTests
 } = require('../services/runningTestService');
 
 exports.addInstantTestResults = async (req, res) => {
@@ -18,90 +18,49 @@ exports.addInstantTestResults = async (req, res) => {
 };
 
 //this is fetching the graph data for the instantTestResults
-exports.getInstantTestResultsGraphData = async (req, res) => {
+exports.getInstantTestResults = async (req, res) => {
 	try {
-		const result = await getInstantTestResultsGraphData(req.params?.runningTestID);
-		/*remove random elements - just for show DELETE THIS TODO!!!
-		const arrCopy = [...result];
-		for (let i = 0; i < 50; i++) {
-			const randomIndex = Math.floor(Math.random() * arrCopy.length);
-			arrCopy.splice(randomIndex, 1);
-		}
-		res.json(arrCopy);
-		*/
-
+		const result = await getInstantTestResults(req.params?.runningTestID);
 		res.json(result);
 	} catch (error) {
-		logger.error('getInstantTestResultsGraphData', error);
+		logger.error('getInstantTestResults', error);
+		res.sendStatus(500);
+	}
+};
+
+exports.getAllPendingRunningTests = async (req, res) => {
+	try {
+		const result = await getPendingRunningTests();
+		res.json(result);
+	} catch (error) {
+		logger.error('getAllPendingRunningTests', error);
 		res.sendStatus(500);
 	}
 };
 
 //this is for starting the test. it will delete running tests and recreate them
+//When starting a test then first deleting running tests on the related ubaSNs + channels
 exports.runTest = async (req, res) => {
 	try {
-		const {ids,errorEnum} = await runTest(req.body);
+		const {ids} = await runTest(req.body);
 		res.end();
-		//TODO!!! remove the setTimeout, this is only for presentation
-		if(process.env.TEST_ENV) return;
-		setTimeout(async () => {
-			try {
-				for (const id of ids) {
-					logger.info(`running-test start changeTestStatus [${id}]`);
-					await changeTestStatus(id, errorEnum === 0 ? status.RUNNING : status.ABORTED);
-					logger.info(`running-test finish changeTestStatus [${id}]`);
-				}
-				logger.info(`running-test finish all ids`, {ids: ids});
-			} catch (error) {
-				logger.error('Error changing status to RUNNING', error);
-			}
-		}, 7000);
 	} catch (error) {
 		logger.error('runTest', error);
 		res.sendStatus(500);
 	}
 };
 
-//this is for stoping the test
-exports.stopTest = async (req, res) => {
-	try {
-		await actionOnRunningTest(req.body?.runningTestID, req.body?.testRoutineChannels, req.body?.ubaSN, RUNNING_TEST_ACTIONS.STOP);
-		res.end();
-	} catch (error) {
-		logger.error('stopTest', error);
-		res.sendStatus(500);
-	}
-};
-
-//this is for pausing the test
-exports.pauseTest = async (req, res) => {
-	try {
-		await actionOnRunningTest(req.body?.runningTestID, req.body?.testRoutineChannels, req.body?.ubaSN, RUNNING_TEST_ACTIONS.PAUSE);
-		res.end();
-	} catch (error) {
-		logger.error('pauseTest', error);
-		res.sendStatus(500);
-	}
-};
-
-//this is for resuming the test
-exports.resumeTest = async (req, res) => {
-	try {
-		await actionOnRunningTest(req.body?.runningTestID, req.body?.testRoutineChannels, req.body?.ubaSN, RUNNING_TEST_ACTIONS.RESUME);
-		res.end();
-	} catch (error) {
-		logger.error('resumeTest', error);
-		res.sendStatus(500);
-	}
-};
-
-//this is for confirming(finished) the test
-exports.confirmTest = async (req, res) => {
-	try {
-		await actionOnRunningTest(req.body?.runningTestID, req.body?.testRoutineChannels, req.body?.ubaSN, RUNNING_TEST_ACTIONS.CONFIRM);
-		res.end();
-	} catch (error) {
-		logger.error('confirmTest', error);
-		res.sendStatus(500);
-	}
+//if the running test is on both channels then going to find the other channel running test and do the action on it as well. not only on runningTestID
+exports.changeRunningTestStatus = async (req, res) => {
+  const validStatuses = new Set(Object.values(status));
+  if (!validStatuses.has(req.body?.newTestStatus)) {
+    return res.status(400).json({ error: 'Invalid newTestStatus value: ' + req.body?.newTestStatus });
+  }
+  try {
+    await changeRunningTestStatus(req.body?.runningTestID, req.body?.testRoutineChannels, req.body?.ubaSN, req.body?.newTestStatus);
+    res.end();
+  } catch (err) {
+    logger.error(`changeRunningTestStatus newTestStatus: [${req.body?.newTestStatus}] [${req.body?.runningTestID}] [${req.body?.testRoutineChannels}] [${req.body?.ubaSN}] test`, err);
+    res.sendStatus(500);
+  }
 };

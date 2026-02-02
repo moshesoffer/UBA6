@@ -1,3 +1,9 @@
+const path = require('node:path');
+
+const reportsDataPath = process.env.TEST_ENV ? path.join(__dirname, '../../../amicell-tests/reports-data') : path.join(__dirname, '../../../amicell-data/reports-data');
+const testResultsFileName = 'testResults.json';
+const ubaDeviceConnectedMs = 60_000; // 1 minute
+
 const ubaChannels = {
 	A: 'A',
 	B: 'B',
@@ -14,24 +20,36 @@ const TEST_ROUTINE_CHANNELS = {
 	A_AND_B: 'A-and-B',
 };
 
+const STANDBY= 0x0001;
+const STOPPED= 0x0002;
+const ABORTED= 0x0004;
+const FINISHED= 0x0008;
+const SAVED= 0x0010;
+const RUNNING= 0x0020;
+const PAUSED= 0x0040;
+const PENDING= 0x0100;
+const IS_TEST_RUNNING = PENDING|RUNNING|PAUSED;
+
 const status = {
-	STANDBY: 0,
-	STOPPED: 3,
-	ABORTED: 4,
-	FINISHED: 5,
-	SAVED: 6,
-	RUNNING: 33,
-	PAUSED: 34,
-	PENDING_STANDBY: 48,
-	PENDING_SAVE: 22,
-	PENDING_PAUSE: 50,
-	PENDING_STOP: 51,
-	PENDING_RUNNING: 49,
+	STANDBY: STANDBY,
+	STOPPED: STOPPED,
+	ABORTED: ABORTED,
+	FINISHED: FINISHED,
+	SAVED: SAVED,
+	RUNNING: RUNNING,
+	PAUSED: PAUSED,
+	PENDING: PENDING,
+	PENDING_STANDBY: PENDING|STANDBY,
+	PENDING_STOP: PENDING|STOPPED,
+	PENDING_RUNNING: PENDING|RUNNING,
+	PENDING_SAVE: PENDING|SAVED,
+	PENDING_PAUSE: PENDING|PAUSED,
+	IS_TEST_RUNNING: PENDING|RUNNING|PAUSED,
 };
 
-const isTestRunning = (runningStatus) => [status.RUNNING, status.PAUSED, status.PENDING_SAVE, status.PENDING_RUNNING, status.PENDING_PAUSE, status.PENDING_STOP, status.PENDING_STANDBY].includes(runningStatus);
+const isTestRunning =  (runningStatus) => (runningStatus & status.IS_TEST_RUNNING) !== 0;
+const isTestInPending =  (runningStatus) => (runningStatus & status.PENDING) !== 0;
 
-const isTestInPending = (runningStatus) => [status.PENDING_SAVE, status.PENDING_RUNNING, status.PENDING_PAUSE, status.PENDING_STOP, status.PENDING_STANDBY].includes(runningStatus);
 
 const DATE_RANGE = {
 	lastWeek: '1 WEEK',
@@ -40,29 +58,22 @@ const DATE_RANGE = {
 	lastYear: '1 YEAR',
 };
 
-const RUNNING_TEST_ACTIONS = {
-	STOP: 'stop',
-	PAUSE: 'pause',
-	RESUME: 'resume',
-	CONFIRM: 'confirm',
-};
-
 const APIS = {
 	apiInitials:'/web-console',
 	get machinesApi() { return this.apiInitials + '/machines' },
 	get ubaDevicesApi() { return this.apiInitials + '/uba-devices' },
-	get graphDataApi() { return this.apiInitials + '/graph-data' },
+	get instantTestResultsApi() { return this.apiInitials + '/instant-test-results' },
 	get cellsApi() { return this.apiInitials + '/cells' },
 	get testRoutinesApi() { return this.apiInitials + '/test-routines' },
 	get startTestApi() { return this.apiInitials + '/running-test' },
-	get stopTestApi() { return this.apiInitials + '/stop-test' },
-	get pauseTestApi() { return this.apiInitials + '/pause-test' },
-	get resumeTestApi() { return this.apiInitials + '/resume-test' },
-	get confirmTestApi() { return this.apiInitials + '/confirm-test' },
-	get createReportApi() { return this.apiInitials + '/reports-and-data' },
-	get getReportsApi() { return this.apiInitials + '/reports' },
+	get changeRunningTestStatusApi() { return this.apiInitials + '/change-running-test-status' },
+	get getAllPendingRunningTestsApi() { return this.apiInitials + '/pending-tests' },
+	get createReportApi() { return this.apiInitials + '/reports' },
+	get getReportsApi() { return this.apiInitials + '/reports/search' },
 	get updateReportApi() { return this.apiInitials + '/reports' },
-	get reportsGraphApi() { return this.apiInitials + '/reports-graph' },
+	get reportsGraphApi() { return this.apiInitials + '/test-results/search' },
+	get pendingTasksApi() { return this.apiInitials + '/pending-tasks' },
+	get queryUbaDevicesApi() { return this.apiInitials + '/query-uba-devices' }
 };
 
 module.exports = {
@@ -71,8 +82,10 @@ module.exports = {
 	status,
 	DATE_RANGE,
 	TEST_ROUTINE_CHANNELS,
-	RUNNING_TEST_ACTIONS,
 	isTestRunning,
 	isTestInPending,
 	APIS,
+	reportsDataPath,
+	testResultsFileName,
+	ubaDeviceConnectedMs
 };

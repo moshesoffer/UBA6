@@ -1,6 +1,6 @@
 import {setNotification,} from 'src/actions/Auth';
 import {setUbaDevices, setUbaTotal,} from 'src/actions/UbaDevices';
-import {postData,} from 'src/utils/httpRequests';
+import {postData,postData2,} from 'src/utils/httpRequests';
 import {handleRequestError,} from 'src/utils/helper';
 import {validateArray, validateObject,} from 'src/utils/validators';
 
@@ -30,6 +30,14 @@ export const createUbaDevice = async (authDispatch, ubaDevicesDispatch, data) =>
 	} catch (error) {
 		const preparedMessage = handleRequestError(error);
 		authDispatch(setNotification({message: preparedMessage,}));
+	}
+}
+
+export const queryUbaDevice = async (authDispatch, data) => {
+	try {
+		return await postData2(authDispatch, 'query-uba-devices', 'POST', data);
+	} catch (error) {
+		return handleRequestError(error);
 	}
 }
 

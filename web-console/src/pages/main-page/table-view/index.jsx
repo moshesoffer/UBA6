@@ -8,21 +8,22 @@ import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
-import { setSelectedDevices, setState, setCurrentUba } from 'src/actions/UbaDevices';
+import { getUbaDevices } from 'src/action-creators/UbaDevices';
+import { setSecondaryNotification } from 'src/actions/Auth';
+import { setCurrentUba, setSelectedDevices, setState } from 'src/actions/UbaDevices';
 import CustomTableHead from 'src/components/CustomTableHead';
 import { pageStateList, statusCodes, ubaChannel, } from 'src/constants/unsystematic';
 import { getText, } from 'src/services/string-definitions';
+import { useAuth, useAuthDispatch } from 'src/store/AuthProvider';
 import { useUbaDevices, useUbaDevicesDispatch, } from 'src/store/UbaDevicesProvider';
 import filtering, { handleChangePage, handleChangeRowsPerPage, } from 'src/utils/filtering';
 import { validateArray, } from 'src/utils/validators';
 import CustomTableToolbar from '../CustomTableToolbar';
+import CustomToolbar from '../CustomToolbar';
 import { doFiltering, prepareValue, } from '../filtering';
 import { enrichUbaDevicesWithRunTime, } from '../utils';
 import CustomTableRow from './CustomTableRow';
-import CustomToolbar from '../CustomToolbar';
 import headLabels from './headLabels';
-import { getUbaDevices} from 'src/action-creators/UbaDevices';
-import {useAuthDispatch,} from 'src/store/AuthProvider';
 
 const POLLING_INTERVAL = 5000;
 
@@ -43,21 +44,13 @@ export default function TableView() {
 	const [rowsPerPage, setRowsPerPage] = useState(50);
 	const [filters, setFilters] = useState(filtersInitial);
 	const [hoveredRow, setHoveredRow] = useState(null);
+	const [dataFiltered, setDataFiltered] = useState([]);
+	const [amountOfRowsWithErrors, setAmountOfRowsWithErrors] = useState(-1);
 
 	const {ubaDevices, selectedDevices,} = useUbaDevices();
 	const authDispatch = useAuthDispatch();
+	const secondaryNotification = useAuth()?.secondaryNotification || {};
 	const ubaDevicesDispatch = useUbaDevicesDispatch();
-
-	const ubaEnriched = enrichUbaDevicesWithRunTime(ubaDevices);
-	const dataFiltered = filtering(ubaEnriched, order, orderBy, filters, prepareValue, doFiltering);
-
-	const rowsWithErrors = dataFiltered.filter((row) => row.error > 0 && row.status === statusCodes.ABORTED);
-
-	const rowsWithOutErrors = dataFiltered.filter((row) => row.status !== statusCodes.ABORTED);
-
-	if(rowsWithErrors && rowsWithErrors.length > 0 && rowsWithOutErrors && rowsWithOutErrors.length > 0){
-		rowsWithOutErrors[0].isFirstAfterErrors = true;
-	}
 
 	useEffect(() => {
 		ubaDevicesDispatch(setSelectedDevices([]));
@@ -67,9 +60,36 @@ export default function TableView() {
 		pollingRef.current = setInterval(() => getUbaDevices(authDispatch, ubaDevicesDispatch, true), POLLING_INTERVAL);
 		return () => {
 			//console.log('TableView unmount useEffect');
+			authDispatch(setSecondaryNotification({message: '',}));
 			clearInterval(pollingRef.current);
 		}
 	}, []);
+
+	useEffect(() => {
+		if(!ubaDevices || ubaDevices.length === 0) return;
+		const ubaEnriched = enrichUbaDevicesWithRunTime(ubaDevices);
+		const dataFilteredTemp = filtering(ubaEnriched, order, orderBy, filters, prepareValue, doFiltering);
+		const abortedRowsWithErrors = dataFilteredTemp.filter((row) => row.error > 0 && row.status === statusCodes.ABORTED);
+		const rowsWithOutErrors = dataFilteredTemp.filter((row) => !row.error || row.error === 0);
+
+		if(abortedRowsWithErrors && abortedRowsWithErrors.length > 0 && rowsWithOutErrors && rowsWithOutErrors.length > 0){
+			rowsWithOutErrors[0].isFirstAfterErrors = true;
+		}
+		setDataFiltered(dataFilteredTemp);
+
+		const rowsWithErrors = dataFilteredTemp.filter((row) => row.error > 0);
+		//amountOfRowsWithErrors > -1 to avoid showing notification on first load
+		//rowsWithErrors?.length > 0 to avoid showing notification when there are no errors
+		//rowsWithErrors.length > amountOfRowsWithErrors to avoid showing notification on every refresh
+		if(!secondaryNotification.message && amountOfRowsWithErrors !== -1 && rowsWithErrors?.length > 0 && rowsWithErrors.length > amountOfRowsWithErrors){
+			authDispatch(setSecondaryNotification({message: 'Some devices have errors',}));
+		} else if(secondaryNotification.message && rowsWithErrors?.length === 0){
+			authDispatch(setSecondaryNotification({message: '',}));
+		}
+
+		setAmountOfRowsWithErrors(rowsWithErrors.length);
+
+	}, [ubaDevices]);
 
 	const prepareSelected = () => selectedDevices.map(element => getCompositeKey(element.ubaSN, element.channel));
 

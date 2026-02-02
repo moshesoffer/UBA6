@@ -1,4 +1,4 @@
-import {SET_AUTH_CONDITION, SET_AJAX_LOADER, SET_NOTIFICATION, SET_MODAL,} from 'src/constants/ActionTypes';
+import {SET_AUTH_CONDITION, SET_AJAX_LOADER, SET_NOTIFICATION, SET_SECONDARY_NOTIFICATION, SET_MODAL,} from 'src/constants/ActionTypes';
 import {notificationSeverity,} from 'src/constants/unsystematic';
 
 const getSeverity = severity => {
@@ -37,6 +37,15 @@ export default function authReducer(state, action) {
 			return {
 				...state,
 				notification: {
+					severity: getSeverity(action.payload?.severity),
+					message: action.payload.message,
+				}
+			};
+		}
+		case SET_SECONDARY_NOTIFICATION: {
+			return {
+				...state,
+				secondaryNotification: {
 					severity: getSeverity(action.payload?.severity),
 					message: action.payload.message,
 				}

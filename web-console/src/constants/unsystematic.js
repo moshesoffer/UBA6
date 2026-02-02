@@ -69,26 +69,87 @@ export const addEditSettings = {
 	EDIT_CELL: 'edit.cell',
 };
 
+const STANDBY= 0x0001;
+const STOPPED= 0x0002;
+const ABORTED= 0x0004;
+const FINISHED= 0x0008;//8
+const SAVED= 0x0010;
+const RUNNING= 0x0020;//32
+const PAUSED= 0x0040;//64
+const PENDING= 0x0100;
+
 export const statusCodes = {
-	STANDBY: 0,
-	STOPPED: 3,
-	ABORTED: 4,
-	FINISHED: 5,
-	SAVED: 6,
-	RUNNING: 33,
-	PAUSED: 34,
-	PENDING_STANDBY: 48,
-	PENDING_SAVE: 22,
-	PENDING_PAUSE: 50,
-	PENDING_STOP: 51,
-	PENDING_RUNNING: 49,
+	STANDBY: STANDBY,
+	STOPPED: STOPPED,
+	ABORTED: ABORTED,
+	FINISHED: FINISHED,
+	SAVED: SAVED,
+	RUNNING: RUNNING,
+	PAUSED: PAUSED,
+	PENDING: PENDING,
+	PENDING_STANDBY: PENDING|STANDBY,
+	PENDING_STOP: PENDING|STOPPED,
+	PENDING_RUNNING: PENDING|RUNNING,
+	PENDING_SAVE: PENDING|SAVED,
+	PENDING_PAUSE: PENDING|PAUSED,
+	IS_TEST_RUNNING: PENDING|RUNNING|PAUSED,
 };
 
-export const isStatusInPending = (status) => [statusCodes.PENDING_SAVE, statusCodes.PENDING_RUNNING, statusCodes.PENDING_PAUSE, statusCodes.PENDING_STOP, statusCodes.PENDING_STANDBY].includes(status);
+export const isTestRunning =  (runningStatus) => (runningStatus & statusCodes.IS_TEST_RUNNING) !== 0;
+export const isStatusInPending =  (runningStatus) => (runningStatus & statusCodes.PENDING) !== 0;
+
+
+export const errorCodes = {
+  0x00000001: 'NOT_AVAILABLE',
+  0x00000002: 'I2C_PERIPHERAL',
+  0x00000004: 'BAT_HIGH_VOLTAGE',
+  0x00000008: 'BAT_HIGH_CURRENT',
+  0x00000010: 'BAT_HIGH_TEMP',
+  0x00000020: 'AMB_HIGH_TEMP',
+  0x00000040: 'GEN_HIGH_VOLTAGE',
+  0x00000080: 'BIST_FAILED',
+  0x00000100: 'BUSY',
+  0x00000200: 'REVERSE_POLARITY',
+  0x00000400: 'OVER_VOLTAGE',
+  0x00000800: 'DISCHARGE_MOSFET_SHORT',
+  0x00001000: 'CHARGE_MOSFET_SHORT',
+  0x00002000: 'LOW_INPUT_VOLTAGE',
+  0x00004000: 'HIGH_INPUT_VOLTAGE',
+  0x00008000: 'VGEN_EXPECTED_MAX_VOLTAGE',
+  0x00010000: 'VGEN_FAILED',
+  0x00020000: 'VGEN_LIMITES',
+  0x00040000: 'OVERCURRENT',
+  0x00080000: 'NO_CALIBRATION',
+  0x00100000: 'BAT_NOT_CONNECTED',
+  0x00200000: 'BAT_TEMP_SENSOR_NC',
+  0x00400000: 'INTERNAL_TEMP_SENSOR_NC',
+  0x00800000: 'EXTERNAL_LINE_ERROR',
+  0x01000000: 'INTERNAL_LINE_ERROR',
+  0x02000000: 'CHANNEL_EMPTY',
+  0x04000000: 'CHANNEL_MULTI_LINE_VOLTAGE_MISMATCH',
+  0x08000000: 'CHANNEL_MULTI_LINE_CURRENT_MISMATCH',
+  0x10000000: 'SD_CARD',
+  0x20000000: 'USER_ABORT',
+  0x40000000: 'CHANNEL_ERROR',
+};
+
+export const getErrorMessage = (errorCode) => {
+	if (errorCode === 0) return 'No Error';
+
+	const messages = [];
+	for (const [flag, message] of Object.entries(errorCodes)) {
+		if (errorCode & parseInt(flag,10)) {
+			messages.push(message);
+		}
+	}
+
+	return messages.length > 0
+		? messages.join(', ')
+		: 'Unrecognized error code';
+};
+
 
 export const getKeyByValue = (obj, value) => Object.entries(obj).find(([key, val]) => val === value)?.[0];
-
-export const isTestRunning = (status) => [statusCodes.RUNNING, statusCodes.PAUSED, statusCodes.PENDING_SAVE, statusCodes.PENDING_RUNNING, statusCodes.PENDING_PAUSE, statusCodes.PENDING_STOP, statusCodes.PENDING_STANDBY].includes(status);
 
 export const isTestNeedToBeConfirmed = (status) => [statusCodes.STOPPED, statusCodes.ABORTED, statusCodes.FINISHED].includes(status);
 

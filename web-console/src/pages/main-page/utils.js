@@ -38,20 +38,28 @@ export const getVoltage = voltage => {
 	if (voltage === null) {
 		return getText('common.NOT_APPLICABLE');
 	}
-
-	return `${(Number(voltage)).toFixed(2)}V`;
+	if(voltage > 1000){
+		return `${(Number(voltage/1000)).toFixed(2)}V`;
+	}
+	return `${(Number(voltage))}mV`;
+	
 }
 
 export const getChargeCurrent = chargeCurrent => {
 	if (chargeCurrent === null) {
 		return getText('common.NOT_APPLICABLE');
 	}
-
-	return `${Number(chargeCurrent)}A`;
+	if(chargeCurrent > 1000){
+		return `${Number(chargeCurrent).toFixed(2)}A`;
+	}
+	return `${Number(chargeCurrent*1000).toFixed(2)}mA`;
 }
 
 export const getTemperature = temperature => {
 	if (temperature === null) {
+		return getText('common.NOT_APPLICABLE');
+	}
+	if(temperature<= -273){
 		return getText('common.NOT_APPLICABLE');
 	}
 

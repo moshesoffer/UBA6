@@ -1,5 +1,6 @@
 const logger = require('../utils/logger');
-const {validateString, validateArray,validateIsDefined} = require('../utils/validators');
+const Joi = require('joi');
+const {validateString, validateArray,validateIsDefined, validateSchema} = require('../utils/validators');
 const pool = require('.');
 
 const selectQuery = async (tableName, query, values, openedConnection) => {
@@ -34,19 +35,26 @@ const createModel = async (model, data, openedConnection) => {
 	let updatePlaceholders = [];
 	let updateValues = [];
     let preparedFields = [];
+	let dataFilteredObj = {};
 	try {
 		for (const field of model.createProperties) {
 			if ((field in data) && validateIsDefined(data[field])) {
                 let val = data[field];
-                if(typeof val === 'string'){
+                if(val && typeof val === 'string'){
                     val = val.trim();
                 }
-                if(val !== null && val !== undefined && val !== '') {
+                if(val !== null && val !== undefined && val !== '') {//not allowing empty strings
                     updatePlaceholders.push(`?`);
                     updateValues.push(val);
                     preparedFields.push(`\`${field}\``);
+					if(model.schema && model.schema[field]){
+						dataFilteredObj[field] = val;
+					}
                 }
 			}
+		}
+		if(model.schema && Object.keys(model.schema).length > 0){
+			validateSchema(Joi.object(model.schema), dataFilteredObj, `createModel ${model.tableName}`);
 		}
 
         if(model.uuid){
@@ -81,6 +89,8 @@ const updateModel = async (model, pkValue, data, openedConnection) => {
 	*/
 	let updateFields = [];
 	let updateValues = [];
+	let dataFilteredObj = {};
+	let schemaFilteredObj = {};
 
 	try {
 		for (const field of model.updateProperties) {
@@ -92,6 +102,10 @@ const updateModel = async (model, pkValue, data, openedConnection) => {
                 if(val !== null && val !== undefined && val !== '') {
                     updateFields.push(`\`${field}\` = ?`);
                     updateValues.push(val);
+					if(model.schema && model.schema[field]){
+						dataFilteredObj[field] = val;
+						schemaFilteredObj[field] = model.schema[field];
+					}
                 }
 				
 			}
@@ -103,6 +117,11 @@ const updateModel = async (model, pkValue, data, openedConnection) => {
 		if (!validateString(pkValue) || !validateString(pkValue.trim())) {
 			throw new Error(`Invalid pkValue [${model.tableName}]`);
 		}
+
+		if(Object.keys(schemaFilteredObj).length > 0){//in update we dont check required. we check only what is sent and update only what is sent, we dont delete fields.
+			validateSchema(Joi.object(schemaFilteredObj), dataFilteredObj, `updateModel ${model.tableName}`);
+		}
+
 		updateValues.push(pkValue.trim());
 		query = `UPDATE \`${model.tableName}\` SET ${updateFields.join(', ')} WHERE \`${model.pkName}\` = ?;`;
 

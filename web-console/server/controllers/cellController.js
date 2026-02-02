@@ -34,7 +34,7 @@ exports.updateCell = async (req, res) => {
 exports.deleteCell = async (req, res) => {
 	try {
 		await deleteCell(req.params?.itemPN);
-		res.status(204).json( { success: true } );
+		res.status(204).end();
 	} catch (error) {
 		logger.error('deleteCell', error);
 		res.sendStatus(500);

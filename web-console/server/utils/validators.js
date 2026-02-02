@@ -1,4 +1,7 @@
-const { testRoutineModel, reportsDataModel } = require('../models');
+const Joi = require('joi');
+
+const { testRoutineModel,  } = require('../models');
+const logger = require('./logger');
 
 const validateIsDefined = value => (typeof value !== 'undefined');
 
@@ -105,7 +108,8 @@ const validatePassword = password => {
 	We need to handle the plan field separately, because it is an array of objects.
 	It is stored as a JSON string in the DB.
 	We check that the array is not empty.
-	We check that each object has only the defined keys.
+	We check that each object has only the defined keys and that the values are of the correct type.
+	it will also convert the values to the correct type for example '123' to 123.
 	See the testRoutineModel.planProperties constant.
 */
 const validatePlan = (plan, mandatory) => {
@@ -119,13 +123,17 @@ const validatePlan = (plan, mandatory) => {
 		let state = testRoutineModel.planProperties.reduce((accumulator, key) => {
 			if (key in testState) {
 				accumulator[key] = testState[key];
+			} else {
+				logger.info(`Key ${key} isn't in plan step value = ${accumulator[key]}`);
 			}
 			return accumulator;
 		}, {});
 
 		if (validateObject(state, true)) {
-			dataPlan.push(state);
+			let convertedValue = validateSchema(Joi.object(testRoutineModel.planSchema), state, `validatePlan`);
+			dataPlan.push(convertedValue);
 		}
+
 	}
 
 	if (!validateArray(dataPlan)) {
@@ -143,8 +151,17 @@ const validateTestResults = (testResults, mandatory) => {
 	}
 
 	let dataTestResults = [];
+	let testResultsProperties = [
+        'timestamp',
+        'voltage',
+        'temperature',
+        'current',
+		'planIndex',
+		'stepIndex',
+        //'currentStep',
+	];
 	for (const testState of testResults) {
-		let state = reportsDataModel.testResultsProperties.reduce((accumulator, key) => {
+		let state = testResultsProperties.reduce((accumulator, key) => {
 			if (key in testState) {
 				accumulator[key] = testState[key];
 			}
@@ -164,6 +181,31 @@ const validateTestResults = (testResults, mandatory) => {
 
 };
 
+function validateSchema(joiSchema, data, context = '') {
+	/*const joiOptions = {
+		convert: true,      // default true
+		abortEarly: true,   // stop after first error (default true)
+		allowUnknown: false,// disallow unknown keys in objects
+		stripUnknown: false,// remove unknown keys instead of erroring
+		presence: 'optional', // can be 'required', 'optional', 'forbidden'
+		noDefaults: false,  // skip applying defaults
+		errors: { label: 'path' } // customize error messages
+	};
+	joiSchema.validate(data, { convert: false }) to avoid auto conversion. default joi will convert strings to numbers '42' → 42
+	Also booleans 'true' → true, 'false' → false, '1' → true, '0' → false
+	Also dates — '2025-09-21' → Date('2025-09-21')
+	*/
+	//currently convert is true by default and many calls to apis are sending strings instead of numbers. in the end the db will convert to the right type. 
+	//but still need to change all the calls to send the right type. and use the value of joiSchema or to add convert:false and to be strict!
+    const { value, error } = joiSchema.validate(data);
+	
+    if (error) {
+        logger.warn(`validateSchema failed${context ? ' for ' + context : ''}`, error.details);
+        throw new Error(error.details.map(e => e.message).join(', '));
+    }
+	return value;
+}
+
 module.exports = {
 	validateIsDefined,
 	validateBoolean,
@@ -177,4 +219,5 @@ module.exports = {
 	validateDate,
 	validatePlan,
 	validateTestResults,
+    validateSchema,
 };

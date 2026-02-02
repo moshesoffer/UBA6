@@ -18,7 +18,7 @@ function DownloadReport() {
 	useEffect(() => {
 		if (currentReport) {
 			//console.log('currentReport', currentReport);
-			const apiUrl = `${import.meta.env.VITE_API_URL}/reports-graph/${currentReport.id}/`;
+			const apiUrl = `${import.meta.env.VITE_API_URL}/test-results/${currentReport.id}/`;
 			setPdfDownloadLink(apiUrl + 'PDF');
 			setExcelDownloadLink(apiUrl + 'XSLX');
 		}

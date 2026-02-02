@@ -34,7 +34,7 @@ exports.updateTestRoutine = async (req, res) => {
 exports.deleteTestRoutine = async (req, res) => {
 	try {
 		await deleteTestRoutine(req.params?.id);
-		res.status(204).json( { success: true } );
+		res.status(204).end();
 	} catch (error) {
 		logger.error('deleteTestRoutine', error);
 		res.sendStatus(500);

@@ -3,7 +3,7 @@ import { setGraphData, setTestRoutines, } from 'src/actions/TestRoutines';
 import { handleRequestError, prepareGraphData, } from 'src/utils/helper';
 import { postData, } from 'src/utils/httpRequests';
 import { validateArray, } from 'src/utils/validators';
-
+import { statusCodes, } from 'src/constants/unsystematic';
 import { getUbaDevices, } from './UbaDevices';
 
 export const getTestRoutines = async (authDispatch, testRoutinesDispatch) => {
@@ -52,7 +52,7 @@ export const deleteTestRoutine = async (authDispatch, testRoutinesDispatch, id) 
 
 export const getGraphData = async (authDispatch, testRoutinesDispatch, runningTestID) => {
 	try {
-		const response = await postData(authDispatch, `graph-data/${runningTestID}`, 'GET');
+		const response = await postData(authDispatch, `instant-test-results/${runningTestID}`, 'GET');
 		if (!validateArray(response, false)) {
 			throw new Error('Invalid response. Graph Data is missing.');
 		}
@@ -84,11 +84,12 @@ export const stopRunningTest = async (authDispatch, ubaDevicesDispatch, runningT
 	const data = {
 		runningTestID,
 		testRoutineChannels,
-		ubaSN
+		ubaSN,
+		newTestStatus: statusCodes.PENDING_STOP
 	};
 
 	try {
-		await postData(null, 'stop-test', 'PATCH', data);
+		await postData(null, 'change-running-test-status', 'PATCH', data);
 		getUbaDevices(authDispatch, ubaDevicesDispatch, true);
 	} catch (error) {
 		const preparedMessage = handleRequestError(error);
@@ -100,11 +101,12 @@ export const pauseRunningTest = async (authDispatch, ubaDevicesDispatch, running
 	const data = {
 		runningTestID,
 		testRoutineChannels,
-		ubaSN
+		ubaSN,
+		newTestStatus: statusCodes.PENDING_PAUSE
 	};
 
 	try {
-		await postData(null, 'pause-test', 'PATCH', data);
+		await postData(null, 'change-running-test-status', 'PATCH', data);
 		getUbaDevices(authDispatch, ubaDevicesDispatch, true);
 	} catch (error) {
 		const preparedMessage = handleRequestError(error);
@@ -116,11 +118,12 @@ export const resumeRunningTest = async (authDispatch, ubaDevicesDispatch, runnin
 	const data = {
 		runningTestID,
 		testRoutineChannels,
-		ubaSN
+		ubaSN,
+		newTestStatus: statusCodes.PENDING_RUNNING
 	};
 
 	try {
-		await postData(null, 'resume-test', 'PATCH', data);
+		await postData(null, 'change-running-test-status', 'PATCH', data);
 		getUbaDevices(authDispatch, ubaDevicesDispatch, true);
 	} catch (error) {
 		const preparedMessage = handleRequestError(error);
@@ -132,11 +135,12 @@ export const confirmRunningTest = async (authDispatch, ubaDevicesDispatch, runni
 	const data = {
 		runningTestID,
 		testRoutineChannels,
-		ubaSN
+		ubaSN,
+		newTestStatus: statusCodes.PENDING_STANDBY
 	};
 
 	try {
-		await postData(null, 'confirm-test', 'PATCH', data);
+		await postData(null, 'change-running-test-status', 'PATCH', data);
 		getUbaDevices(authDispatch, ubaDevicesDispatch, true);
 	} catch (error) {
 		const preparedMessage = handleRequestError(error);

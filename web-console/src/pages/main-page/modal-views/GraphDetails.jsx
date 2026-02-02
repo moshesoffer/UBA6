@@ -179,7 +179,7 @@ function GraphDetails() {
 					</Box>
 
 					<Box>
-						{getText('mainPage.LAST_READING')}: <span style={{color: "green"}}>{lastReading?.voltage}V</span> / <span style={{color: "blue"}}>{lastReading?.current}A</span> / <span style={{color: "red"}}>{lastReading?.temp ? lastReading?.temp + '℃' : ''}</span>
+						{getText('mainPage.LAST_READING')}: <span style={{color: "green"}}>{lastReading?.voltage}mV</span> / <span style={{color: "blue"}}>{lastReading?.current}A</span> / <span style={{color: "red"}}>{lastReading?.temp ? lastReading?.temp + '℃' : ''}</span>
 					</Box>
 				</Stack>
 			</Stack>

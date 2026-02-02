@@ -1,4 +1,4 @@
-FROM node:22-alpine
+FROM node:20-alpine
 
 ENV DB_CONFIGURATION_HOST=dev-amicell-mysql.cluster-cza84fhjccav.us-east-1.rds.amazonaws.com
 
@@ -12,4 +12,4 @@ COPY . ./
 
 RUN npm install
 
-CMD [ "node", "./bin/www" ]
+CMD [ "npm", "start" ]

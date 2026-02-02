@@ -4,21 +4,25 @@
 	"version": "1.0.0",
 	"private": true,
 	"scripts": {
-		"start": "node ./bin/www",
+		"migrate": "db-migrate --config ./database.js up",
+		"prestart": "node scripts/create-mysql-schema-if-needed.js",
+		"start": "npm run migrate && node ./bin/www",
+
 		"rm:beforeBuild": "rm -rf dist logs",
-		"dev": "rm -rf logs && PORT=4000 DB_CONFIGURATION_PASSWORD='12345678' ENABLE_CORS_FOR_LOCALHOST=true npm start",
-		"test": "jest --runInBand"
-	},
-	"jest": {
-		"globalSetup": "<rootDir>/tests/jest.setup.js",
-		"globalTeardown": "<rootDir>/tests/jest.teardown.js",
-		"testEnvironment": "node",
-		"testTimeout": 30000
+		"rm:all": "rm -rf dist logs node_modules",
+		"dev": "rm -rf logs && PORT=4000 ENABLE_CORS_FOR_LOCALHOST=true npm start",
+		"test": "jest --runInBand --detectOpenHandles"
 	},
 	"dependencies": {
 		"cors": "^2.8.5",
+		"db-migrate": "^0.11.14",
+		"db-migrate-mysql": "^3.0.0",
 		"express": "^4.19.2",
+		"helmet": "^8.1.0",
+		"joi": "^17.13.3",
 		"mysql2": "^3.11.0",
+		"swagger-jsdoc": "^6.2.8",
+		"swagger-ui-express": "^5.0.1",
 		"uuid": "^10.0.0",
 		"winston": "^3.16.0",
 		"winston-daily-rotate-file": "^5.0.0",

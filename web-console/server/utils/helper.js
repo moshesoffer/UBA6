@@ -1,3 +1,5 @@
+const logger = require('./logger');
+const fs = require('fs');
 const {validateString, validateArray,} = require('./validators');
 const {testChannels,} = require('./constants');
 
@@ -25,46 +27,46 @@ const checkOrderParameter = metadata => {
 	}
 }
 
-const enrichUbaDevices = (ubaDevices, instantTestResults) => ubaDevices.map(ubaDevice => {
-
-	let testState = null;
-	let testCurrentStep = null;
-	let voltage = null;
-	let current = null;
-	let temp = null;
-	let capacity = null;
-	let error = null;
-
-	for (const result of instantTestResults) {
-		if (ubaDevice.runningTestID === result.runningTestID) {
-			({
-				testState,
-				testCurrentStep,
-				voltage,
-				current,
-				temp,
-				capacity,
-				error
-			} = result);
-
-			break;
-		}
+const createFolderIfNotExists = (folderPath) => {
+	if (!fs.existsSync(folderPath)) {
+		fs.mkdirSync(folderPath, { recursive: true });
+		logger.info(`folderPath created: ${folderPath}`);
+	} else {
+		logger.info(`folderPath already exists: ${folderPath}`);
 	}
+};
 
-	return {
-		...ubaDevice,
-		testState,
-		testCurrentStep,
-		voltage,
-		current,
-		temp,
-		capacity,
-		error,
-	};
-});
+const readTextFromFile = (filePath) => {
+	return fs.readFileSync(filePath, 'utf8');
+};
+
+const median = (numbers) => {
+  if (!Array.isArray(numbers) || numbers.length === 0) return null;
+
+  const sorted = [...numbers].sort((a, b) => a - b);
+
+  const mid = Math.floor(sorted.length / 2);
+
+  if (sorted.length % 2 === 0) {
+    return (sorted[mid - 1] + sorted[mid]) / 2;
+  } else {
+    return sorted[mid];
+  }
+};
+
+const formatSecondsToHHMMSS = (totalSeconds) => {
+  const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+  const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+  const seconds = String(totalSeconds % 60).padStart(2, '0');
+
+  return `${hours}:${minutes}:${seconds}`;
+};
 
 module.exports = {
 	checkRunningTestKeys,
 	checkOrderParameter,
-	enrichUbaDevices,
+	createFolderIfNotExists,
+	readTextFromFile,
+	median,
+	formatSecondsToHHMMSS,
 }

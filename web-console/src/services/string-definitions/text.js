@@ -189,13 +189,12 @@ export default {
 	},
 	settingsPage: {
 		LABS: 'Labs (Stations)',
-		TEST_COMPLETED: 'Test Completed',
-		TEST_RUNNING: 'Test is Running',
 		uba: {
 			ADD_UBA: 'Add UBA',
 			EDIT_UBA: 'Edit UBA',
 			PORT: 'Port',
 			ADDRESS: 'Address',
+			UBA_DEVICE_NO_RESPONSE: 'Oops could not find UBA device'
 		},
 		cell: {
 			ADD_CELL: 'Add Cell',

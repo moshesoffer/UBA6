@@ -49,7 +49,7 @@ export default function Discharge(props) {
 			const minVoltage = chosenCellPN?.minVoltage;
 
 			if (validateNumber(minVoltage) && minVoltage > 0 && cutOffVoltage === null) {
-				const cutOffVoltage = noCellSerial * minVoltage;
+				const cutOffVoltage =  minVoltage;
 				handleInputChange(testRoutinesDispatch, id, 'cutOffVoltage', cutOffVoltage, true);
 			}
 		}

@@ -1,3 +1,4 @@
+the project should use nvm 20.12.2(Or computer) or 20.14.0(Oded's)
 https://github.com/minimal-ui-kit/material-kit-react.git
 
 ###Found here:

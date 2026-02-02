@@ -27,7 +27,7 @@ const prepareResponse = async response => {
 				console.info('Response:', dataString);
 				// eslint-disable-next-line no-console
 				console.info('Error parsing response:', error);
-				throw new Error('JSON response parsing error.');
+				throw new Error('JSON response parsing error.', { cause: error });
 			}
 		}
 
@@ -68,4 +68,30 @@ export const postData = async (authDispatch, pathname, method, data) => {
 			authDispatch(setAjaxLoader(false));
 		}
 	}
+}
+
+export const postData2 = async (authDispatch, pathname, method, data) => {
+	const options = createRequestOptions(method, data);
+	const url = `${import.meta.env.VITE_API_URL}/${pathname}`;
+	let response, responseBody;
+
+	if (validateFunction(authDispatch)) {
+		authDispatch(setAjaxLoader(true));
+	}
+	try {
+		response = await fetch(url, options);
+		if (response.status === 204) {
+			responseBody = { success: true };
+		} else {
+			responseBody = await response.json();
+		}
+		return responseBody;
+	} catch (error) {
+		if(response && !responseBody) responseBody = await response.text();
+	} finally {
+		if (validateFunction(authDispatch)) {
+			authDispatch(setAjaxLoader(false));
+		}
+	}
+	return responseBody;
 }
