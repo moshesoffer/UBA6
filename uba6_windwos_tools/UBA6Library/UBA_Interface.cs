@@ -47,28 +47,29 @@ namespace UBA6Library {
         }
 
         public UBA_Interface(ILogger<UBA_Interface> logger, string portName, int baudRate = 115200) : this(logger) {
+            portName = "com 3";//==>Moshe
             sp = new SerialPort(portName, baudRate);
             sp.ReadBufferSize = 4096;
             sp.Parity = Parity.None;
             sp.ReadTimeout = 5000;
             sp.WriteTimeout = 5000;
             sp.DataReceived += SerialPort_DataReceived;
-            _logger.LogDebug($"Initializing UBA_Interface with COM port: {portName}");
+            _logger.LogDebug($"==> Moshe: Initializing UBA_Interface with COM port: {portName}");
             try {
                 sp.Open();
             } catch (Exception ex) {
-                _logger.LogError($"Failed to open COM port {portName}: {ex.Message}");
+                _logger.LogError($"==> Moshe: Initializing COM port {portName}: {ex.Message}");
             }
             StartProcessing();
         }
         public void SwitchCom(string newComPort, bool overwite = false) {
             if (string.IsNullOrEmpty(newComPort)) {
-                _logger.LogError("Cannot switch to an empty COM port.");
+                _logger.LogError("==> Moshe: Cannot switch to an empty COM port.");
                 return;
             }
             if (overwite == false) {
                 if (sp != null && sp.PortName.Equals(newComPort)) {
-                    _logger.LogDebug($"Already connected to {newComPort}, no need to switch.");
+                    _logger.LogDebug($"==> Moshe: Already connected to {newComPort}, no need to switch.");
                     return;
                 }
             }
@@ -87,9 +88,9 @@ namespace UBA6Library {
             sp.DataReceived += SerialPort_DataReceived;
             try {
                 sp.Open();
-                _logger.LogDebug($"COM port switched to {sp.PortName}");
+                _logger.LogDebug($"==> Moshe: COM port switched to {sp.PortName}");
             } catch (Exception ex) {
-                _logger.LogError($"Failed to open COM port {sp.PortName}: {ex.Message}");
+                _logger.LogError($"==> Moshe: Failed to open COM port {sp.PortName}: {ex.Message}");
             } finally {
                 failes = 0; 
             }
