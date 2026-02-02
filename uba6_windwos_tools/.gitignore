@@ -1,0 +1,9 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+**/bin/
+!UBA6_Controller_App/bin/**
+**/obj/
+Channel *.pb

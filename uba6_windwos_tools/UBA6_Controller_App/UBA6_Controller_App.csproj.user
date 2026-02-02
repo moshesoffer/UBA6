@@ -1,0 +1,61 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup />
+  <ItemGroup>
+    <ApplicationDefinition Update="App.xaml">
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="BK_Precision9104Window.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\CommandPage.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\DelayPage.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\DeviceSettingsPage.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\DischargePage.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\FileManagerPage.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="View\LineClibrationPage.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="BK_Precision9104Window.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Converters\Converters.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="MainWindow.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="MainWindowTheme.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Themes\Style\StyleApp.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Themes\Style\StyleChannel.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Themes\Style\StyleDischargePage.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Themes\Style\StyleMainWindow.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="View\DischargePage.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+</Project>

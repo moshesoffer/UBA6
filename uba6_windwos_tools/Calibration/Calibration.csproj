@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AmicellUtil\AmicellUtil.csproj" />
+    <ProjectReference Include="..\BK_PRECISION9104Libary\BK_PRECISION9104Libary.csproj" />
+    <ProjectReference Include="..\KeithleyDMM6500Library\KeithleyDMM6500Library.csproj" />
+    <ProjectReference Include="..\KORAD_KEL103Library\KORAD_KEL103Library.csproj" />
+    <ProjectReference Include="..\UBA6Library\UBA6Library.csproj" />
+  </ItemGroup>
+
+</Project>

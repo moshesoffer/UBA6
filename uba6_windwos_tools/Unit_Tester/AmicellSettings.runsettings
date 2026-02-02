@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<RunSettings>
+	<TestRunParameters>
+		<Parameter name="PS_COM" value="COM4" />
+		<Parameter name="UBA_COM" value="COM16"/>
+		<Parameter name="MultimeterName" value="USB0::0x05E6::0x6500::04624183::0::INSTR"/>
+		<Parameter name="LoadCell_COM" value="COM12"/>
+		<Parameter name="MultimeterEmulation" value="FALSE"/>
+	</TestRunParameters>
+</RunSettings>

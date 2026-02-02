@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+import "nanopb.proto";
+import "UBA_PROTO_UBA6.proto";
+option csharp_namespace = "UBA_PROTO_LINE";
+
+package UBA_PROTO_LINE;
+
+enum ID{
+	NONE = 0;
+	A = 1;
+	B = 2;
+}
+
+enum STATE{
+	INIT = 0;
+	IDLE = 1;
+	PRE_CHARGING = 2;
+	CHARGING_CC = 3;
+	CHARGING_CV = 4;
+	DISCHARGING = 5;
+	DEAD = 6;
+}
+
+enum CMD_ID{
+	TEST = 0; /*do nothing*/
+	CALIBRATION = 1 ;/*disable/enable calibration*/
+	CHARGE_ENABLE= 2; /*tuen on/off the charge enable */
+	DISCHARGE_ENABLE= 3; /*tuen on/off the discharge enable */
+	TARGET = 4; /*set the target Voltage and current and set new state */
+	BIST = 5 ; /*start built in self test */
+}
+
+message data_message{
+	int32 voltage = 1;
+	int32 gen_voltage =2;
+	float bat_temperature=3;
+	float amb_temperature=4;
+	int32 discharge_current = 5;
+	int32 charge_current= 6; 
+	int32 vps =7;
+	float capacity = 8; 
+	bool isBattery_connected = 9;
+}
+
+message adc_data_message{
+	uint32 vbat = 1 [(nanopb).int_size = IS_16];
+	uint32 vgen = 2 [(nanopb).int_size = IS_16];
+	uint32 amb_temp = 3 [(nanopb).int_size = IS_16];
+	uint32 ntc_temp = 4 [(nanopb).int_size = IS_16];
+	uint32 discharge_curr = 5 [(nanopb).int_size = IS_16];
+	uint32 charge_curr = 6 [(nanopb).int_size = IS_16];
+	uint32 vps = 7 [(nanopb).int_size = IS_16];
+}
+
+message status{
+	ID id  = 1;
+	STATE state = 2;
+	UBA_PROTO_UBA6.ERROR error =3;
+	data_message data = 4  [(nanopb).proto3_singular_msgs = true]; 
+	adc_data_message adc_data =5;
+}
+
+message command{
+	CMD_ID id = 1 ;
+	ID line_id = 2 ; /*the selected line (A/B)*/
+	uint32 state = 3 [(nanopb).int_size = IS_8];  /*on/off /UBA_PROTO_LINE.state */
+	int32 current = 4 ;  /*target current*/
+	int32 voltage = 5 ; /*target current*/
+}

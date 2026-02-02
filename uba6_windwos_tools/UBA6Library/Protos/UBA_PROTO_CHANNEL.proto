@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+import "nanopb.proto";
+import "UBA_PROTO_LINE.proto";
+import "UBA_PROTO_UBA6.proto";
+
+option csharp_namespace = "UBA_PROTO_CHANNEL";
+
+package UBA_PROTO_CHANNEL;
+
+
+
+enum ID{
+	NONE = 0;
+	A = 1;
+	B = 2;
+	AB = 3;
+}
+
+enum STATE{
+	INIT = 0 ;// configure the channel
+	STANDBY = 1 ; // wait for external state change , make sure that the channel is in idle mode all the time
+	DELAY = 2 ;
+	CHARGE = 3 ;
+	DISCHARGE=4;
+	OFF=5;
+}
+
+enum CMD_ID{
+	TEST = 0;
+	DCDC = 1 ;/*set the state and value of the DC to DC Converter*/
+	
+}
+
+message data_message{
+	int32 voltage = 1;
+	float temperature=2;
+	int32 current= 3; 
+	float capacity = 4;
+	bool isBattery_connected = 5;
+}
+
+message status{
+	uint32 state = 1 [(nanopb).int_size = IS_8]; /*the state of the channel*/
+	uint32 id = 2 [(nanopb).int_size = IS_8]; /*the id of the channel (A/B/AB)*/
+	uint32 size = 3 [(nanopb).int_size = IS_8]; /*the number of the lines in the channnel*/
+	data_message data = 4; /*that data of the cheannle*/
+	repeated UBA_PROTO_LINE.status line_status = 5 [(nanopb).max_count = 2,(nanopb).fixed_count = true];
+	UBA_PROTO_UBA6.ERROR error = 6;
+}
+
+message command{
+	CMD_ID id = 1 ;
+	ID channel = 2 ;	
+}

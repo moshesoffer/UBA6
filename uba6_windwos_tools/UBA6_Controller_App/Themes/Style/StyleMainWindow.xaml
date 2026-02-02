@@ -1,0 +1,53 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                       xmlns:ui="http://schemas.modernwpf.com/2019"  
+                    xmlns:modern="clr-namespace:ModernWpf.Controls;assembly=ModernWpf"
+                    >
+
+    <Style x:Key="FlatTabButton" TargetType="Button">
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="10,5"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="{TemplateBinding Background}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="#1976D2"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="YourCustomTextBoxStyle" TargetType="TextBox">
+        <Setter Property="Foreground" Value="Red"/>
+        <Setter Property="Background" Value="Lavender"/>
+        <Setter Property="FontSize" Value="20"/>
+    </Style>
+
+    <Style x:Key="YourCustomCheckBoxBoxStyle" TargetType="CheckBox">
+        
+    </Style>
+    <Style TargetType="{x:Type ui:SimpleStackPanel}" x:Key="SimpleStackPanel_Main" >
+        <Setter Property="Spacing" Value="10"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+    </Style>
+
+    <Style TargetType="{x:Type ui:SimpleStackPanel}" x:Key="SimpleStackPanel_HorizontalMain" BasedOn="{StaticResource SimpleStackPanel_Main}">
+        <Setter Property="Orientation" Value="Horizontal"/>
+    </Style>
+    <Style TargetType="{x:Type ui:SimpleStackPanel}" x:Key="SimpleStackPanel_VerticalMain" BasedOn="{StaticResource SimpleStackPanel_Main}">
+        <Setter Property="Orientation" Value="Vertical"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>        
+    </Style>
+</ResourceDictionary>

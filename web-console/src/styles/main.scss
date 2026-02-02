@@ -1,0 +1,89 @@
+
+.MuiGrid-root{
+    .MuiPaper-root.MuiCard-root {
+        min-height: 148px;
+        min-width: 266px;
+        //max-width: 260px;
+        //width: 260px;
+        border-radius: 8px;
+        display: block;//TODO!!!
+    }
+}
+
+
+.MuiPaper-root {
+    .MuiCardHeader-root {
+        .MuiTypography-root.MuiCardHeader-title {
+            font-size: 0.9rem;
+        }
+        .MuiCardHeader-action{
+            margin-top: -2px;
+            
+        }
+    }
+    .MuiCardContent-root{
+        padding: 0px;
+    }
+    .MuiCardContent-root:last-child {
+        padding: 0px;
+    }
+    .MuiGrid-root.MuiGrid-item{
+        padding: 5px;
+        .MuiButtonGroup-root{
+            padding-top: 4px;
+            .MuiButton-root {
+                //width: 70px;
+            }
+            .MuiSvgIcon-root{
+                font-size: 1.6rem;
+            }
+            @media (min-width: 1500px) {
+                .MuiSvgIcon-root {
+                    font-size: 1.7rem;
+                }
+            }
+            @media (min-width: 1650px) {
+                .MuiSvgIcon-root {
+                    font-size: 1.8rem;
+                }
+            }
+        }
+    }
+    .MuiBox-root{
+        font-size: 0.75rem;
+        margin: 0;
+    }
+    .MuiChip-root {
+        height: 22px;
+        font-size: 0.6rem;
+        padding-top: 2px;
+        margin-top: 1px;
+        .MuiChip-label{
+            padding-top: 1px;
+        }
+    }
+    
+}
+
+.MuiButtonBase-root.MuiCheckbox-root{
+    padding: 0px;
+}
+
+main.MuiBox-root {
+    padding-right: 0px;
+    padding-left: 0px;
+}
+
+tbody{
+    .MuiSvgIcon-root{
+        font-size: 1.7rem;
+    }
+}
+.MuiButtonBase-root.MuiIconButton-root{
+    padding: 0px 5px 0px 0px;
+}
+
+.MuiButtonGroup-root{
+    padding-top: 2px;
+}
+

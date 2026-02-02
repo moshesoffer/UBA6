@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+import "nanopb.proto";
+import "UBA_PROTO_LINE.proto";
+option csharp_namespace = "UBA_PROTO_CALIBRATION";
+
+package UBA_PROTO_CALIBRATION;
+
+message liniar_calibration_message{
+	float slop = 1;
+	float y_intercept = 2;
+}
+
+message line_calibration_message{
+	UBA_PROTO_LINE.ID id = 1;
+	repeated liniar_calibration_message vbat = 2 [(nanopb).proto3_singular_msgs = true ,(nanopb).max_count = 3,(nanopb).fixed_count = true];;
+	liniar_calibration_message vgen = 3 [(nanopb).proto3_singular_msgs = true];
+	liniar_calibration_message vps = 4 [(nanopb).proto3_singular_msgs = true];
+	liniar_calibration_message charge_current = 5 [(nanopb).proto3_singular_msgs = true];
+	liniar_calibration_message discharge_current = 6 [(nanopb).proto3_singular_msgs = true];
+	liniar_calibration_message amb_temp = 7 [(nanopb).proto3_singular_msgs = true];
+	liniar_calibration_message ntc_temp = 8 [(nanopb).proto3_singular_msgs = true];
+	uint32 max_discharge_current = 9 [(nanopb).int_size = IS_16]; /*the max discharge current in mA*/
+	uint32 max_charge_current = 10 [(nanopb).int_size = IS_16]; /*the max charge current in mA*/
+	uint32 max_voltage = 11 [(nanopb).int_size = IS_16]; /* the max voltage in mV*/
+}
+
+message calibration_message{
+	repeated line_calibration_message line_calibration = 1 [(nanopb).max_count = 2,(nanopb).fixed_count = true];
+}

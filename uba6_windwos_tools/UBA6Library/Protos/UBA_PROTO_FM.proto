@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+import "nanopb.proto";
+option csharp_namespace = "UBA_PROTO_FM";
+package UBA_PROTO_FM;
+
+
+
+
+enum CMD_ID{	
+	TEST = 0;
+	CHUNK_REQUEST = 1; /*request a chunk of the file */
+	FILE_LIST_REQUEST = 2; /*request the list of the files */
+	BPT_FILE = 3; /*request the file name of the the runnig BPT */
+	TR_LIST_REQUEST = 4 ; /*request the list of the test routines that stored in the uba */
+	DELETE_FILE = 5 ; /*delete a file from the uba */
+}
+message command{
+	CMD_ID id=1;
+	string filename = 2 [(nanopb).max_size = 64];/*the name of the file */
+	uint32 chunk_index = 3 [(nanopb).int_size = IS_32];/*the requested chank or the channle index*/	
+}
+
+message file_transfer{
+	string filename = 1 [(nanopb).max_size = 64];/*the name of the file */
+	uint32 total_size = 2 [(nanopb).int_size = IS_32];
+	uint32 chunk_size = 3 [(nanopb).int_size = IS_32];
+	uint32 chunk_index = 4 [(nanopb).int_size = IS_32];
+	bytes data = 5 [(nanopb).max_size = 2048] ;
+}
+message file_list{
+	repeated string filenames = 1 [(nanopb).max_count = 20,(nanopb).max_size = 64];
+	uint32 total_files = 2 [(nanopb).int_size = IS_16]; /*the total number of files on the device*/
+}
+
+message transfer{
+	oneof request{
+		file_list list = 1;
+		file_transfer file = 2;
+	}
+}

@@ -1,0 +1,159 @@
+DROP TABLE IF EXISTS `TestRoutines`;
+DROP TABLE IF EXISTS `ReportsData`;
+DROP TABLE IF EXISTS `Reports`;
+DROP TABLE IF EXISTS `InstantTestResults`;
+DROP TABLE IF EXISTS `RunningTests`;
+DROP TABLE IF EXISTS `UBADevices`;
+DROP TABLE IF EXISTS `Machines`;
+DROP TABLE IF EXISTS `CellPartNumbers`;
+
+CREATE TABLE `CellPartNumbers` (
+  `itemPN` varchar(64) NOT NULL,
+  `chemistry` varchar(64) NOT NULL,
+  `manufacturer` varchar(64) NOT NULL,
+  `minVoltage` decimal(19,4) NOT NULL,
+  `nomVoltage` decimal(19,4) NOT NULL,
+  `maxVoltage` decimal(19,4) NOT NULL,
+  `minCapacity` decimal(19,5) NOT NULL,
+  `nomCapacity` decimal(19,5) NOT NULL,
+  `minTemp` decimal(19,4) NOT NULL,
+  `maxTemp` decimal(19,4) NOT NULL,
+  `chargeOption` varchar(64) NOT NULL,
+  PRIMARY KEY (`itemPN`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `Machines` (
+  `mac` varchar(64) NOT NULL,
+  `name` varchar(64) NOT NULL,
+  `ip` varchar(64) NOT NULL,
+  `createdTime` datetime(3) DEFAULT CURRENT_TIMESTAMP(3),
+  `modifiedTime` datetime(3) DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`mac`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `UBADevices` (
+  `ubaSN` varchar(64) NOT NULL,
+  `machineMac` varchar(64) NOT NULL,
+  `name` varchar(64) NOT NULL,
+  `address` varchar(64) NOT NULL,
+  `comPort` varchar(64) NOT NULL,
+  `ubaChannel` varchar(64) DEFAULT NULL,
+  `isConnected` tinyint unsigned NOT NULL DEFAULT '0',
+  `lastConDis` datetime(3) DEFAULT NULL,
+  `createdTime` datetime(3) DEFAULT CURRENT_TIMESTAMP(3),
+  `modifiedTime` datetime(3) DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`ubaSN`),
+  UNIQUE KEY `uniqueName` (`name`),
+  KEY `Machines_UBADevices_fk` (`machineMac`),
+  KEY `ubaDevices_connected_idx` (`isConnected`),
+  CONSTRAINT `Machines_UBADevices_fk` FOREIGN KEY (`machineMac`) REFERENCES `Machines` (`mac`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `RunningTests` (
+  `id` char(36) NOT NULL,
+  `ubaSN` varchar(64) NOT NULL,
+  `channel` varchar(64) NOT NULL,
+  `timestampStart` datetime(3) NOT NULL,
+  `status` tinyint unsigned NOT NULL,
+  `testName` varchar(64) DEFAULT NULL,
+  `batteryPN` varchar(256) DEFAULT NULL,
+  `batterySN` varchar(256) DEFAULT NULL,
+  `noCellSerial` int DEFAULT NULL,
+  `noCellParallel` int DEFAULT NULL,
+  `maxPerBattery` decimal(19,4) DEFAULT NULL,
+  `ratedBatteryCapacity` decimal(19,5) DEFAULT NULL,
+  `notes` varchar(256) DEFAULT NULL,
+  `customer` varchar(64) DEFAULT NULL,
+  `workOrderNumber` varchar(64) DEFAULT NULL,
+  `approvedBy` varchar(64) DEFAULT NULL,
+  `conductedBy` varchar(64) DEFAULT NULL,
+  `cellSupplier` varchar(64) DEFAULT NULL,
+  `cellBatch` varchar(64) DEFAULT NULL,
+  `plan` json DEFAULT NULL,
+  `testRoutineChannels` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniqueRow` (`ubaSN`,`channel`),
+  KEY `runningTests_status_idx` (`status`),
+  CONSTRAINT `RunningTests_UBADevices_FK` FOREIGN KEY (`ubaSN`) REFERENCES `UBADevices` (`ubaSN`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `InstantTestResults` (
+  `id` char(36) NOT NULL,
+  `runningTestID` char(36) NOT NULL,
+  `timestamp` datetime(3) NOT NULL,
+  `testState` varchar(64) NOT NULL,
+  `testCurrentStep` tinyint unsigned NOT NULL,
+  `voltage` decimal(19,4) NOT NULL,
+  `current` decimal(19,4) NOT NULL,
+  `temp` decimal(19,4) NOT NULL,
+  `capacity` decimal(19,5) NOT NULL,
+  `error`  int NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `RunningTests_InstantTestResults_fk` (`runningTestID`),
+  CONSTRAINT `RunningTests_InstantTestResults_fk` FOREIGN KEY (`runningTestID`) REFERENCES `RunningTests` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `Reports` (
+  `id` char(36) NOT NULL,
+  `ubaSN` varchar(64) NOT NULL,
+  `channel` varchar(64) NOT NULL,
+  `timestampStart` datetime(3) NOT NULL,
+  `status` tinyint unsigned NOT NULL,
+  `testName` varchar(64) NOT NULL,
+  `batteryPN` varchar(256) NOT NULL,
+  `batterySN` varchar(256) NOT NULL,
+  `noCellSerial` int NOT NULL,
+  `noCellParallel` int NOT NULL,
+  `maxPerBattery` decimal(19,4) NOT NULL,
+  `ratedBatteryCapacity` decimal(19,5) NOT NULL,
+  `notes` varchar(256) DEFAULT NULL,
+  `customer` varchar(64) DEFAULT NULL,
+  `workOrderNumber` varchar(64) DEFAULT NULL,
+  `approvedBy` varchar(64) DEFAULT NULL,
+  `conductedBy` varchar(64) DEFAULT NULL,
+  `cellSupplier` varchar(64) DEFAULT NULL,
+  `cellBatch` varchar(64) DEFAULT NULL,
+  `plan` json NOT NULL,
+  `testRoutineChannels` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `machineName` varchar(64) NOT NULL,
+  `timeOfTest` varchar(64) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniqueRow` (`ubaSN`,`channel`,`timestampStart`),
+  KEY `batteryPnIndex` (`batteryPN`),
+  KEY `batterySnIndex` (`batterySN`),
+  KEY `testNameIndex` (`testName`),
+  KEY `machineNameIndex` (`machineName`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `ReportsData` (
+  `reportID` char(36) NOT NULL,
+  `testResults` json DEFAULT NULL,
+  PRIMARY KEY (`reportID`),
+  CONSTRAINT `Reports_ReportsData_fk2` FOREIGN KEY (`reportID`) REFERENCES `Reports` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `TestRoutines` (
+  `id` char(36) NOT NULL,
+  `cellPN` char(36) NOT NULL,
+  `testName` varchar(64) NOT NULL,
+  `isLocked` tinyint unsigned NOT NULL DEFAULT '0',
+  `channel` varchar(64) NOT NULL,
+  `batteryPN` varchar(256) NOT NULL,
+  `batterySN` varchar(256) NOT NULL,
+  `noCellSerial` int NOT NULL,
+  `noCellParallel` int NOT NULL,
+  `maxPerBattery` decimal(19,4) NOT NULL,
+  `ratedBatteryCapacity` decimal(19,5) NOT NULL,
+  `notes` varchar(256) DEFAULT NULL,
+  `customer` varchar(64) DEFAULT NULL,
+  `workOrderNumber` varchar(64) DEFAULT NULL,
+  `approvedBy` varchar(64) DEFAULT NULL,
+  `conductedBy` varchar(64) DEFAULT NULL,
+  `cellSupplier` varchar(64) DEFAULT NULL,
+  `cellBatch` varchar(64) DEFAULT NULL,
+  `plan` json DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniqueTestName` (`testName`),
+  KEY `CellPartNumbers_TestRoutines_fk` (`cellPN`),
+  CONSTRAINT `CellPartNumbers_TestRoutines_fk` FOREIGN KEY (`cellPN`) REFERENCES `CellPartNumbers` (`itemPN`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

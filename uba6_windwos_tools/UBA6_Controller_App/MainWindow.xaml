@@ -1,0 +1,161 @@
+﻿<Window x:Class="UBA6_Controller_App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:UBA6_Controller_App"
+        xmlns:ui="http://schemas.modernwpf.com/2019"
+        xmlns:uii="clr-namespace:ModernWpf.Controls.Primitives;assembly=ModernWpf"
+        ui:WindowHelper.UseModernWindowStyle="True"
+        xmlns:vm ="clr-namespace:UBA6_Controller_App.ViewModel"
+        d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel}"
+        mc:Ignorable="d"
+        Title="{Binding Title}" d:Title="MainWindow" Height="1200" Width="900"
+        ui:ThemeManager.RequestedTheme="Dark"
+        WindowStartupLocation="Manual"
+        Left="0"
+        Top="0"
+        >
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <!-- Menu -->
+            <RowDefinition Height="*"/>
+            <!--Contant-->
+            <RowDefinition Height="Auto"/>
+            <!-- StatusBar -->
+        </Grid.RowDefinitions>
+
+        <!-- Menu Bar -->
+        <Menu Grid.Row="0" >
+            <MenuItem Header="_File">
+                <MenuItem Header="Open"/>
+                <MenuItem Header="Exit"/>
+            </MenuItem>
+            <MenuItem Header="Settings">
+                <MenuItem Header="UBA COM Port" SubmenuOpened="ComPortMenuItem_SubmenuOpened">
+                    <ComboBox Width="150"  ItemsSource="{Binding Ports}" SelectedValue="{Binding SelectedUBAPort ,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}" />
+                </MenuItem>
+                <MenuItem Header="Power Supply COM Port" SubmenuOpened="ComPortMenuItem_SubmenuOpened">
+                    <ComboBox  Width="150"  ItemsSource="{Binding Ports}" SelectedValue="{Binding SelectedPowerSupplyPort}" />
+                </MenuItem>
+                <MenuItem Header="Load Cell COM Port" SubmenuOpened="ComPortMenuItem_SubmenuOpened">
+                    <ComboBox  Width="150"  ItemsSource="{Binding Ports}" SelectedValue="{Binding SelectedLoadCellPort}" />
+                </MenuItem>
+                <MenuItem Header="Calibration Config">
+                    <ui:ToggleSwitch OnContent="On" OffContent="Disable" Header="Emulation Mode" IsOn="{Binding EmulationMode}"  />
+                    <ui:NumberBox Header="Average Number of Repetitions " Value="{Binding AvgCount}" SpinButtonPlacementMode ="Inline"/>
+                    <ui:NumberBox Header="Delay Between Measurements [ms]" Value="{Binding MeasurementDelayMs}" SpinButtonPlacementMode ="Inline"/>
+                    <ui:NumberBox Header="Power Supply Delay [ms]" Value="{Binding PS_DelayMs}" SpinButtonPlacementMode ="Inline"/>
+                    <ui:NumberBox Header="Power Supply Tolerance Percentage" Value="{Binding TolerancePercentage}" SpinButtonPlacementMode ="Inline" Minimum="0" Maximum="100" />
+                    <ui:NumberBox Header="UBA Max Charge Current [mA]" Value="{Binding MaxChargeCurrent}" SpinButtonPlacementMode ="Inline" Minimum="0" Maximum="10000" />
+                    <ui:NumberBox Header="UBA Max Discharge Current [mA]" Value="{Binding MaxDischargeCurrent}" SpinButtonPlacementMode ="Inline" Minimum="0" Maximum="10000" />
+                    <ui:NumberBox Header="UBA Max Voltage  [mA]" Value="{Binding MaxVoltage}" SpinButtonPlacementMode ="Inline" Minimum="0" Maximum="10000" />
+                </MenuItem>
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="About"/>
+            </MenuItem>
+        </Menu>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+            <Grid Grid.Row="1"  >
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <!-- Frames -->
+                    <RowDefinition Height="*"/>
+                    <!-- TabControl -->
+                </Grid.RowDefinitions>
+                <!-- Side-by-side Frames -->
+                <Grid Grid.Row="0" Margin="5" d:ShowGridLines="True">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Frame Grid.Row="0" Grid.Column="0" x:Name="Frame_channel_A" d:Width="200" Width="Auto" d:Height="200"  Margin="2"  BorderThickness="1" BorderBrush="Gray" Height="Auto"  NavigationUIVisibility="Hidden" HorizontalAlignment="Center" VerticalAlignment="Top" />
+                    <ui:SimpleStackPanel Grid.Row="0" Grid.Column="1"  Style="{StaticResource SimpleStackPanel_VerticalMain}" HorizontalAlignment="Center">
+                        <ui:SimpleStackPanel Orientation="Horizontal" Spacing="5" HorizontalAlignment="Center" >                            
+                            <ComboBox IsEditable="True"  ui:ControlHelper.Header="Channel Select:" Name="ComboBox_ch" ItemsSource="{Binding ChanneNames}" SelectedItem="{Binding SelectedChannel}"/>
+                        <ui:NumberBox Header="Test Index" Value="{Binding BPTListEntery}" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource NumberBox_LineEq}" Minimum="0" Maximum="9" SmallChange="1" LargeChange="2"/>
+                        </ui:SimpleStackPanel>
+                        <ui:SimpleStackPanel Orientation="Horizontal" Spacing="5" >                            
+                            <Button Content="Start" Command="{Binding StartBPTCommand}" VerticalAlignment="Bottom" MinWidth="100"/>
+                            <Button Content="Stop" Command="{Binding StopBPTCommand}" VerticalAlignment="Bottom" MinWidth="100"/>
+                            <Button Content="Query" Command="{Binding QueryCommand}" VerticalAlignment="Bottom" MinWidth="100" />
+                        </ui:SimpleStackPanel>
+                    </ui:SimpleStackPanel>
+                    <Frame Grid.Row="0" Grid.Column="2" x:Name="Frame_channel_B" d:Width="200" Width="Auto" d:Height="200"  Margin="2"  BorderThickness="1" BorderBrush="Gray" Height="Auto"  NavigationUIVisibility="Hidden" HorizontalAlignment="Center" VerticalAlignment="Top" />
+                </Grid>
+
+                <!-- TabControl -->
+                <ui:SimpleStackPanel Grid.Row="1" Margin="5" Style="{StaticResource SimpleStackPanel_VerticalMain}" >
+                    <TabControl Grid.Row="1" Margin="5" TabStripPlacement="Left" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch">
+                        <TabItem Header="Charge">
+                            <Frame Name="Frame_Charge" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" NavigationUIVisibility="Hidden" Source="View/ChargePage.xaml" Width="500"/>
+                        </TabItem>
+                        <TabItem Header="Discharge">
+                            <Frame Name="Frame_Discharge" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" NavigationUIVisibility="Automatic" d:Source="View/DischargePage.xaml" Width="500" />
+                        </TabItem>
+                        <TabItem Header="Delay">
+                            <Frame Name="Frame_Delay" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" NavigationUIVisibility="Automatic" d:Source="View/DelayPage.xaml" Width="500" />
+                        </TabItem>
+                        <TabItem Header="Calibration">
+                            <Grid d:ShowGridLines="True">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <Frame Grid.Row="0" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" NavigationUIVisibility="Hidden" Name="Frame_Calibration_A"/>
+                                <Frame Grid.Row="0" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" NavigationUIVisibility="Hidden" Name="Frame_Calibration_B"/>
+                                <ui:SimpleStackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="20" VerticalAlignment="Center">
+                                    <Button Content="Disable Calibration" HorizontalContentAlignment="Center" HorizontalAlignment="Center" Padding="5" Command="{Binding DisableCalibrationCommand}" />
+                                    <Button Content="Sent Calibration Data" HorizontalContentAlignment="Center" HorizontalAlignment="Center" Padding="5" Command="{Binding SendCalibrationDataCommand}" />
+                                    <Button Content="Calibrate All Selected Voltages" HorizontalContentAlignment="Center" HorizontalAlignment="Center" Padding="5" Command="{Binding SendCalibrationDataCommand}" Click="CalibrateAllSelected" />
+                                    <ui:SimpleStackPanel Orientation="Vertical" HorizontalAlignment="Center" Spacing="20" VerticalAlignment="Center">
+                                        <ui:NumberBox Header="UBA Max Charge Current [mA]" Value="{Binding MaxChargeCurrent}" SpinButtonPlacementMode ="Inline" Minimum="0" Maximum="10000" />
+                                        <ui:NumberBox Header="UBA Max Discharge Current [mA]" Value="{Binding MaxDischargeCurrent}" SpinButtonPlacementMode ="Inline" Minimum="0" Maximum="10000" />                                        
+                                    </ui:SimpleStackPanel>
+                                </ui:SimpleStackPanel>
+                            </Grid>
+                        </TabItem>
+                        <TabItem Header="Device Settings">
+                            <Frame Name="Frame_DeviceSettings" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" NavigationUIVisibility="Hidden" Source="View/DeviceSettingsPage.xaml" Width="500"/>
+                        </TabItem>
+                        <TabItem Header="File Mangger">
+                            <Frame Name="Frame_FM" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" NavigationUIVisibility="Hidden" Source="View/DeviceSettingsPage.xaml" />
+                        </TabItem>
+                        <TabItem Header="Commands">                            
+                            <Frame Name="Frame_Commands" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" NavigationUIVisibility="Hidden" Source="View/CommandsLogPage.xaml" Width="500"/>
+                        </TabItem>
+                    </TabControl>
+                </ui:SimpleStackPanel>
+            </Grid>
+        </ScrollViewer>
+        <!-- Status Bar -->
+        <StatusBar Grid.Row="3" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+            <Grid HorizontalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <!-- Status message -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Stretch">
+                    <Ellipse Width="10" Height="10" Fill="{Binding FillColor}" Margin="0,0,5,0"/>
+                    <TextBlock Text="{Binding StatusTime, Converter={StaticResource DateTimeConvertor}}" VerticalAlignment="Center"/>
+                    <Border BorderThickness="2" />
+                    <TextBlock d:Text="Blalba" Text="{Binding Status}" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </StatusBar>
+        <StatusBar Grid.Row="3" HorizontalAlignment="Right" HorizontalContentAlignment="Stretch">
+            <ProgressBar Grid.Column="2" Width="150" Height="16" 
+         d:Value="50"  Value="{Binding Progress}" Maximum="100" VerticalAlignment="Center"/>
+        </StatusBar>
+
+    </Grid>
+</Window>
+    

@@ -1,0 +1,44 @@
+{
+	"name": "web-console",
+	"license": "MIT",
+	"version": "1.0.0",
+	"private": true,
+	"scripts": {
+		"dev": "vite",
+		"start": "vite preview",
+		"build": "vite build",
+		"build:dev": "vite build --mode dev",
+		"lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\"",
+		"lint:fix": "eslint --fix \"src/**/*.{js,jsx,ts,tsx}\"",
+		"rm:all": "rm -rf node_modules .next out dist build",
+		"re:start-npm": "npm run rm:all && npm install && npm run dev",
+		"re:build-npm": "npm run rm:all && npm install && npm run build",
+		"dev:host": "vite --host",
+		"vite:start": "vite",
+		"vite:build": "vite build"
+	},
+	"dependencies": {
+		"@emotion/react": "^11.11.4",
+		"@emotion/styled": "^11.11.5",
+		"@iconify/react": "^5.0.1",
+		"@mui/icons-material": "^5.15.20",
+		"@mui/material": "^5.15.20",
+		"chart.js": "^4.4.4",
+		"chartjs-plugin-zoom": "^2.0.1",
+		"globals": "^15.11.0",
+		"react": "^18.2.0",
+		"react-chartjs-2": "^5.2.0",
+		"react-dom": "^18.2.0",
+		"react-router-dom": "^6.23.1"
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.4.0",
+		"@vitejs/plugin-react-swc": "^3.7.0",
+		"eslint": "^9.4.0",
+		"eslint-plugin-react": "^7.34.2",
+		"eslint-plugin-react-hooks": "^5.1.0-rc-f994737d14-20240522",
+		"sass": "^1.81.1",
+		"vite": "^5.2.13",
+		"vite-plugin-eslint": "^1.8.1"
+	}
+}

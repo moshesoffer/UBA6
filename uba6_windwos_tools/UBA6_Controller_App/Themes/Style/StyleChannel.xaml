@@ -1,0 +1,56 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"                    
+                    >
+
+    <!-- Define your global font family -->
+    <FontFamily x:Key="PageFont">Segoe UI</FontFamily>    
+    <Style TargetType="{x:Type RibbonTextBox}" x:Key="ChannelStyleRibbonTextBox">
+        <Setter Property="FontFamily" Value = "{StaticResource PageFont}" />
+        <Setter Property="FontSize" Value = "16" />
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>        
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+    </Style>
+
+    <Style TargetType="{x:Type Label}" x:Key="ChannelStyleLabelType">
+        <Setter Property="FontFamily" Value = "{StaticResource PageFont}" />
+        <Setter Property="FontSize" Value = "16" />        
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+    </Style>
+
+    <Style TargetType="{x:Type Label}" x:Key="ChannelStyleLable">
+        <Setter Property="FontFamily" Value = "{StaticResource PageFont}" />
+        <Setter Property="FontSize" Value = "40" />
+        <Setter Property="HorizontalAlignment" Value = "Center" />
+        <Setter Property="VerticalAlignment" Value = "Center" />
+        <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />        
+    </Style>
+    <Style TargetType="{x:Type Label}" x:Key="ChannelStyleLableState">
+        <Setter Property="FontFamily" Value = "{StaticResource PageFont}" />
+        <Setter Property="FontSize" Value = "20" />
+        <Setter Property="HorizontalAlignment" Value = "Center" />
+        <Setter Property="VerticalAlignment" Value = "Center" />
+        <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+    </Style>
+
+    <Style TargetType="{x:Type Border}" x:Key="ChannelStyleBorderStatus">
+        <Setter Property="CornerRadius" Value="10"/>
+    </Style>
+
+    <Style TargetType="{x:Type RibbonCheckBox}" x:Key="ChannelStyleRibbonCheckBox">
+        <Setter Property="FontFamily" Value = "{StaticResource PageFont}" />
+        <Setter Property="FontSize" Value = "16" />
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Width" Value="Auto"/>
+        <Setter Property="IsChecked" Value="False"/>
+    </Style>
+</ResourceDictionary>

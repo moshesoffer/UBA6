@@ -1,0 +1,34 @@
+﻿<Page x:Class="UBA6_Controller_App.View.DeviceSettingsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:UBA6_Controller_App.View"
+      xmlns:ui="http://schemas.modernwpf.com/2019"      
+      xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+      xmlns:vm ="clr-namespace:UBA6_Controller_App.ViewModel"
+      d:DataContext="{d:DesignInstance Type=vm:DeviceSettingsPageViewModel}"
+      mc:Ignorable="d" 
+      d:DesignHeight="450" d:DesignWidth="800"
+      Title="DeviceSettingsPage"
+      ui:ThemeManager.RequestedTheme="Dark"
+      >
+
+    <ui:SimpleStackPanel  HorizontalAlignment="Stretch" Spacing="5" Style="{StaticResource SimpleStackPanel_VerticalMain}">
+        <Label d:Content="Device Settings" Content="{Binding Title}" HorizontalAlignment="Center"  FontSize="20"/>
+        <ui:SimpleStackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+            <ui:NumberBox  Value="{Binding UnixTimestamp}" Header="Set RTC Time" Style="{StaticResource NumberBox_Input}" />
+            <Button Content="Now" Command="{Binding setRTCCommand}" />
+            <Button Content="Set time " Command="{Binding ApplyRTCCommand}"/>
+        </ui:SimpleStackPanel>
+        <ui:NumberBox  Value="{Binding SN}" Header="Device Serial Number" Style="{StaticResource NumberBox_Input}" />
+        <ui:SimpleStackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+            <Label Content="{Binding Address ,Converter={StaticResource NumberToHexConverter}}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <ui:NumberBox  Value="{Binding Address2Set }" Header="Adress" Style="{StaticResource NumberBox_Discharge}"  Minimum="0" Maximum="31" SmallChange="1" LargeChange="1" />        
+        </ui:SimpleStackPanel>
+        <TextBox Text="{Binding Name}" HorizontalAlignment="Center" ui:ControlHelper.Header="Name of the device"  ui:ControlHelper.PlaceholderText="UBA-32"/>
+        <ui:ToggleSwitch  IsOn="{Binding IsBuzzerEnabled}" HorizontalAlignment="Center" OffContent="Mute" OnContent="Buzzz"/>
+        <Button Content="Query Device" HorizontalAlignment="Center" Command="{Binding RefreshCommand}"/>
+        <Button Content="Boot Device" HorizontalAlignment="Center" Command="{Binding RebootCommand}"/>
+     </ui:SimpleStackPanel>
+</Page>

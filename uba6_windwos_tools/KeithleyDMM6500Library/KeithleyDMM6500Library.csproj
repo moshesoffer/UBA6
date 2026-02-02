@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <COMReference Include="VisaComLib">
+      <WrapperTool>tlbimp</WrapperTool>
+      <VersionMinor>15</VersionMinor>
+      <VersionMajor>5</VersionMajor>
+      <Guid>db8cbf00-d6d3-11d4-aa51-00a024ee30bd</Guid>
+      <Lcid>0</Lcid>
+      <Isolated>false</Isolated>
+      <EmbedInteropTypes>true</EmbedInteropTypes>
+      <Private>True</Private>
+    </COMReference>
+    <COMReference Include="BASICFORMATTEDIOLib">
+      <WrapperTool>tlbimp</WrapperTool>
+      <VersionMinor>15</VersionMinor>
+      <VersionMajor>5</VersionMajor>
+      <Guid>709f7ec2-ab81-11d4-98e6-00108301cb39</Guid>
+      <Lcid>0</Lcid>
+      <Isolated>false</Isolated>
+      <EmbedInteropTypes>true</EmbedInteropTypes>
+      <Private>True</Private>
+    </COMReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AmicellUtil\AmicellUtil.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Ivi.Visa.Interop">
+      <HintPath>..\..\..\..\..\..\Windows\assembly\GAC_64\Ivi.Visa.Interop\8.0.0.0__a128c98f1d7717c1\Ivi.Visa.Interop.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,71 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:ui="http://schemas.modernwpf.com/2019">
+    <Style TargetType="{x:Type ui:NumberBox}" x:Key="NumberBox_LineEq">
+        <Setter Property="FontFamily" Value = "{StaticResource PageFont}" />
+        <Setter Property="FontSize" Value = "16" />
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="SpinButtonPlacementMode" Value="Inline"/>
+        <Setter Property="PlaceholderText" Value="00.000"/>
+        <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+    </Style>
+    <Style TargetType="{x:Type ui:NumberBox}" x:Key="NumberBox_MaxValues">
+        <Setter Property="FontFamily" Value = "{StaticResource PageFont}" />
+        <Setter Property="FontSize" Value = "16" />
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="SpinButtonPlacementMode" Value="Inline"/>
+        <Setter Property="PlaceholderText" Value="00000"/>
+        <Setter Property="LargeChange" Value="10"/> 
+        <Setter Property="SmallChange" Value="1"/>
+        <Setter Property="Minimum" Value="0"/>
+        <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+    </Style>
+    <Style TargetType="{x:Type Label}" x:Key="Lable_CalibrationDisc">
+        <Setter Property="FontFamily" Value = "{StaticResource PageFont}" />
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+
+    </Style>
+    <Style TargetType="{x:Type CheckBox}" x:Key="CheckBox_Calibrate">
+        <Setter Property="FontFamily" Value = "{StaticResource PageFont}" />
+        <Setter Property="Content" Value="Calibrate ?" />
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+    </Style>
+    <Style TargetType="{x:Type Button}" x:Key="Button_Calibrate">
+        <Setter Property="FontFamily" Value = "{StaticResource PageFont}" />
+        <Setter Property="Content" Value="Calibrate" />
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="IsEnabled" Value="{Binding IsClassEnable}" />
+        <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+    </Style>
+    <Style TargetType="{x:Type ui:SimpleStackPanel}" x:Key="SimpleStackPanel_CalibrationItem">
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="Spacing" Value="10"/>
+        <Setter Property="Orientation" Value="Horizontal"/>
+    </Style>
+    <Style TargetType="{x:Type ui:SimpleStackPanel}" x:Key="SimpleStackPanel_CalibrationItem2" BasedOn="{StaticResource SimpleStackPanel_CalibrationItem }">
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+    </Style>
+    <Style TargetType="{x:Type ui:SimpleStackPanel}" x:Key="SimpleStackPanel_CalibrationMain">
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="Spacing" Value="10"/>
+        <Setter Property="Orientation" Value="Vertical"/>        
+    </Style>
+    <Style TargetType="{x:Type Expander}" x:Key="Expender_Cal">
+        
+    </Style>
+    
+</ResourceDictionary>

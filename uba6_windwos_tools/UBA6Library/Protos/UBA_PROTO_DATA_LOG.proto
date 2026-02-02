@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+import "nanopb.proto";
+import "UBA_PROTO_BPT.proto";
+option csharp_namespace = "UBA_PROTO_DATA_LOG";
+package UBA_PROTO_DATA_LOG;
+
+
+
+message data_log{
+	uint32 time = 1 ; /*the time in ms of the log for the start of the test*/
+	uint32 step_index = 2 [(nanopb).int_size = IS_8]; /*the index of the step in the BPT*/
+	uint32 plan_index = 3 [(nanopb).int_size = IS_8]; /*the index of the plan in the TR*/
+	int32 current = 4 [(nanopb).int_size = IS_16]; /*the current in mA negative for discharge and postive for charge*/
+	uint32 voltage = 5 [(nanopb).int_size = IS_16];  /*the voltage in mV */
+	int32 temp = 6 [(nanopb).int_size = IS_16];  /*the temp of the battery in centi C*/
+}

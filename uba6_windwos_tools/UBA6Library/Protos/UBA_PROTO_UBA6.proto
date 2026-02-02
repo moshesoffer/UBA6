@@ -1,0 +1,103 @@
+syntax = "proto3";
+
+import "nanopb.proto";
+option csharp_namespace = "UBA_PROTO_UBA6";
+package UBA_PROTO_UBA6;
+
+enum STATE{
+	INIT = 0;
+	SINGLE_CHANNELS = 1;
+	DUAL_CHANNEL=2;
+}
+
+enum ERROR{
+	NO_ERROR = 0;
+	LINE_NOT_AVAILABLE =					0x00000001;
+	LINE_I2C_PERIPHERAL =					0x00000002;
+	LINE_BAT_HIGH_VOLTAGE =					0x00000004;
+	LINE_BAT_HIGH_CURRENT =					0x00000008;
+	LINE_BAT_HIGH_TEMP =					0x00000010;
+	LINE_AMB_HIGH_TEMP =					0x00000020;
+	LINE_GEN_HIGH_VOLTAGE =					0x00000040;
+	LINE_BIST_FALIED =						0x00000080;
+	LINE_BUSY =								0x00000100;
+	LINE_REVERSE_POLARITY =					0x00000200;
+	LINE_OVER_VOLTAGE =						0x00000400;
+	LINE_DISCHARGE_MOSFET_SHORT =			0x00000800;
+	LINE_CHARGE_MOSFET_SHORT =				0x00001000;
+	LINE_LOW_INPUT_VOLTAGE =				0x00002000;
+	LINE_HIGH_INPUT_VOLTAGE =				0x00004000;
+	LINE_VGEN_EXPECTED_MAX_VOLTAGE =		0x00008000;
+	LINE_VGEN_FAILED =						0x00010000;	/*VGEN has failed to start*/
+	LINE_VGEN_LIMITES =						0x00020000; /*VGEN is reatch the limit*/
+	LINE_OVERCURRENT =						0x00040000; /*overcurrent condition detected*/
+	LINE_NO_CALIBRATION =					0x00080000; /*calibration file is missing or filed to load*/
+	LINE_NOT_CONNECTED =					0x00100000; /*the battery is not connected */
+	LINE_BAT_TEMP_SENSOR_NC =		0x00200000; /*the battery temp sensor is not connected */
+	LINE_INTRENAL_TEMP_SENSOR_NC =		0x00400000; /*the battery temp sensor is not connected */
+	EXTERNAL_LINE_ERROR =					0x00800000; /*an external error is detected form external control*/
+	INTRENAL_LINE_ERROR  =					0x01000000; /*an internal error is detected */
+	CHANNEL_EMPTY					=		0x02000000; /*the channel has no lines connected*/
+	CHANNEL_MULTI_LINE_VOLTAGE_MISMATCH =	0x04000000; /*the lines in the channel have different voltages*/
+	CHANNEL_MULTI_LINE_CURRENT_MISMATCH =	0x08000000; /*the lines in the channel have different currents*/
+	SD_CARD								= 	0x10000000; /*SD card error */
+	USER_ABORT 							=	0x20000000; /*the user has aborted the operation*/
+	CHANNEL_ERROR						=   0x40000000; /*generic channel error*/
+
+
+}
+
+enum CMD_ID{
+	TEST = 0;
+	ADDRESSS =1;// chnage address value 1-32
+	BUZZER=2;	// mute/unmute buzzer
+	MODE = 3; // set mode single chnaggle dual channel
+	NAME = 4; // rename the device
+	TIME = 5; // set the time of the device
+	BOOT = 6; // reboot the device
+	SN = 7 ; // set the serial number of the device
+}
+
+message firmware_message{
+	uint32 major = 1  [(nanopb).int_size = IS_16] ;
+	uint32 minor = 2  [(nanopb).int_size = IS_16];
+	uint32 patch = 3  [(nanopb).int_size = IS_16];
+	uint32 build = 4  [(nanopb).int_size = IS_16];
+}
+message hardware_revision_message{
+	uint32 major = 1  [(nanopb).int_size = IS_16];
+	uint32 minor = 2  [(nanopb).int_size = IS_16];	
+}
+
+message serial_number{
+	uint32 constant = 1  [(nanopb).int_size = IS_8] ;
+	uint32 year = 2  [(nanopb).int_size = IS_8] ;
+	uint32 week = 3  [(nanopb).int_size = IS_8] ;
+	uint32 number = 4  [(nanopb).int_size = IS_16] ;
+}
+
+message settings{
+	uint32 SN = 1 ; /*the serial number of the device*/ 
+	uint32 address = 2; /* the address of the device 1-32*/
+	string name = 3 [(nanopb).max_size = 32]; /*the name of the device*/
+	uint32 buzzer = 4 [(nanopb).int_size = IS_8];; // 0 mute, 1 unmute
+}
+
+message info{
+	firmware_message firmware = 1  [(nanopb).proto3_singular_msgs = true];
+	hardware_revision_message revision = 2  [(nanopb).proto3_singular_msgs = true];
+	uint32 rtc = 3 ; /*the time of the device in unix format*/
+	STATE state = 4; /*the current state of the device*/
+	ERROR error = 5; /*the current error of the device*/
+}
+
+message status{
+	settings settings= 1  [(nanopb).proto3_singular_msgs = true]; /*the setting of the device , retrive form file can be change in factory */ 	
+	info info = 2	 [(nanopb).proto3_singular_msgs = true]; 		/*the info of the device , the info and status of the device */
+}
+
+message command{
+	CMD_ID id=1;
+	uint32 value = 2; /*the value of the command*/
+	string name = 3 [(nanopb).max_size = 32]; /*reanme the device*/
+}

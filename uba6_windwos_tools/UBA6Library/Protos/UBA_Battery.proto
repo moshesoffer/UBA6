@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+import "nanopb.proto";
+
+option csharp_namespace = "UBA_Battery";
+
+package Battery;
+
+
+ enum TYPE {
+	TYPE_NONE = 0 ;
+	TYPE_PRIMERY = 1;
+	TYPE_SECONDERY = 2;
+	TYPE_MAX = 3;
+	TYPE_INVALID = 4;
+} 
+
+enum CELL_CHEMISTRY {
+	CELL_CHEMISTRY_LITHIUM_ION =0;
+	CELL_CHEMISTRY_CUSTOM = 0xff;
+}
+ message Voltage_limits {  // in mV
+         int32 min = 1;
+         int32 nominal = 2;
+         int32 max = 3;
+ }
+
+message Capacity_limits { //in mAh
+        int32 min = 1;
+        int32 max = 2;
+}
+message Temperature_limits { // in C
+        float min = 1;
+        float max = 2;
+}
+
+
+message Cell{
+	 TYPE type = 1;
+     CELL_CHEMISTRY chemistry = 2;
+     bytes manufacturer = 3  [(nanopb).max_size = 32,(nanopb).fixed_length = true]; 
+     bytes part_number = 4  [(nanopb).max_size = 32,(nanopb).fixed_length = true];
+     Voltage_limits voltage = 5 [(nanopb).proto3_singular_msgs = true];
+     Capacity_limits capacity = 6 [(nanopb).proto3_singular_msgs = true];
+     Temperature_limits temperature = 7 [(nanopb).proto3_singular_msgs = true];
+}
+
+
+message Battery{
+    TYPE type = 1;
+	string serial_number = 2 [(nanopb).max_size = 10];
+	uint32 number_of_cells = 3  [(nanopb).int_size = IS_8]; 
+	uint32 max_voltage = 4; // in mV    
+}

@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+import "nanopb.proto";
+import "UBA_PROTO_UBA6.proto";
+import "UBA_PROTO_LINE.proto";
+import "UBA_PROTO_CHANNEL.proto";
+import "UBA_PROTO_BPT.proto";
+option csharp_namespace = "UBA_PROTO_QUERY";
+
+package UBA_PROTO_QUERY;
+
+enum RECIPIENT  {
+	NONE = 0;
+	DEVICE = 1;
+	LINE_A = 2;
+	LINE_B = 4;
+	CHANNEL_A = 8;
+	CHANNEL_B = 16;
+	CHANNEL_AB = 32;
+	BPT_A = 64;
+	BPT_B = 128;
+	BPT_AB = 256;
+}
+
+message query_message{
+	RECIPIENT recipient  = 1;	
+}
+
+message query_response_message{
+	RECIPIENT recipient  = 1;	
+	uint32 response_id = 2; /*the id of the query message*/
+	oneof status{
+		UBA_PROTO_UBA6.status device = 3;
+		UBA_PROTO_LINE.status line = 4;
+		UBA_PROTO_CHANNEL.status channel = 5;		
+		UBA_PROTO_BPT.status_message bpt = 6;
+	}
+}

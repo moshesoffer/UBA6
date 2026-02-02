@@ -1,0 +1,121 @@
+
+syntax = "proto3";
+
+import "nanopb.proto";
+import "UBA_PROTO_UBA6.proto";
+import "UBA_PROTO_CHANNEL.proto";
+
+option csharp_namespace = "UBA_PROTO_BPT";
+
+package UBA_PROTO_BPT; /*Battery Performance Test */
+
+enum STEP_TYPE {
+	CHARGE = 0;
+	DISCHARGE = 1;
+	DELAY = 2;
+	MAX = 3 ;
+	INVALID = 4;
+}
+
+enum MODE {
+	SINGLE_CHANNEL = 0 ;
+	DUAL_CHANNEL = 1;
+	MODE_MAX = 2 ;
+	MODE_INVALED = 3;
+}
+enum SOURCE {
+	INTERNAL = 0;
+	EXTERNAL = 1;
+	SOURCE_MAX = 2;
+}
+ enum DISCHARGE_CURRENT_TYPE {
+	ABSOLUTE = 0;	
+	POWER = 1; 
+	RESISTANCE = 2; 
+	TYPE_MAX = 3;
+}
+enum STATE {
+	INIT = 0;
+	STANDBY = 1;
+	PAUSE = 2;
+	RUN_STEP = 3;
+	STEP_COMPLEATE = 4;
+	TEST_FAILED = 5 ;
+	TEST_COMPLEATE = 6 ;
+	STATE_MAX = 7;
+	STATE_INVALID = 8 ;
+}
+
+
+
+message  discharge_current {
+	DISCHARGE_CURRENT_TYPE type = 1;
+	int32 value = 2;
+}
+
+message charge_stop_condition{
+		float max_temperature = 1; /*the max temp in c*/
+		uint32 max_time = 2; /*the max time in ms*/
+		int32 cut_off_current = 3 ; /*the current of charge that below it the step will end*/
+		int32 limit_capacity = 4; /*the capacity in mAh that above it the step will end*/
+}
+
+message charge {
+	SOURCE source = 1; /* select the source that the charge will occur */ 
+	int32 current = 2 ; /*the charge current in mA the device must keep this current whill charging*/ //TODO: Cehck if current can be negtive and if max current can be  2^31
+	int32 voltage = 3; /*the end voltage that the deivce need to charge the battery*/
+	float min_temperature = 4; /*below this temp the device will not charge*/
+	charge_stop_condition  sc = 5 [(nanopb).proto3_singular_msgs = true];
+}
+
+message discharge_stop_condition{
+		float max_temperature = 1;/*the max temp in c*/
+		uint32 max_time = 2;/*the max time in ms*/
+		int32 cut_off_voltag = 3; /*the voltage that the battery will reatch that stop the step*/
+		int32 limit_capacity = 4; /*the capacity in mAh that above it the step will end*/
+}; 
+
+message discharge {
+	SOURCE source = 1; /*select the source that the charge will occur*/ 
+	discharge_current current = 2 [(nanopb).proto3_singular_msgs = true]; /*the dischrage value*/
+	float min_temperature = 3;
+	discharge_stop_condition sc = 4 [(nanopb).proto3_singular_msgs = true];
+}
+message delay {
+	uint32 delay_time = 1;
+	float cool_down_temperature = 2 ;
+} 
+
+message BPT {
+	STATE state =1 ;
+}
+
+enum CMD_ID{
+	TEST = 0;
+	SELECT = 1;  /*start BPT*/
+	STOP= 2; /*stop bpt*/
+	PAUSED= 3; /*stop bpt*/
+	CLEAR= 4; /*Clear the BPT reset errro and set to STANDBY*/
+}
+
+message data_log_message{
+	UBA_PROTO_CHANNEL.ID channelID = 1;
+	uint32 timestamp = 2;
+	uint32 current_step = 3;
+}
+
+message command{
+	CMD_ID id = 1 ;
+	UBA_PROTO_CHANNEL.ID channel = 2;
+	uint32 BPT_list_entery = 3 [(nanopb).int_size = IS_8]; 	
+}
+
+message status_message{
+	UBA_PROTO_UBA6.ERROR error =1;
+	STATE state =2;
+	uint32 start_time= 3;
+	uint32 current_step = 4 [(nanopb).int_size = IS_8]; 
+	STEP_TYPE step_type = 5;
+	uint32 total_steps = 6 [(nanopb).int_size = IS_8]; 
+	UBA_PROTO_CHANNEL.status channel_status = 7 [(nanopb).proto3_singular_msgs = true];
+}

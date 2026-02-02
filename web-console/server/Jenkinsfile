@@ -1,0 +1,117 @@
+pipeline {
+    /*
+    Plugins dependancies:
+    - Pipeline: AWS Steps
+    - Slack Notification Plugin
+    */
+    options {
+        skipDefaultCheckout()
+    }
+    environment {
+        MY_GIT_REPO = 'https://shacharsatpet@bitbucket.org/amicell1/web-console.git'
+        ARTIFACT_ID = 'web-console-artifact'
+        AWS_REPO_NAME = 'amicell-web-console'
+
+        AWS_DEV_ACCOUNT = '341022751600.dkr.ecr.us-east-1.amazonaws.com'
+        SLACK_CHANNEL = '#amicell-build'
+        SERVICE_MAJOR_VERSION = '4.0'
+        DOCKER_IMAGE_PREFIX = 'amicell'
+        DOCKER_IMAGE_TAG = "${env.SERVICE_MAJOR_VERSION}.${env.BUILD_NUMBER}-${env.BRANCH_NAME}"
+        INTERNAL_DOCKER_IMAGE = "${env.DOCKER_IMAGE_PREFIX}/${env.ARTIFACT_ID}:${env.DOCKER_IMAGE_TAG}"
+    }
+    agent none
+    stages {
+        stage ('Notify') {
+            agent any
+            steps {
+                wrap([$class: 'BuildUser']) {
+                    slackSend channel: SLACK_CHANNEL,
+                        message: "${env.BRANCH_NAME} » ${env.JOB_NAME} - #${env.BUILD_NUMBER} Started by ${env.BUILD_USER_ID} <${env.BUILD_URL}|(Open)>",
+                        tokenCredentialId: 'slack-petnovations'
+                }
+            }
+        }
+        stage ('Checkout') {
+            agent any
+            steps {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: "*/${env.BRANCH_NAME}"]],
+                    doGenerateSubmoduleConfigurations: false,
+                    extensions: [],
+                    submoduleCfg: [],
+                    userRemoteConfigs: [[credentialsId: 'bitbucket', url: "${env.MY_GIT_REPO}"]]
+                ])
+            }
+        }
+        stage ('Clean install and build inside docker') {
+            agent {
+                docker {
+                    image 'node:16-buster'
+                }
+            }
+            steps {
+                echo "${HOME}======== Maven Deploy ========${WORKSPACE}"
+                dir('web-console') {
+                    echo "======== Clean & Install ========"
+                    sh "pwd"
+                    sh "npm run clean"
+                    sh "ls -rtl"
+                    sh "npm install"
+                    echo "======== Build ========"
+                    sh "npm run build"
+                    sh "ls -rtl"
+                }
+            }
+        }
+        stage('Build') {
+            agent any
+            steps {
+                echo "======== Build docker image ========"
+                dir('web-console') {
+                    sh """
+                    docker run --privileged --rm tonistiigi/binfmt --install arm64
+                    docker buildx build --load --platform linux/arm64 -t ${env.INTERNAL_DOCKER_IMAGE} .
+                    """
+                }
+            }
+        }
+        stage ('Push to dev repository') {
+            agent any
+            environment {
+                AWS_REPO = "${env.AWS_DEV_ACCOUNT}/${env.AWS_REPO_NAME}"
+                AWS_DOCKER_IMAGE = "${env.AWS_REPO}:${env.DOCKER_IMAGE_TAG}"
+            }
+            steps {
+                echo "======== Push to Dev ========"
+                withAWS(credentials: "aws-credentials-dev") {
+                    sh "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${env.AWS_REPO}"
+                    sh "docker tag ${env.INTERNAL_DOCKER_IMAGE} ${env.AWS_DOCKER_IMAGE}"
+                    sh "docker push ${env.AWS_DOCKER_IMAGE}"
+                    sh "docker rmi ${env.AWS_DOCKER_IMAGE}"
+                }
+            }
+        }
+        stage ('Docker Cleanup') {
+            agent any
+            steps {
+                echo "======== Clean internal images ========"
+                sh "docker rmi ${env.INTERNAL_DOCKER_IMAGE}"
+            }
+        }
+    }
+    post{
+      success{
+            echo "========pipeline executed successfully ========"
+            slackSend channel: SLACK_CHANNEL, color: 'good',
+                message: "${env.BRANCH_NAME} » ${env.JOB_NAME} - #${env.BUILD_NUMBER} Success <${env.BUILD_URL}|(Open)>",
+                tokenCredentialId: 'slack-petnovations'
+        }
+        failure{
+            echo "========pipeline execution failed========"
+            slackSend channel: SLACK_CHANNEL, color: 'danger',
+                message: "${env.BRANCH_NAME} » ${env.JOB_NAME} - #${env.BUILD_NUMBER} Failure <${env.BUILD_URL}|(Open)>",
+                tokenCredentialId: 'slack-petnovations'
+        }
+    }
+}

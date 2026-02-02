@@ -1,0 +1,44 @@
+# ===== Build output =====
+Debug/
+Release/
+build/
+out/
+
+# ===== STM32 / CubeIDE =====
+*.elf
+*.hex
+*.bin
+*.map
+*.lst
+*.d
+*.o
+*.su
+*.axf
+
+# ===== Make / CMake =====
+Makefile
+makefile
+*.mk
+CMakeFiles/
+cmake_install.cmake
+CMakeCache.txt
+
+# ===== IDE junk =====
+.vs/
+.settings/
+.project
+.cproject
+
+# ===== Logs / temp =====
+*.log
+*.tmp
+
+# ===== additional =====
+*.db
+*.json
+*.suo
+*.ipch
+*.log
+
+
+

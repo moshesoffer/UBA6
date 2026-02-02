@@ -1,0 +1,66 @@
+﻿<Page x:Class="UBA6_Controller_App.View.ChargePage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:UBA6_Controller_App.View"
+      xmlns:ui="http://schemas.modernwpf.com/2019" 
+      xmlns:vm ="clr-namespace:UBA6_Controller_App.ViewModel"      
+      mc:Ignorable="d" 
+      d:DesignHeight="450" d:DesignWidth="800"
+      d:DataContext="{d:DesignInstance Type=vm:ChargePageViewModel}"
+      Title="ChargePage"
+      ui:ThemeManager.RequestedTheme="Dark"
+      >
+
+    <Grid>
+
+        <ui:SimpleStackPanel Orientation="Vertical" HorizontalAlignment="Center" Style="{StaticResource SimpleStackPanel_Discharge_SC}">
+
+            <ui:SimpleStackPanel Style="{StaticResource SimpleStackPanel_Discharge_SC}" Orientation="Vertical" HorizontalAlignment="Center"  >
+                <ui:SimpleStackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="20">
+                    <ComboBox Text="Select Source:"                           
+ui:ControlHelper.Header="Test Channel" 
+ui:ControlHelper.PlaceholderText="Select Channel" ItemsSource="{Binding ChannelOptions}" SelectedItem="{Binding SelectedChannel}" HorizontalAlignment="Center"/>
+                    <ComboBox Text="Select Source:"                           
+ui:ControlHelper.Header="Test Channel" 
+ui:ControlHelper.PlaceholderText="Select Source" ItemsSource="{Binding SourceOptions}" SelectedItem="{Binding SelectedSource}" HorizontalAlignment="Center"/>
+                </ui:SimpleStackPanel>
+                <ui:SimpleStackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <ui:NumberBox Header="Store Index" Style="{StaticResource NumberBox_Discharge}" Minimum="0" Maximum="9" PlaceholderText="9" SmallChange="1" LargeChange="2" Value="{Binding StoreIndex}"/>
+                    <ui:NumberBox Header="Log Interval [ms]" Style="{StaticResource NumberBox_Discharge}" Minimum="1" PlaceholderText="1000" SmallChange="10" LargeChange="1000" Value="{Binding LogInterval}"/>
+
+                </ui:SimpleStackPanel>
+            </ui:SimpleStackPanel>
+            <ui:SimpleStackPanel Style="{StaticResource SimpleStackPanel_Discharge_SC}"    >
+                <ui:NumberBox Header="Charge Voltage[mA]:" Style="{StaticResource NumberBox_Discharge}" Minimum="0" Maximum="60000" PlaceholderText="0000" SpinButtonPlacementMode="Compact" Value="{Binding ChargeVoltage}" />
+                <ui:NumberBox Header="Charge Current[mA]:" Style="{StaticResource NumberBox_Discharge}" Minimum="0" PlaceholderText="0000" SpinButtonPlacementMode="Compact" Value="{Binding ChargeCurrent}" />
+                <ui:NumberBox Header="Min Temperature[C]:" Style="{StaticResource NumberBox_Discharge}" Minimum="-100" PlaceholderText="0000" Value="{Binding MinTemp}" />
+            </ui:SimpleStackPanel>
+            <Expander Header="Stop Condtion" HorizontalAlignment="Center" Foreground="{StaticResource AccentBrush}" d:IsExpanded="True">
+                <ui:SimpleStackPanel Orientation="Vertical" HorizontalAlignment="Center" Spacing="0">
+                    <ui:SimpleStackPanel Style="{StaticResource SimpleStackPanel_Discharge_SC}">
+                        <CheckBox Content="Max Temp[C]:"  IsChecked="{Binding IsMaxTemp}" Style="{StaticResource ChackBox_discharge}" d:IsChecked="True" />
+                        <ui:NumberBox Value="{Binding MaxTemp}" Style="{StaticResource NumberBox_Discharge}" Minimum="-273.0" PlaceholderText="00.00" Maximum="4294967295" />
+                    </ui:SimpleStackPanel>
+                    <ui:SimpleStackPanel Style="{StaticResource SimpleStackPanel_Discharge_SC}">
+                        <CheckBox Content="Cut Off Current[mA]: "  IsChecked="{Binding IsCutOffCurrent}" Style="{StaticResource ChackBox_discharge}" d:IsChecked="True" />
+                        <ui:NumberBox Value="{Binding CutOffCurrent }" Style="{StaticResource NumberBox_Discharge}" Minimum="0"  PlaceholderText="0000" />
+                    </ui:SimpleStackPanel>
+                    <ui:SimpleStackPanel Style="{StaticResource SimpleStackPanel_Discharge_SC}">
+                        <CheckBox IsChecked="{Binding IsMaxTime}" Content="Max Time [Sec]:" Style="{StaticResource ChackBox_discharge}"  d:IsChecked="True" />
+                        <ui:NumberBox Value ="{Binding MaxTime}" Style="{StaticResource NumberBox_Discharge}" Minimum="-273.0" PlaceholderText="0000 sec" />
+                    </ui:SimpleStackPanel>
+                    <ui:SimpleStackPanel Style="{StaticResource SimpleStackPanel_Discharge_SC}" HorizontalAlignment="Stretch" >
+                        <CheckBox IsChecked="{Binding IsDischargeLimit}" Content="Discharge Limit:"   Style="{StaticResource ChackBox_discharge}" d:IsChecked="True" />
+                        <ui:NumberBox Value="{Binding DischargeLimit}" Style="{StaticResource NumberBox_Discharge}" HorizontalAlignment="Right" Minimum="-273.0" PlaceholderText="0000"  LargeChange="10" SmallChange="0.5"/>
+                    </ui:SimpleStackPanel>
+                </ui:SimpleStackPanel>
+            </Expander>
+            <ui:SimpleStackPanel Style="{StaticResource SimpleStackPanel_Discharge_SC}" HorizontalAlignment="Center">
+                <Button Content="Store Charge Setp " HorizontalAlignment="Center" Command="{Binding sentChargeTRMessageCommand}"/>
+                <Button Content="Store and Start  " HorizontalAlignment="Center" Command="{Binding storeAndStartChargeStepCommand}"/>
+            </ui:SimpleStackPanel>
+        </ui:SimpleStackPanel>
+    </Grid>
+</Page>

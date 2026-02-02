@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+import "nanopb.proto";
+import "UBA_PROTO_CMD.proto";
+import "UBA_PROTO_TR.proto";
+import "UBA_PROTO_CHANNEL.proto";
+import "UBA_PROTO_CALIBRATION.proto";
+import "UBA_PROTO_QUERY.proto";
+import "UBA_PROTO_UBA6.proto";
+import "UBA_PROTO_LINE.proto";
+import "UBA_PROTO_BPT.proto";
+import "UBA_PROTO_FM.proto";
+
+option csharp_namespace = "UBA_MSG";
+
+package MSG; 
+
+message Header{
+	uint32 sender_address = 1 [(nanopb).int_size = IS_32];;
+	uint32 target_address = 2 [(nanopb).int_size = IS_32];;	
+	uint32 length = 3 [(nanopb).int_size = IS_32];
+	uint32 id = 4 [(nanopb).int_size = IS_32];
+}
+
+message Message {
+	Header head = 1 [(nanopb).proto3_singular_msgs = true]; 
+	oneof pyload {
+		UBA_PROTO_CMD.command_message cmd = 2;
+		TR.Test_Routine_Message tr = 3; /*sennd/recive a test rotine*/
+		UBA_PROTO_QUERY.query_message query = 4;
+		UBA_PROTO_QUERY.query_response_message query_response = 5;
+		UBA_PROTO_CALIBRATION.calibration_message calibration = 6;
+		UBA_PROTO_UBA6.settings device_settings = 11;
+		UBA_PROTO_FM.file_transfer file = 12;
+		UBA_PROTO_FM.file_list fm_list = 13; 
+	} 
+}

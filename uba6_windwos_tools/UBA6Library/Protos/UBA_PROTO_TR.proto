@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+import "nanopb.proto";
+import "UBA_PROTO_BPT.proto";
+import "UBA_Battery.proto";
+
+option csharp_namespace = "UBA_PROTO_TR";
+
+package TR; 
+
+enum STEP_TYPE {
+	STEP_TYPE_CHARGE = 0 ;
+	STEP_TYPE_DISCHARGE = 1;
+	STEP_TYPE_DELAY =  2;
+	STEP_TYPE_LOOP = 3;
+	STEP_TYPE_MAX = 4;
+	STEP_TYPE_INVALID = 5;
+} 
+
+enum CMD {
+	CMD_TEST = 0;
+	CMD_STORE = 1;
+	CMD_DELETE = 2;
+
+}
+
+message Loop {
+	uint32 loop_to_step = 1 [(nanopb).int_size = IS_8]; 
+	uint32 loop_size = 2  [(nanopb).int_size = IS_16]; 
+	uint32 loop_counter = 3 [(nanopb).int_size = IS_16]; 
+}
+
+message config_step {
+	STEP_TYPE type_id = 1;
+	oneof type {
+		UBA_PROTO_BPT.charge charge = 2;
+		UBA_PROTO_BPT.discharge discharge = 3;
+		UBA_PROTO_BPT.delay delay = 4 ;
+		Loop loop = 5;
+	}
+}
+
+message Test_Routine{
+	UBA_PROTO_BPT.MODE mode = 1 ; /*the mode of the Test (single channels or dual channels*/
+	string name = 2 [(nanopb).max_size = 32];
+	uint32 length = 3  [(nanopb).int_size = IS_8]; 
+	Battery.Battery battery = 4 [(nanopb).proto3_singular_msgs = true]; 
+	repeated config_step config = 5 [(nanopb).max_count = 10,(nanopb).fixed_count = true];
+	uint32 log_interval = 6 [(nanopb).int_size = IS_16]; /*the logging interval in milisec */
+}
+
+
+message Test_Routine_Message{
+	uint32 index = 1  [(nanopb).int_size = IS_8];  /*the index in the test list */
+	Test_Routine tr = 2 [(nanopb).proto3_singular_msgs = true]; /*the Test Routine*/
+}
+
+message Test_Routine_File{
+	repeated Test_Routine list = 1 [(nanopb).max_count = 10,(nanopb).fixed_count = true];
+}

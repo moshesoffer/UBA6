@@ -1,0 +1,61 @@
+﻿<Page x:Class="UBA6_Controller_App.View.FileManagerPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:UBA6_Controller_App.View"
+      xmlns:ui="http://schemas.modernwpf.com/2019"      
+      xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+      xmlns:vm ="clr-namespace:UBA6_Controller_App.ViewModel"
+      d:DesignHeight="450" d:DesignWidth="800"
+      d:DataContext="{d:DesignInstance Type=vm:FileManagerPageViewModel}"
+      mc:Ignorable="d" 
+      Title="FileManagerPage"      
+      >
+
+    
+        <ui:SimpleStackPanel Spacing="15">
+        <TextBox Text="{Binding Filename, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="10"  Width="auto" HorizontalAlignment="left"  MinWidth="450" ui:ControlHelper.Header="Sherch For File Name in the UBA" Foreground="AliceBlue"/>
+
+        <DataGrid ItemsSource="{Binding Files}"   IsReadOnly="True"  Margin="10"  EnableRowVirtualization="True"
+          EnableColumnVirtualization="False"
+          VirtualizingPanel.IsVirtualizing="True"
+          VirtualizingPanel.VirtualizationMode="Standard"
+          AutoGenerateColumns="False"
+           ScrollViewer.VerticalScrollBarVisibility="Auto"
+           ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                       ScrollViewer.CanContentScroll="True"
+                        Height="150"                       
+                  >
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="File Name"  Binding="{Binding}" />                
+            </DataGrid.Columns>
+        </DataGrid>
+        <DataGrid ItemsSource="{Binding FileData}"   IsReadOnly="True"  Margin="10"  EnableRowVirtualization="True"
+          EnableColumnVirtualization="False"
+          VirtualizingPanel.IsVirtualizing="True"
+          VirtualizingPanel.VirtualizationMode="Standard"
+          AutoGenerateColumns="False"
+           ScrollViewer.VerticalScrollBarVisibility="Auto"
+           ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                       ScrollViewer.CanContentScroll="True"
+                        Height="300"                       
+                  >
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Time" Binding="{Binding Time}" />
+                    <DataGridTextColumn Header="Step Index" Binding="{Binding StepIndex}" />
+                    <DataGridTextColumn Header="Plan Index" Binding="{Binding PlanIndex}" />
+                    <DataGridTextColumn Header="Current [mA]" Binding="{Binding Current}" />
+                    <DataGridTextColumn Header="Voltage[mV]" Binding="{Binding Voltage}" />
+                    <DataGridTextColumn Header="Temp[cC]" Binding="{Binding Temp}" />
+                </DataGrid.Columns>
+            </DataGrid>
+        <ui:SimpleStackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="15">
+            
+            <Button Content="Retrive Files" Command="{Binding FetchFilesNameCommand}" />
+            <Button Content="Load Test Result File" Command="{Binding LoadFileCommand}" />
+            <Button Content="Featch UBA File" Command="{Binding FetchFileCommand}" />
+        </ui:SimpleStackPanel>
+        </ui:SimpleStackPanel> 
+    
+</Page>

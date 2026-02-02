@@ -1,0 +1,21 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                     xmlns:local="clr-namespace:UBA6_Controller_App"
+                     xmlns:cnv="clr-namespace:UBA6_Controller_App.Converters">
+    <cnv:VoltageConverter x:Key="VoltageConverter"/>
+    <cnv:CurrentConverter x:Key="CurrentConverter"/>
+    <cnv:CapacityConverter x:Key="CapacityConverter"/>
+    <cnv:SpanTimeConverter x:Key="SpanTimeConverter"/>
+    <cnv:DateTimeConvertor x:Key="DateTimeConvertor"/>
+    <cnv:TempConverter x:Key="TempConverter"/>
+    <cnv:ChannelStateConverter x:Key="ChannelStateConverter"/>
+    <cnv:ChannelIDConverter x:Key="ChannelIDConverter"/>
+    <cnv:ChannelErrorConverter x:Key="ChannelErrorConverter"/>
+    <cnv:PowerOfTwoToExponentConverter x:Key="PowerOfTwoToExponentConverter"/>
+    <cnv:NumberToHexConverter x:Key="NumberToHexConverter"/>
+    
+    
+    
+    <cnv:LineStateConverter x:Key="LineStateConverter"/>
+
+</ResourceDictionary>

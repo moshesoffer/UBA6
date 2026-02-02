@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+import "nanopb.proto";
+import "UBA_PROTO_UBA6.proto";
+import "UBA_PROTO_CHANNEL.proto";
+import "UBA_PROTO_LINE.proto";
+import "UBA_PROTO_BPT.proto";
+import "UBA_PROTO_FM.proto";
+
+option csharp_namespace = "UBA_PROTO_CMD";
+package UBA_PROTO_CMD;
+
+
+message command_message{
+	oneof command {
+		UBA_PROTO_LINE.command line = 1;
+		UBA_PROTO_CHANNEL.command channel = 2;
+		UBA_PROTO_UBA6.command uba = 3;
+		UBA_PROTO_BPT.command bpt = 4;
+		UBA_PROTO_FM.command file = 5;
+	}
+}
