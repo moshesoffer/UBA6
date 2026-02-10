@@ -180,7 +180,6 @@ void UBA_channel_init_enter(UBA_channel *ch) {
 		UART_LOG_CRITICAL(ch->name, "init Failed , channel dose not have any connected lines");
 	}
 	ch->line_size = line_index;
-
 }
 
 void UBA_channel_init(UBA_channel *ch) {
@@ -485,6 +484,16 @@ void UBA_channel_init_g(void) {
 	memcpy(UBA_CH_B.name, "Channel B", 10);
 	UBA_CH_AB.id = UBA_CHANNLE_ID_AB;
 	memcpy(UBA_CH_AB.name, "Channel AB", 11);
+
+	//init shadow
+	UBA_CH_A.shadow.ch_name_changed = false;
+	UBA_CH_A.shadow.state = UBA_CHANNEL_STATE_INVALID;
+
+	UBA_CH_B.shadow.ch_name_changed = false;
+	UBA_CH_B.shadow.state = UBA_CHANNEL_STATE_INVALID;
+
+	UBA_CH_AB.shadow.ch_name_changed = false;
+	UBA_CH_AB.shadow.state = UBA_CHANNEL_STATE_INVALID;
 }
 
 void UBA_channle_start_cmd(UBA_channel *uba_ch) {

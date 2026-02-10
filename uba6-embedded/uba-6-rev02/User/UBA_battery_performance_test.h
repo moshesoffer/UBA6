@@ -14,6 +14,7 @@
 #include "UBA_common_def.h"
 #include  "UBA_PROTO_BPT.pb.h"
 #include "UBA_PROTO_UBA6.pb.h"
+#include "UBA_GFX.h"
 
 #define UBA_BPT_STMP_MAX_TIME (0xffffffff)
 #define UBA_BPT_NAME_MAX_SIZE (32)
@@ -163,6 +164,30 @@ typedef enum UBA_BPT_STATE {
 	UBA_BPT_STATE_INVALID,
 } UBA_BPT_STATE;
 
+typedef struct UBA_BPT_SHADOW {
+	char test_name[UBA_BPT_NAME_MAX_SIZE];
+	UBA_BPT_STATE current_state;
+	UBA_PROTO_UBA6_ERROR error;
+	struct {
+		UBA_GFX_EFFECT effect;
+		uint16_t color_text;
+		uint16_t color_bg;
+		char text[11];
+	} bnt_back_stop;
+	struct {
+		UBA_GFX_EFFECT effect;
+		uint16_t color_text;
+		uint16_t color_bg;
+		char text[11];
+	} bnt_pause_start;
+	struct {
+		UBA_GFX_EFFECT effect;
+		uint16_t color_text;
+		uint16_t color_bg;
+		char text[11];
+	} bnt_select;
+} UBA_BPT_SHADOW;
+
 typedef struct UBA_BPT {
 	UBA_BPT_MODE type;
 	UBA_PROTO_UBA6_ERROR error;
@@ -184,8 +209,9 @@ typedef struct UBA_BPT {
 	} start_date_time;
 	uint8_t filename[UBA_BPT_FILENAME_MAX_SIZE]; /*the file name that the data will be store at*/
 	uint8_t TR_selected_index;
-} UBA_BPT;
 
+	UBA_BPT_SHADOW shadow;
+} UBA_BPT;
 
 
 

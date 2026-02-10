@@ -114,6 +114,8 @@ void Error_Handler(void);
 #define DISP_CS_GPIO_Port GPIOB
 #define LCD_SCK_Pin GPIO_PIN_13
 #define LCD_SCK_GPIO_Port GPIOB
+#define LCD_MISO_Pin GPIO_PIN_14
+#define LCD_MISO_GPIO_Port GPIOB
 #define ADC2_AMB_TEMP_CH2_Pin GPIO_PIN_15
 #define ADC2_AMB_TEMP_CH2_GPIO_Port GPIOB
 #define FAN_Pin GPIO_PIN_8

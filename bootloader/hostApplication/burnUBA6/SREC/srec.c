@@ -61,11 +61,11 @@ int extract_srec_line(char* line, int line_len, char* srec, int srec_len)
     checksum += (addr >> 8) & 0xFF;
     checksum += addr & 0xFF;
 
-    if ((addr - ETX_APP_FLASH_ADDR) > srec_len)
+    if ((int)(addr - ETX_APP_FLASH_ADDR) > srec_len)
     {
         //printf ("pad with 0xFF: adr %x, srec_len %x, pad %d\n", addr - ETX_APP_FLASH_ADDR, srec_len, ((addr - ETX_APP_FLASH_ADDR) - srec_len));
         //pad with 0xFF
-        for (int i = 0; i < ((addr - ETX_APP_FLASH_ADDR) - srec_len); i++)
+        for (int i = 0; i < (int)((addr - ETX_APP_FLASH_ADDR) - srec_len); i++)
         {
             srec[srec_len+i] = 0xFF;
         }

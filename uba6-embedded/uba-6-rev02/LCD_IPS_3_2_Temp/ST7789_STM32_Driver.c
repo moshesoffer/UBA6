@@ -37,6 +37,7 @@ void ST7789_Reset(void)
 	HAL_GPIO_WritePin(LCD_Reset_GPIO_Port, LCD_Reset_Pin, GPIO_PIN_SET);
 	HAL_Delay(200);
 }
+
 /*Send data (char) to LCD*/
 void ST7789_SPI_Send(unsigned char SPI_Data)
 {

@@ -57,11 +57,9 @@
 #define LINE_EWI_FONT_SIZE			(2)
 // @formatter:on
 
-#define UBA_LCD_MAX_DISPLAY_TEST_SELECT (7)
-
 #define LINE(x) ((LINE_H*x) + LINE0_Y)
 
-UBA_LCD UBA_LCD_g = UBA_LCD_DEFAULT;
+UBA_LCD UBA_LCD_g =  UBA_LCD_DEFAULT;
 
 /*State Machine function  */
 
@@ -108,6 +106,13 @@ static const struct UBALCDSMA_rule rule_g[UBA_LCD_STATE_MAX] ={
 
 
 };
+
+//@formatter:on
+
+void LCD_start()
+{
+}
+
 //@formatter:on
 
 void LCD_run(UBA_LCD *LCD) {
@@ -132,7 +137,6 @@ static void LCD_update_state(UBA_LCD *LCD) {
 	LCD->state.pre = LCD->state.current;
 	LCD->state.current = LCD->state.next;
 	LCD->state.next = UBA_LCD_STATE_INVALID;
-
 }
 
 void LCD_init_g(UBA_LCD *LCD) {
@@ -140,63 +144,133 @@ void LCD_init_g(UBA_LCD *LCD) {
 	ST7789_Set_Rotation(LCD->orientation);
 }
 
-static void LCD_init_enter(UBA_LCD *LCD) {
-	UBA_GFX uba_title = { 0 };
-	ST7789_Init();
+static void LCD_init_main_frame(UBA_LCD *LCD) {
+	sprintf(LCD->name, "Amicell - UBA 6");
+	snprintf(LCD->version, UBA_GFX_TEXT_MAX_LENGTH, "Ver:%02u.%02u.%02u.%02u", UBA_6_device_g.info.firmware.major,
+			UBA_6_device_g.info.firmware.minor,
+			UBA_6_device_g.info.firmware.patch, UBA_6_device_g.info.firmware.build);
 
-	ST7789_Set_Rotation(LCD->orientation);
-	LCD_update_state(LCD);
+	LCD->orientation = SCREEN_HORIZONTAL_2;
+
 	LCD->main_frame.id = UBA_GFX_ELEMNET_FRAME;
 	LCD->main_frame.effect = UBA_GFX_EFFECT_SOLID;
 	LCD->main_frame.pos.x = START_X;
 	LCD->main_frame.pos.y = START_Y;
-	LCD->main_frame.elemnt.frame.heigth = LCD->height;
-	LCD->main_frame.elemnt.frame.width = LCD->width;
+	LCD->main_frame.elemnt.frame.heigth = ST7789_SCREEN_HEIGHT;
+	LCD->main_frame.elemnt.frame.width = ST7789_SCREEN_WIDTH;
 	LCD->main_frame.elemnt.frame.color_border = BLACK;
 	LCD->main_frame.elemnt.frame.color_fill = BACKGROUND_COLOR;
+
+	//pages
+	UBA_LCD_init_page_channel(&LCD->pages.channel);
+	//LCD_init_page_screen_bpt(LCD);
+	//LCD_init_page_test_list(LCD);
+	//LCD_init_page_test_info(LCD);
+}
+
+static void LCD_draw_main_frame(UBA_LCD *LCD) {
+	UBA_GFX uba_title = { 0 };
+
+	//draw/erase frame
 	UBA_GFX_draw_frame(&LCD->main_frame);
 
+	//draw text
+	sprintf(uba_title.elemnt.text.text, LCD->name);
+	uba_title.id = UBA_GFX_ELEMNET_TEXT;
+	uba_title.effect = UBA_GFX_EFFECT_SOLID;
+	uba_title.pos.x = LCD->main_frame.elemnt.frame.width / 2;
+	uba_title.pos.y = LCD->main_frame.elemnt.frame.heigth / 4;
+	uba_title.elemnt.text.color_bg = WHITE;
+	uba_title.elemnt.text.color_text = BLACK;
+	uba_title.elemnt.text.size = 2;
+	UBA_GFX_draw_text_center(&uba_title);
+
+	sprintf(uba_title.elemnt.text.text, LCD->version); 
+	uba_title.pos.y = (LCD->main_position.height / 4) * 3;
+	UBA_GFX_draw_text_center(&uba_title);
+}
+
+static void LCD_init_screens(UBA_LCD *LCD) {
+	//screen position
+	LCD->screen_position[UBA_PROTO_CHANNEL_ID_A-1].start_x = LCD->main_frame.pos.x;
+	LCD->screen_position[UBA_PROTO_CHANNEL_ID_A-1].start_y = LCD->main_frame.pos.y;
+	LCD->screen_position[UBA_PROTO_CHANNEL_ID_A-1].width = LCD->main_frame.elemnt.frame.width / 2;
+	LCD->screen_position[UBA_PROTO_CHANNEL_ID_A-1].height = LCD->main_frame.elemnt.frame.heigth;
+
+	LCD->screen_position[UBA_PROTO_CHANNEL_ID_B-1].start_x = LCD->main_frame.pos.x + LCD->main_frame.elemnt.frame.width / 2;
+	LCD->screen_position[UBA_PROTO_CHANNEL_ID_B-1].start_y = LCD->main_frame.pos.y;
+	LCD->screen_position[UBA_PROTO_CHANNEL_ID_B-1].width = LCD->main_frame.elemnt.frame.width / 2;
+	LCD->screen_position[UBA_PROTO_CHANNEL_ID_B-1].height = LCD->main_frame.elemnt.frame.heigth;
+
+	LCD->screen_position[UBA_PROTO_CHANNEL_ID_AB-1].start_x = LCD->main_frame.pos.x;
+	LCD->screen_position[UBA_PROTO_CHANNEL_ID_AB-1].start_y = LCD->main_frame.pos.y;
+	LCD->screen_position[UBA_PROTO_CHANNEL_ID_AB-1].width = LCD->main_frame.elemnt.frame.width;
+	LCD->screen_position[UBA_PROTO_CHANNEL_ID_AB-1].height = LCD->main_frame.elemnt.frame.heigth;
+
+	//screen info
+	LCD->screen_ch_A.LCD_handler = (void *) LCD;
 	LCD->screen_ch_A.bpt = &UBA_6_device_g.BPT_A;
-	LCD->screen_ch_A.start_x = START_X;
-	LCD->screen_ch_A.start_y = START_Y;
-	LCD->screen_ch_A.width = LCD->width / 2;
-	LCD->screen_ch_A.height = LCD->height;
 	LCD->screen_ch_A.ch_control = UBA_CHANNLE_ID_A;
+	//shadow
+	LCD->screen_ch_A.bpt->shadow.test_name[0] = 'x';
+	LCD->screen_ch_A.bpt->shadow.current_state = UBA_BPT_STATE_INVALID;
+	LCD->screen_ch_A.bpt->shadow.error = UBA_PROTO_UBA6_ERROR_LINE_NOT_AVAILABLE;
+	LCD->screen_ch_A.bpt->shadow.bnt_back_stop.text[0] = '\0';
+	LCD->screen_ch_A.bpt->shadow.bnt_back_stop.color_text = GRAYBLUE;//not in use
+	LCD->screen_ch_A.bpt->shadow.bnt_back_stop.color_bg =  GRAYBLUE;//not in use
+	LCD->screen_ch_A.bpt->shadow.bnt_back_stop.effect = UBA_GFX_EFFECT_MAX;
+	LCD->screen_ch_A.bpt->shadow.bnt_back_stop.text[0] = '\0';
+	LCD->screen_ch_A.bpt->shadow.bnt_back_stop.color_text = GRAYBLUE;//not in use
+	LCD->screen_ch_A.bpt->shadow.bnt_back_stop.color_bg =  GRAYBLUE;//not in use
+	LCD->screen_ch_A.bpt->shadow.bnt_back_stop.effect = UBA_GFX_EFFECT_MAX;
 
+	LCD->screen_ch_B.LCD_handler = (void *) LCD;
 	LCD->screen_ch_B.bpt = &UBA_6_device_g.BPT_B;
-	LCD->screen_ch_B.start_x = START_X + LCD->width / 2;
-	LCD->screen_ch_B.start_y = START_Y;
-	LCD->screen_ch_B.width = LCD->width / 2;
-	LCD->screen_ch_B.height = LCD->height;
 	LCD->screen_ch_B.ch_control = UBA_CHANNLE_ID_B;
+	//shadow
+	LCD->screen_ch_B.bpt->shadow.test_name[0] = 'x';
+	LCD->screen_ch_B.bpt->shadow.current_state = UBA_BPT_STATE_INVALID;
+	LCD->screen_ch_B.bpt->shadow.error = UBA_PROTO_UBA6_ERROR_LINE_NOT_AVAILABLE;
+	LCD->screen_ch_B.bpt->shadow.bnt_back_stop.text[0] = '\0';
+	LCD->screen_ch_B.bpt->shadow.bnt_back_stop.color_text = GRAYBLUE;//not in use
+	LCD->screen_ch_B.bpt->shadow.bnt_back_stop.color_bg =  GRAYBLUE;//not in use
+	LCD->screen_ch_B.bpt->shadow.bnt_back_stop.effect = UBA_GFX_EFFECT_MAX;
+	LCD->screen_ch_B.bpt->shadow.bnt_back_stop.text[0] = '\0';
+	LCD->screen_ch_B.bpt->shadow.bnt_back_stop.color_text = GRAYBLUE;//not in use
+	LCD->screen_ch_B.bpt->shadow.bnt_back_stop.color_bg =  GRAYBLUE;//not in use
+	LCD->screen_ch_B.bpt->shadow.bnt_back_stop.effect = UBA_GFX_EFFECT_MAX;
 
+	LCD->screen_ch_AB.LCD_handler = (void *) LCD;
 	LCD->screen_ch_AB.bpt = &UBA_6_device_g.BPT_AB;
-	LCD->screen_ch_AB.start_x = START_X;
-	LCD->screen_ch_AB.start_y = START_Y;
-	LCD->screen_ch_AB.width = LCD->width;
-	LCD->screen_ch_AB.height = LCD->height;
 	LCD->screen_ch_AB.ch_control = UBA_CHANNLE_ID_AB;
+	//shadow
+	LCD->screen_ch_AB.bpt->shadow.test_name[0] = 'x';
+	LCD->screen_ch_AB.bpt->shadow.current_state = UBA_BPT_STATE_INVALID;
+	LCD->screen_ch_AB.bpt->shadow.error = UBA_PROTO_UBA6_ERROR_LINE_NOT_AVAILABLE;
+	LCD->screen_ch_AB.bpt->shadow.bnt_back_stop.text[0] = '\0';
+	LCD->screen_ch_AB.bpt->shadow.bnt_back_stop.color_text = GRAYBLUE;//not in use
+	LCD->screen_ch_AB.bpt->shadow.bnt_back_stop.color_bg =  GRAYBLUE;//not in use
+	LCD->screen_ch_AB.bpt->shadow.bnt_back_stop.effect = UBA_GFX_EFFECT_MAX;
+	LCD->screen_ch_AB.bpt->shadow.bnt_back_stop.text[0] = '\0';
+	LCD->screen_ch_AB.bpt->shadow.bnt_back_stop.color_text = GRAYBLUE;//not in use
+	LCD->screen_ch_AB.bpt->shadow.bnt_back_stop.color_bg =  GRAYBLUE;//not in use
+	LCD->screen_ch_AB.bpt->shadow.bnt_back_stop.effect = UBA_GFX_EFFECT_MAX;
 
-	sprintf(uba_title.elemnt.text.text, "Amicell - UBA 6");
-	uba_title.id = UBA_GFX_ELEMNET_TEXT;
-	uba_title.effect = UBA_GFX_EFFECT_SOLID;
-	uba_title.pos.x = LCD->width / 2;
-	uba_title.pos.y = LCD->height / 4;
-	uba_title.elemnt.text.color_bg = WHITE;
-	uba_title.elemnt.text.color_text = BLACK;
-	uba_title.elemnt.text.size = 2;
-	UBA_GFX_draw_text_center(&uba_title);
-	snprintf(uba_title.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, "Ver:%02u.%02u.%02u.%02u", UBA_6_device_g.info.firmware.major,
-			UBA_6_device_g.info.firmware.minor,
-			UBA_6_device_g.info.firmware.patch, UBA_6_device_g.info.firmware.build);
-	uba_title.id = UBA_GFX_ELEMNET_TEXT;
-	uba_title.effect = UBA_GFX_EFFECT_SOLID;
-	uba_title.pos.x = LCD->width / 2;
-	uba_title.pos.y = (LCD->height / 4) * 3;
-	uba_title.elemnt.text.color_bg = WHITE;
-	uba_title.elemnt.text.color_text = BLACK;
-	uba_title.elemnt.text.size = 2;
-	UBA_GFX_draw_text_center(&uba_title);
+}
+
+static void LCD_init_enter(UBA_LCD *LCD) {
+	//UBA_GFX uba_title = { 0 };
+	ST7789_Init();
+
+	ST7789_Set_Rotation(LCD->orientation);
+	LCD_update_state(LCD);
+
+	//main freme
+	LCD_init_main_frame(LCD);
+	LCD_draw_main_frame(LCD);
+	
+	//screens
+	LCD_init_screens(LCD);
 }
 
 static void LCD_init(UBA_LCD *LCD) {
@@ -209,9 +283,6 @@ static void LCD_init_exit(UBA_LCD *LCD) {
 
 static void LCD_side_by_side_enter(UBA_LCD *LCD) {
 	LCD_update_state(LCD);
-	LCD->screen_ch_A.state.next = UBA_LCD_SCREEN_DISPLAY_INIT;
-	LCD->screen_ch_B.state.next = UBA_LCD_SCREEN_DISPLAY_INIT;
-
 }
 
 static void LCD_side_by_side(UBA_LCD *LCD) {
@@ -229,7 +300,8 @@ static void LCD_side_by_side_exit(UBA_LCD *LCD) {
 
 static void LCD_full_screen_enter(UBA_LCD *LCD) {
 	LCD_update_state(LCD);
-	LCD->screen_ch_AB.state.next = UBA_LCD_SCREEN_DISPLAY_INIT;
+//Mshe
+//	LCD->screen_ch_AB.state.next = UBA_LCD_SCREEN_DISPLAY_INIT;
 }
 static void LCD_full_screen(UBA_LCD *LCD) {
 	UBA_LCD_screen_run(&LCD->screen_ch_AB);

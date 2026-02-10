@@ -596,7 +596,10 @@ void ST7789_Draw_Image(const char *Image_Array, uint8_t Orientation)
 		ST7789_Set_Rotation(SCREEN_HORIZONTAL_1);
 		ST7789_Set_Address(0, 0, ST7789_SCREEN_WIDTH, ST7789_SCREEN_HEIGHT);
 
-		HAL_GPIO_WritePin(LCD_DC_PORT, LCD_DC_PIN, GPIO_PIN_SET);
+		//old version
+		//HAL_GPIO_WritePin(LCD_DC_PORT, LCD_DC_PIN, GPIO_PIN_SET);
+ 		HAL_GPIO_WritePin(/*LCD_CS_PORT*/LCD_DC_PORT, /*LCD_CS_PIN*/DISP_CS_Pin, GPIO_PIN_RESET); // CS LOW
+    	DC_DATA();
 
 		unsigned char Temp_small_buffer[BURST_MAX_SIZE];
 		uint32_t counter = 0;
@@ -606,9 +609,23 @@ void ST7789_Draw_Image(const char *Image_Array, uint8_t Orientation)
 					{
 				Temp_small_buffer[k] = Image_Array[counter + k];
 			}
-			HAL_SPI_Transmit(&hspi2, (unsigned char*) Temp_small_buffer, BURST_MAX_SIZE, 10);
+
+        	// Full-duplex transmit (MISO read is optional)
+    		uint8_t rx_dummy[BURST_MAX_SIZE];
+        	HAL_SPI_TransmitReceive(&hspi2, (unsigned char*) Temp_small_buffer, rx_dummy, BURST_MAX_SIZE, HAL_MAX_DELAY);
+    
+        	// Optional: check if MISO is floating (all 0xFF)
+        	bool maybe_disconnected = true;
+        	for (int j = 0; j < BURST_MAX_SIZE; j++)
+        	{
+    			UART_LOG_DEBUG("c", "<%x>:<0x%x>", Temp_small_buffer[i], rx_dummy[j]);
+	        	if (rx_dummy[j] != 0xFF)
+                	maybe_disconnected = false;
+        	}
+			
 			counter += BURST_MAX_SIZE;
 		}
+ 		HAL_GPIO_WritePin(/*LCD_CS_PORT*/LCD_DC_PORT, /*LCD_CS_PIN*/DISP_CS_Pin, GPIO_PIN_SET); // CS HIGH    
 	}
 	else if (Orientation == SCREEN_HORIZONTAL_2)
 	{

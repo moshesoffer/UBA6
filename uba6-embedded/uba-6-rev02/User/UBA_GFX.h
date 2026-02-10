@@ -157,7 +157,7 @@ typedef struct UBA_GFX {
 	UBA_GFX_STATE_INVISIBLE,	\
 	UBA_GFX_EFFECT_INVISIBLE,	\
 	{0,0},						\
-	.elemnt ={.button ={"blabla",1,UBA_GFX_COLOR_BLACK,UBA_GFX_COLOR_WHITE}} \
+	.elemnt ={.button ={"",1,UBA_GFX_COLOR_BLACK,UBA_GFX_COLOR_WHITE}} \
 }
 
 #define UBA_GFX_FRAME_DEFALT 	\
@@ -175,8 +175,9 @@ typedef struct UBA_GFX {
 	UBA_GFX_STATE_INVISIBLE,	\
 	UBA_GFX_EFFECT_INVISIBLE,	\
 	{0,0},						\
-	.elemnt ={.text  ={"BLABLA",1,UBA_GFX_COLOR_BLACK,UBA_GFX_COLOR_WHITE}} \
+	.elemnt ={.text  ={"",1,UBA_GFX_COLOR_BLACK,UBA_GFX_COLOR_WHITE}} \
 }
+
 #define UBA_GFX_STATUS_DEFALT 	\
 {								\
 	UBA_GFX_ELEMNET_STATUS,		\

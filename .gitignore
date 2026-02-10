@@ -39,6 +39,8 @@ CMakeCache.txt
 *.suo
 *.ipch
 *.log
-
+*.ibt
+*.ibd
+*.pid
 
 

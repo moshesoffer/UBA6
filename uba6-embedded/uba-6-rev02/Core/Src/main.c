@@ -143,6 +143,7 @@ int main(void)
 	file_logger_print();
 	UBA_UART_comm_init();
 	PLI74HC166_init(&buttons_driver_g);
+  LCD_start();
   /* USER CODE END 2 */
 
   /* Infinite loop */

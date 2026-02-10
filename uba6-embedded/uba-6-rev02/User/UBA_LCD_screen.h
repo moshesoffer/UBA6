@@ -44,6 +44,19 @@ typedef enum UBA_LCD_SCREEN_DISPLAY_STATE {
 
 } UBA_LCD_SCREEN_DISPLAY_STATE;
 
+typedef struct UBA_LCD_channel_shadow
+{
+	float volt_vlaue;
+	float current_vlaue;
+	float capacity_vlaue;
+	float temp_value;
+
+	bool volt_vlaue_changed;
+	bool current_vlaue_changed;
+	bool capacity_vlaue_changed;
+	bool temp_value_changed;
+} UBA_LCD_channel_shadow;
+
 typedef struct UBA_LCD_channel {
 	UBA_GFX ch_name;
 	UBA_GFX status;
@@ -52,6 +65,7 @@ typedef struct UBA_LCD_channel {
 	UBA_GFX capacity;
 	UBA_GFX temp;
 
+	UBA_LCD_channel_shadow shadow;
 } UBA_LCD_channel;
 
 
@@ -124,8 +138,8 @@ typedef struct UBA_LCD_page_test_list_select {
 	UBA_GFX title;
 	UBA_GFX test_name_list[TEST_SELECT_LIST_SIZE];
 	UBA_GFX bnt_cancel;
-	uint8_t select_index;
-	uint8_t list_select_index;
+	int8_t select_index;
+	int8_t list_select_index;
 
 } UBA_LCD_page_test_list_select;
 
@@ -176,18 +190,33 @@ typedef struct UBA_LCD_page_test_info {
 }
 // @formatter:on
 
+typedef struct UBA_LCD_screen_shadow {
+	char test_name[UBA_BPT_NAME_MAX_SIZE];
+	UBA_BPT_STATE current_state;
+	UBA_PROTO_UBA6_ERROR error;
+	struct {
+		UBA_GFX_EFFECT effect;
+		uint16_t color_text;
+		uint16_t color_bg;
+		char text[11];
+	} bnt_back_stop;
+	struct {
+		UBA_GFX_EFFECT effect;
+		uint16_t color_text;
+		uint16_t color_bg;
+		char text[11];
+	} bnt_pause_start;
+} UBA_LCD_screen_shadow;
+
 typedef struct UBA_LCD_screen {
+	void *LCD_handler;
 	struct {
 		UBA_LCD_SCREEN_DISPLAY_STATE pre;
 		UBA_LCD_SCREEN_DISPLAY_STATE current;
 		UBA_LCD_SCREEN_DISPLAY_STATE next;
 	} state;
 	uint32_t start_tick;
-	uint16_t start_x;
-	uint16_t start_y;
-	uint16_t width;
-	uint16_t height;
-	union {
+	struct {
 		UBA_LCD_page_channel channel;
 		UBA_LCD_page_BPT screen_bpt;
 		UBA_LCD_page_test_list_select test_list;
@@ -230,6 +259,58 @@ typedef struct UBA_LCD_screen {
 	UBA_CHANNLE_ID_NONE,			\
 	0,								\
 }
+
+typedef struct UBA_LCD_STATIC_PAGE {
+	struct {
+		UBA_GFX_EFFECT effect;
+		uint16_t color_fill;
+	} frame;
+	struct {
+		UBA_GFX_EFFECT effect;
+		uint8_t text_size;
+		uint16_t text_color_bg;
+		uint16_t text_color_text;
+	} ch_name;
+	struct {
+		UBA_GFX_EFFECT effect;
+	} status;
+	struct {
+		UBA_GFX_EFFECT effect;
+		uint8_t text_size;
+		uint16_t text_color_bg;
+		uint16_t text_color_text;
+	} volt;
+	struct {
+		UBA_GFX_EFFECT effect;
+		uint8_t text_size;
+		uint16_t text_color_bg;
+		uint16_t text_color_text;
+	} current;
+	struct {
+		UBA_GFX_EFFECT effect;
+		uint8_t text_size;
+		uint16_t text_color_bg;
+		uint16_t text_color_text;
+	} capacity;
+	struct {
+		UBA_GFX_EFFECT effect;
+		uint8_t text_size;
+		uint16_t text_color_bg;
+		uint16_t text_color_text;
+	} temp;
+	struct {
+		UBA_GFX_EFFECT effect;
+		uint8_t button_size;
+		uint16_t button_color_bg;
+		uint16_t button_color_text;
+		char button_text[10];
+	} bnt_select;
+	struct {
+		UBA_GFX_EFFECT effect;
+		uint8_t text_size;
+	} EWI_msg;
+} UBA_LCD_STATIC_PAGE;
+
 // @formatter:on
 void UBA_LCD_screen_run(UBA_LCD_screen *screen);
 

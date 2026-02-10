@@ -234,7 +234,7 @@ int RS485_ConfigComport(int comport_number, int read_timeout) {
 
     if (!SetCommTimeouts(Cport[comport_number], &timeouts)) {
         printf("Error setting timeouts (Error %lu)\n", GetLastError());
-        return INVALID_HANDLE_VALUE;
+        return -1/*INVALID_HANDLE_VALUE*/;
     }
     return 0;
 }

@@ -317,7 +317,7 @@ int main(int argc, char *argv[])
     strcpy(bin_name, argv[2]);
 
     printf("Opening COM%d...\n", comport+1 );
-    if (RS485_OpenComport(comport, bdrate, mode, 0) == INVALID_HANDLE_VALUE)
+    if (RS485_OpenComport(comport, bdrate, mode, 0) != 0)//INVALID_HANDLE_VALUE)
     {
       printf("Can not open comport\n");
       ex = -1;
@@ -404,7 +404,7 @@ int main(int argc, char *argv[])
       }
 
       bytes_sent += size;
-    } while (bytes_sent < app_size);
+    } while (bytes_sent < (uint32_t)app_size);
 
     if( ex < 0 )
     {

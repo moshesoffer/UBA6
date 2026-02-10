@@ -18,6 +18,7 @@
 #include "UBA_util.h"
 #include "UBA_PROTO_CHANNEL.pb.h"
 #include "UBA_PROTO_BPT.pb.h"
+#include "UBA_GFX.h"
 
 #define UBA_CHANNEL_MAX_LINES (2)
 
@@ -42,7 +43,14 @@ typedef enum UBA_CHANNEL_STATE {
 	UBA_CHANNEL_STATE_INVALID,
 } UBA_CHANNEL_STATE;
 
-typedef struct UBA_channle {
+typedef struct UBA_channel_shadow {
+	bool ch_name_changed;
+	UBA_CHANNEL_STATE state;
+	UBA_PROTO_UBA6_ERROR error;
+	char test_name[32];
+} UBA_channel_shadow;
+
+typedef struct UBA_channel {
 	UBA_CHANNLE_ID id;
 	UBA_PROTO_UBA6_ERROR error;
 	uint8_t name[11];
@@ -61,6 +69,8 @@ typedef struct UBA_channle {
 		uint32_t pid_tick;
 	}target;
 	float capacity;
+
+	UBA_channel_shadow shadow;
 } UBA_channel;
 
 uint32_t UBA_channel_get_voltage(UBA_channel *ch);
