@@ -26,8 +26,8 @@ CMakeCache.txt
 # ===== IDE junk =====
 .vs/
 .settings/
-.project
-.cproject
+# .project
+# .cproject
 
 # ===== Logs / temp =====
 *.log
