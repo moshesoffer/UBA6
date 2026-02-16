@@ -1,29 +1,28 @@
-import { useState, } from 'react';
+import {useState,} from 'react';
 
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
-import FormControl from '@mui/material/FormControl';
-import FormHelperText from '@mui/material/FormHelperText';
-import InputLabel from '@mui/material/InputLabel';
-import MenuItem from '@mui/material/MenuItem';
-import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import FormHelperText from '@mui/material/FormHelperText';
+import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { createUbaDevice, queryUbaDevice, updateUbaDevice, } from 'src/action-creators/UbaDevices';
-import { setModal } from 'src/actions/Auth';
-import { updateCurrentUba, } from 'src/actions/UbaDevices';
+
+import {useAuth, useAuthDispatch,} from 'src/store/AuthProvider';
+import {useUbaDevices, useUbaDevicesDispatch} from 'src/store/UbaDevicesProvider';
+import {useSettings,} from 'src/store/SettingsProvider';
 import withModalView from 'src/components/withModalView';
-import { addEditSettings, ubaChannel as channelPossibleValues, } from 'src/constants/unsystematic';
-import { getText, } from 'src/services/string-definitions';
-import { useAuth, useAuthDispatch, } from 'src/store/AuthProvider';
-import { useSettings, } from 'src/store/SettingsProvider';
-import { useUbaDevices, useUbaDevicesDispatch } from 'src/store/UbaDevicesProvider';
-import { checkString, } from 'src/utils/checker';
-import { getInputValue, handleInputChange, } from 'src/utils/helper';
-import { validateString, } from 'src/utils/validators';
-import Tooltip from '@mui/material/Tooltip';
+import {getText,} from 'src/services/string-definitions';
+import {validateString,} from 'src/utils/validators';
+import {checkString,} from 'src/utils/checker';
+import {getInputValue, handleInputChange,} from 'src/utils/helper';
+import {createUbaDevice, updateUbaDevice,} from 'src/action-creators/UbaDevices';
+import {setModal,} from 'src/actions/Auth';
+import {updateCurrentUba,} from 'src/actions/UbaDevices';
+import {addEditSettings, ubaChannel as channelPossibleValues,} from 'src/constants/unsystematic';
 
 function AddEditUbaDevice() {
 
@@ -33,11 +32,7 @@ function AddEditUbaDevice() {
 	const [machineError, setMachineError] = useState('');
 	const [portError, setPortError] = useState('');
 	const [addressError, setAddressError] = useState('');
-	
 	const [testRunStage, setTestRunStage] = useState(0);
-	const [ubaDeviceQueryAnswer, setUbaDeviceQueryAnswer] = useState({});
-	const [queryError, setQueryError] = useState('');
-	const [ubaName, setUbaName] = useState('');
 
 	const {openedModalType,} = useAuth();
 	const {currentUba,} = useUbaDevices();
@@ -83,63 +78,61 @@ function AddEditUbaDevice() {
 		handleInputChange(ubaDevicesDispatch, updateCurrentUba, dataKey, dataValue);
 	}
 
-	const handleTestClick = async () => {
-		setTestRunStage(1);
-		setQueryError('');
+	const handleTestClick = () => {
+		const isSerialValid = validateValue('ubaSN', currentUba.ubaSN);
+		const isNameValid = validateValue('name', currentUba.name);
+		const isUbaChannelValid = validateValue('ubaChannel', currentUba.ubaChannel);
 		const isMachineValid = validateValue('machineMac', currentUba.machineMac);
 		const isPortValid = validateValue('comPort', currentUba.comPort);
 		const isAddressValid = validateValue('address', currentUba.address);
-		if (!isMachineValid || !isPortValid || !isAddressValid) {
-			setTestRunStage(0);
+
+		if ((!isSerialValid && openedModalType === addEditSettings.ADD_UBA_DEVICE) ||
+			!isMachineValid || !isPortValid || !isAddressValid) {
 			return;
 		}
 
-		const queryObj = {machineMac: currentUba.machineMac, comPort: currentUba.comPort, address: currentUba.address,};
-		if( openedModalType === addEditSettings.EDIT_UBA_DEVICE) {
-			queryObj.ubaSN = currentUba.ubaSN;
-			queryObj.ubaChannel = currentUba.ubaChannel;
-		}
-		const res = await queryUbaDevice(false, queryObj);
-		if(res?.error) {
-			//authDispatch(setNotification({message: res.error,}));
-			setQueryError(res.error);
-			setUbaDeviceQueryAnswer({});
-			setTestRunStage(0);
-		} else {
-			setQueryError('');
-			setUbaDeviceQueryAnswer(res);
-			setTestRunStage(2);
-			setUbaName(res?.name || '');
-		}
-		
+		setTestRunStage(1);
+		// TODO: Implement test run, instead of setTimeout mock.
+		setTimeout(() => setTestRunStage(2), 2000);
 	}
 
 	const handleSubmitClick = () => {
-		const { action, actionResult, ...ubaToAddEdit} = { ...ubaDeviceQueryAnswer}
-		ubaToAddEdit.name = ubaName;
 		if (openedModalType === addEditSettings.EDIT_UBA_DEVICE) {
-			updateUbaDevice(authDispatch, ubaDevicesDispatch, ubaToAddEdit);
+			updateUbaDevice(authDispatch, ubaDevicesDispatch, currentUba);
 		} else {
-			createUbaDevice(authDispatch, ubaDevicesDispatch, ubaToAddEdit);
+			createUbaDevice(authDispatch, ubaDevicesDispatch, currentUba);
+			
 		}
 		authDispatch(setModal(''));
 	}
 
 	return (
-		<Box sx={{background: theme => theme.palette.grey[200], borderRadius: 2, width: '20vw',position: "relative",}}>
+		<Box sx={{background: theme => theme.palette.grey[200], borderRadius: 2, width: '20vw',}}>
 			<Typography level="title-lg" sx={{px: 3.5, py: 2,}}>
 				{title}
 			</Typography>
 
 			<Stack alignItems="center" spacing={2} sx={{background: theme => theme.palette.grey[0], p: 2,}}>
+				{(openedModalType === addEditSettings.ADD_UBA_DEVICE) &&
+					<TextField
+						fullWidth
+						size="small"
+						error={validateString(serialError)}
+						label={getText('common.UBA_S_N')}
+						value={getInputValue(currentUba, 'ubaSN')}
+						onChange={event => handleChange('ubaSN', event.target.value)}
+						helperText={serialError}
+					/>
+				}
+
 				<TextField
 					fullWidth
-					disabled={true}
 					size="small"
-					error={validateString(serialError)}
-					label={getText('common.UBA_S_N')}
-					value={ubaDeviceQueryAnswer.ubaSN || getInputValue(currentUba, 'ubaSN')}
-					helperText={serialError}
+					error={validateString(nameError)}
+					label={getText('common.NAME')}
+					value={getInputValue(currentUba, 'name')}
+					onChange={event => handleChange('name', event.target.value)}
+					helperText={nameError}
 				/>
 
 				<FormControl fullWidth size="small" error={validateString(ubaChannelError)}>
@@ -148,9 +141,10 @@ function AddEditUbaDevice() {
 					</InputLabel>
 
 					<Select
-						disabled={true}
+						disabled={openedModalType === addEditSettings.EDIT_UBA_DEVICE}
 						label={getText('common.CHANNEL')}
-						value={ubaDeviceQueryAnswer.ubaChannel || getInputValue(currentUba, 'ubaChannel')}
+						value={getInputValue(currentUba, 'ubaChannel')}
+						onChange={event => handleChange('ubaChannel', event.target.value)}
 						MenuProps={{
 							PaperProps: {
 								sx: {maxHeight: 200,}
@@ -169,19 +163,6 @@ function AddEditUbaDevice() {
 					</FormHelperText>
 				</FormControl>
 
-				<Tooltip title={testRunStage === 1 || !ubaDeviceQueryAnswer.ubaSN || !ubaDeviceQueryAnswer.name || !ubaDeviceQueryAnswer.ubaChannel ? "This value can be edited only after a successful test" : ""} arrow>
-					<TextField
-						fullWidth
-						size="small"
-						disabled={testRunStage === 1 || !ubaDeviceQueryAnswer.ubaSN || !ubaDeviceQueryAnswer.name || !ubaDeviceQueryAnswer.ubaChannel}
-						error={validateString(nameError)}
-						label={getText('common.NAME')}
-						value={ubaName || getInputValue(currentUba, 'name')}
-						onChange={event => { setUbaName(event.target.value); setNameError(''); } }
-						helperText={nameError}
-					/>
-				</Tooltip>
-				
 				<FormControl fullWidth size="small" error={validateString(machineError)}>
 					<InputLabel>
 						{getText('common.LAB')}
@@ -190,8 +171,7 @@ function AddEditUbaDevice() {
 					<Select
 						label={getText('common.LAB')}
 						value={getInputValue(currentUba, 'machineMac')}
-						onChange={event => {setTestRunStage(0); setQueryError(''); handleChange('machineMac', event.target.value) } }
-						disabled={testRunStage === 1}
+						onChange={event => handleChange('machineMac', event.target.value)}
 						MenuProps={{
 							PaperProps: {
 								sx: {maxHeight: 200,}
@@ -213,36 +193,30 @@ function AddEditUbaDevice() {
 				<TextField
 					fullWidth
 					size="small"
-					disabled={testRunStage === 1}
 					error={validateString(portError)}
 					label={getText('settingsPage.uba.PORT')}
 					value={getInputValue(currentUba, 'comPort')}
-					onChange={event => {setTestRunStage(0); setQueryError(''); handleChange('comPort', event.target.value) } }
+					onChange={event => handleChange('comPort', event.target.value)}
 					helperText={portError}
 				/>
 
 				<TextField
 					fullWidth
 					size="small"
-					disabled={testRunStage === 1}
 					error={validateString(addressError)}
 					label={getText('settingsPage.uba.ADDRESS')}
 					value={getInputValue(currentUba, 'address')}
-					onChange={event => { setTestRunStage(0); setQueryError(''); handleChange('address', event.target.value) } }
+					onChange={event => handleChange('address', event.target.value)}
 					helperText={addressError}
 				/>
 
-				{ queryError !== '' &&
-					<Typography
-						fullWidth
-						size="small"
-						color="error"
-						sx={{paddingLeft: 1,paddingRight: 1,}}
-					>
-						{queryError === 'Timeout Reached' ? getText('settingsPage.uba.UBA_DEVICE_NO_RESPONSE') : queryError}
-					</Typography>
-				}
+				<Typography align="center" sx={{display: (testRunStage === 1) ? 'block' : 'none',}}>
+					{getText('settingsPage.TEST_RUNNING')}
+				</Typography>
 
+				<Typography align="center" sx={{display: (testRunStage === 2) ? 'block' : 'none',}}>
+					{getText('settingsPage.TEST_COMPLETED')}
+				</Typography>
 			</Stack>
 
 			<Stack direction="row" justifyContent="space-between" sx={{
@@ -251,49 +225,14 @@ function AddEditUbaDevice() {
 				background: theme => theme.palette.grey[0],
 				borderRadius: 2,
 			}}>
-				<Button variant="contained" disabled={testRunStage !== 0} onClick={handleTestClick} sx={{width: 100,height: 60,}}>
-					<Typography>{ getText('common.TEST') }</Typography>
-					{
-						testRunStage === 1 &&
-						<Box sx={{ paddingLeft: '10px', marginTop: '5px' }}>
-							<CircularProgress
-								sx={{
-									color: "blue",
-									animationDuration: "5s", 
-									marginTop: 0.5,
-									
-								}}
-								size={25}
-							/>
-						</Box>
-					}
-					
+				<Button variant="contained" onClick={handleTestClick} sx={{width: 100,}}>
+					{getText('common.TEST')}
 				</Button>
 
 				<Button variant="contained" disabled={(testRunStage !== 2)} onClick={handleSubmitClick} sx={{width: 100,}}>
 					{buttonText}
 				</Button>
 			</Stack>
-
-			{testRunStage === 1 && (
-				<Box
-					sx={{
-						position: "absolute",
-						inset: 0, // top:0, right:0, bottom:0, left:0
-						display: "flex",
-						justifyContent: "center",
-						alignItems: "center",
-						backgroundColor: "rgba(255,255,255,0.6)", // dim background
-						borderRadius: 2,
-						zIndex: 10,
-					}}
-				>
-					<CircularProgress
-						sx={{ color: "blue", animationDuration: "5s" }}
-						size={50}
-					/>
-				</Box>
-			)}
 		</Box>
 	);
 }

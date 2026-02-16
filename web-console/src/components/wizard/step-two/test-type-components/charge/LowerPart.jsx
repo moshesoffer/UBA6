@@ -39,6 +39,7 @@ export default function LowerPart(props) {
 		maxTempDefault,
 		isChargeLimit,
 		chargeLimit,
+		isIgnoreLimits,
 		isCutOffCurrent,
 		cutOffCurrent,
 	} = props;
@@ -305,7 +306,7 @@ export default function LowerPart(props) {
 					</FormHelperText>
 				</FormControl>
 			</Grid>
-			
+
 			<Grid item lg={8} >
 				<Stack direction="row" alignItems="center" spacing={1}>
 					<FormControlLabel
@@ -320,6 +321,7 @@ export default function LowerPart(props) {
 					/>
 				</Stack>
 			</Grid>
+
 		</Grid>
 	);
 }

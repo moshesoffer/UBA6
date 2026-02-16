@@ -289,7 +289,7 @@ describe('Edge Cases and Error Scenarios', () => {
                     dischargeLimit: `${500 + i}:absoluteMah`,
                     chargeCurrent: `${100 + i}:absoluteMa`,
                     dischargeCurrent: `${50 + i}:absoluteMa`,
-                    isIgnoreLimit: false,
+                    isIgnoreLimits: false,
                     cRate: 0.5 + (i * 0.01),
                     isCutOffCurrent: true,
                     cutOffCurrent: `${10 + i}:absoluteMa`,
