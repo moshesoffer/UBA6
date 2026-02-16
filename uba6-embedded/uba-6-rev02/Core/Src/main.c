@@ -149,17 +149,34 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-	while (1) {
-		UBA_6_run(&UBA_6_device_g);
-		UBA_line_run(&UBA_LINE_A);
-		UBA_line_run(&UBA_LINE_B);
-		LCD_run(&UBA_LCD_g);
-		UBA_UART_comm_run();
-		UBA_buzzer_run(&buzzer_g);
-    /* USER CODE END WHILE */
+ //refresh LCD (periodically)
+#define LCD_REFRESH
 
-    /* USER CODE BEGIN 3 */
-	}
+#ifdef LCD_REFRESH
+#define LCD_REFRESH_DELAY  (30 *60 * 1000) /*30 min*/
+uint32_t lcd_refresh_last_time = 0;
+#endif/*LCD_REFRESH*/
+
+	while (1) {
+		  UBA_6_run(&UBA_6_device_g);
+		  UBA_line_run(&UBA_LINE_A);
+		  UBA_line_run(&UBA_LINE_B);
+		  LCD_run(&UBA_LCD_g);
+		  UBA_UART_comm_run();
+		  UBA_buzzer_run(&buzzer_g);
+      /* USER CODE END WHILE */
+
+      /* USER CODE BEGIN 3 */
+			//refresh LCD - upon 3 consecutive button press			
+#ifdef LCD_REFRESH
+			uint32_t sample_time = HAL_GetTick();
+			if ((sample_time - lcd_refresh_last_time) > LCD_REFRESH_DELAY)
+			{
+					LCD_refresh(&UBA_LCD_g);
+          lcd_refresh_last_time = sample_time;
+			}
+#endif/*LCD_REFRESH*/
+    }
   /* USER CODE END 3 */
 }
 
