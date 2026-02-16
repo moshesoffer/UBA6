@@ -124,6 +124,7 @@ export default {
 			CUT_OFF_VOLTAGE_BATTERY: 'Cut-off Voltage - Battery',
 			CHARGE_LIMIT: 'Charge Limit',
 			DISCHARGE_LIMIT: 'Discharge Limit',
+			IGNORE_LIMITS: 'Ignore Limits',
 			WAIT_TEMPERATURE: 'Wait for temperature',
 			GO_TO_STEP: 'Go to Step',
 			REPEAT_STEP: 'Repeat this Step',

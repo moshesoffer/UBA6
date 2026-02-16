@@ -80,6 +80,7 @@ const setPlan = (plan, testType) => {
 			dischargeLimit: `:${dischargeLimitUnit}`,
 			chargeCurrent: `:${chargeCurrentUnit}`,
 			dischargeCurrent: `:${dischargeCurrentUnit}`,
+			isIgnoreLimits: false,
 			cRate: null,
 			isCutOffCurrent: false,
 			cutOffCurrent: `:${cutOffCurrentUnit}`,

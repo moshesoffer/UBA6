@@ -111,6 +111,8 @@ const testRoutineModel = {
         'dischargeLimit',
         'chargeCurrent',
         'dischargeCurrent',
+        'isIgnoreLimits',
+        'ignoreLimits',
         'cRate',
         'isCutOffCurrent',
         'cutOffCurrent',

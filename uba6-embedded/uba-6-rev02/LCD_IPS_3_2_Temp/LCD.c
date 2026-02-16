@@ -289,7 +289,7 @@ static void LCD_side_by_side(UBA_LCD *LCD) {
 	UBA_LCD_screen_run(&LCD->screen_ch_A);
 	UBA_LCD_screen_run(&LCD->screen_ch_B);
 	if ((LCD->screen_ch_A.state.current == UBA_LCD_SCREEN_DISPLAY_OFF) || (LCD->screen_ch_B.state.current == UBA_LCD_SCREEN_DISPLAY_OFF)) {
-		LCD->state.next = UBA_LCD_STATE_FULL_SCREEN;
+//Moshe	- no rason to change state;	LCD->state.next = UBA_LCD_STATE_FULL_SCREEN;
 	}
 }
 

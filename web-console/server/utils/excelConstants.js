@@ -13,6 +13,7 @@ const generalConsts = {
 	maxTime: 'Max Time',
 	cutOffCurrent: 'Cut-off Current',
 	chargeLimit: 'Charge Limit',
+	ignoreLimits: 'Ignore Limits',
 	//charge Results
 	chargeCapacity: 'Charge Capacity',
 	chargeEnergy: 'Charge Energy',
