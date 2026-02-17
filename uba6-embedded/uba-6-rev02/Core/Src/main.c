@@ -150,7 +150,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 
  //refresh LCD (periodically)
-#define LCD_REFRESH
+#undef LCD_REFRESH
 
 #ifdef LCD_REFRESH
 #define LCD_REFRESH_DELAY  (30 *60 * 1000) /*30 min*/

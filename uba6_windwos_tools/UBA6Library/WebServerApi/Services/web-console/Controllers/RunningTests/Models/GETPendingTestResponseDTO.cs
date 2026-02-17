@@ -122,6 +122,8 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
         [JsonPropertyName("dischargeCurrent")]        
         public string? DischargeCurrent { get; set; }
 
+        [JsonPropertyName("isIgnoreLimits")]        
+        public bool IsIgnoreLimits { get; set; }
 
         [JsonIgnore]
         public double? DischargeValue => ParseValue();
@@ -288,6 +290,9 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
             }
             if (ps.IsChargeLimit) {
                 LimitCapacity = ps.ChargeLimit?? LimitCapacity;
+            }
+            if (ps.IsIgnoreLimits) {
+                CutoffCurrent = int.MaxValue;/*unlimited*/
             }
             UBA_PROTO_BPT.charge_stop_condition msg = ProtoHelper.CreateChargeStopCondtion(
                 maxTemp:maxTemp

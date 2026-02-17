@@ -17,6 +17,7 @@
         public string dischargeLimit { get; set; }
         public string chargeCurrent { get; set; }
         public string dischargeCurrent { get; set; }
+        public bool isIgnoreLimits { get; set; }
         public bool isCutOffCurrent { get; set; }
         public string cutOffCurrent { get; set; }
         public bool isCutOffVoltage { get; set; }
