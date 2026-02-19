@@ -1,9 +1,10 @@
 const logger = require('../utils/logger');
 const {	createTestRoutine, updateTestRoutine, getTestRoutines, deleteTestRoutine} = require('../services/testRoutineService');
+const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 
 exports.getTestRoutines = async (req, res) => {
 	try {
-		const result = await getTestRoutines();
+		const result = await withTimeout(getTestRoutines(), AWAIT_TIMEOUT);
 		res.json(result);
 	} catch (error) {
 		logger.error('getTestRoutines', error);
@@ -13,7 +14,7 @@ exports.getTestRoutines = async (req, res) => {
 
 exports.createTestRoutine = async (req, res) => {
 	try {
-		await createTestRoutine(req.body);
+		await withTimeout(createTestRoutine(req.body), AWAIT_TIMEOUT);
 		res.status(201).json( { success: true } );
 	} catch (error) {
 		logger.error('createTestRoutine', error);
@@ -23,7 +24,7 @@ exports.createTestRoutine = async (req, res) => {
 
 exports.updateTestRoutine = async (req, res) => {
 	try {
-		await updateTestRoutine(req.params?.id, req.body);
+		await withTimeout(updateTestRoutine(req.params?.id, req.body), AWAIT_TIMEOUT);
 		res.end();
 	} catch (error) {
 		logger.error('updateTestRoutine', error);
@@ -33,7 +34,7 @@ exports.updateTestRoutine = async (req, res) => {
 
 exports.deleteTestRoutine = async (req, res) => {
 	try {
-		await deleteTestRoutine(req.params?.id);
+		await withTimeout(deleteTestRoutine(req.params?.id), AWAIT_TIMEOUT);
 		res.status(204).end();
 	} catch (error) {
 		logger.error('deleteTestRoutine', error);

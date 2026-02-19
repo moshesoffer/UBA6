@@ -8,6 +8,7 @@ const {
 const {getRunningAmount, getAllLatestInstantTestResults} = require('../services/runningTestService');
 const { ubaChannels,} = require('../utils/constants');
 const { getLastInstantTestResult, getConnectedAmount } = require('../utils/testResultsHelper');
+const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 
 //fetching all data for main page
 exports.getUbaDevices = async (req, res) => {
@@ -15,7 +16,7 @@ exports.getUbaDevices = async (req, res) => {
 		logger.debug(`uba-devices going to call all promises`);
 		//TODO getRunningAmount might be not needed because calling getUbaDevices already returns running tests and then can see what is running
 		//TODO also getAllLatestInstantTestResults instead of calling db, go over all getUbaDevices running tests and get info from memory and if its not in memory then fetch from db and put in memory that way also next time it will be called we wont need to call db.
-		const [running, ubaDevices, latestInstantTestResults] = await Promise.all([getRunningAmount(), getUbaDevices(), getAllLatestInstantTestResults()]);
+		const [running, ubaDevices, latestInstantTestResults] = await withTimeout(Promise.all([getRunningAmount(), getUbaDevices(), getAllLatestInstantTestResults()]), AWAIT_TIMEOUT);
 		const ubaDevicesUniqueSN = [...new Map(ubaDevices.map(item => [item.ubaSN, item.ubaSN])).values()];
 		logger.debug(`uba-devices going to enrichUbaDevices`);
 		const ubaEnriched = enrichUbaDevices(ubaDevices, latestInstantTestResults);
@@ -91,7 +92,7 @@ exports.createUbaAndTest = async (req, res) => {
 			throw new Error(`Invalid value ${req.body.ubaChannel} of the ubaChannel parameter.`);
 		}
 		logger.info(`uba-devices going to createUbaDevice`);
-		const ids = await createUbaAndTest(req.body);
+		const ids = await withTimeout(createUbaAndTest(req.body), AWAIT_TIMEOUT);
 		logger.info(`uba-devices finished to createUbaAndTest`);
 		res.status(201).json(ids);
 	} catch (error) {
@@ -102,7 +103,7 @@ exports.createUbaAndTest = async (req, res) => {
 
 exports.updateUbaDevice = async (req, res) => {
 	try {
-		await updateUbaDevice(req.params?.serial, req.body);
+		await withTimeout(updateUbaDevice(req.params?.serial, req.body), AWAIT_TIMEOUT);
 		res.end();
 	} catch (error) {
 		logger.error('updateUbaDevice', error);
@@ -112,7 +113,7 @@ exports.updateUbaDevice = async (req, res) => {
 
 exports.deleteUbaDeviceAndTest = async (req, res) => {
 	try {
-		await deleteUbaDeviceAndTest(req.params?.serial);
+		await withTimeout(deleteUbaDeviceAndTest(req.params?.serial), AWAIT_TIMEOUT);
 		res.status(204).end();
 	} catch (error) {
 		logger.error('deleteUbaDeviceAndTest', error);

@@ -5,6 +5,7 @@ const { ubaDeviceModel, runningTestsModel, instantTestResultsModel } = require('
 const { UI_FLOWS, UBA_DEVICE_ACTIONS, PENDING_TASKS_TYPES, ACTION_RESULT } = require('../utils/ubaCommunicatorHelper');
 const { clearMemInServer } = require('./testHelper');
 const { APIS } = require('../utils/constants');
+const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 
 describe('Machine API Tests', () => {
     const machineToAdd = {
@@ -26,31 +27,31 @@ describe('Machine API Tests', () => {
     let connection;
 
     beforeAll(async () => {
-        await runSchema();
-        connection = await mysql.createConnection(global.__MYSQL_CONFIG__);
+        await withTimeout( runSchema(), AWAIT_TIMEOUT);
+        connection = await withTimeout( mysql.createConnection(global.__MYSQL_CONFIG__), AWAIT_TIMEOUT);
 
-        let response = await request(global.__SERVER__)
+        let response = await withTimeout( request(global.__SERVER__)
             .post(APIS.machinesApi)
-            .send(machineToAdd);
+            .send(machineToAdd), AWAIT_TIMEOUT);
         expect(response.status).toBe(201);
 
-        response = await request(global.__SERVER__)
+        response = await withTimeout( request(global.__SERVER__)
                     .post(APIS.ubaDevicesApi)
-                    .send(ubaDeviceToAdd1);
+                    .send(ubaDeviceToAdd1), AWAIT_TIMEOUT);
         expect(response.status).toBe(201);
 
         //just in order to release the ADD_TO_WATCH_LIST
         const pendingTask = { pendingUbaDevice: { ...ubaDeviceToAdd1, actionResult: ACTION_RESULT.SUCCESS.code, action: UBA_DEVICE_ACTIONS.ADD_TO_WATCH_LIST} };
-        await ubaDeviceExecutePendingTask(pendingTask);
+        await withTimeout( ubaDeviceExecutePendingTask(pendingTask), AWAIT_TIMEOUT);
     });
 
     afterAll(async () => {
         console.log('Machine Test suite finished');
-        if(connection) await connection.end();
-        await new Promise(resolve => setTimeout(resolve, 500));//waiting for winston server logs to finish
+        if(connection) await withTimeout( connection.end(), AWAIT_TIMEOUT);
+        await withTimeout( new Promise(resolve), 500);//waiting for winston server logs to finish
     });
     afterEach(async () => {
-        await clearMemInServer();
+        await withTimeout( clearMemInServer(), AWAIT_TIMEOUT);
     });
 
     test('pendingTasksExecuted fail flows', async () => {
@@ -69,16 +70,16 @@ describe('Machine API Tests', () => {
             .catch(err => {
                 queryUbaDeviceError = err;
             });
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await withTimeout( new Promise(resolve), 1500);
 
         const pendingTask = { pendingUbaDevice: { ...pendingUbaDevice, fwVersion: "7.5.3.0", hwVersion: "5.2",
                 ubaSN: pendingUbaDevice.ubaSN, ubaChannel: pendingUbaDevice.ubaChannel, name: pendingUbaDevice.name, action: UBA_DEVICE_ACTIONS.QUERY } };
-        await expectedFailedExecutePendingTask(pendingTask, 'Missing required parameters.');
+        await withTimeout( expectedFailedExecutePendingTask(pendingTask, 'Missing required parameters.'), AWAIT_TIMEOUT);
         pendingTask.pendingUbaDevice.actionResult = ACTION_RESULT.SUCCESS.code;
         pendingTask.pendingUbaDevice.ubaChannel = undefined;
-        await expectedFailedExecutePendingTask(pendingTask, 'Missing parameters for SUCCESS uba device operation.');
+        await withTimeout( expectedFailedExecutePendingTask(pendingTask, 'Missing parameters for SUCCESS uba device operation.'), AWAIT_TIMEOUT);
         pendingTask.pendingUbaDevice.ubaChannel = ubaDeviceToAdd1.ubaChannel;
-        await ubaDeviceExecutePendingTask(pendingTask);//in order to release the waiter for next tests
+        await withTimeout( ubaDeviceExecutePendingTask(pendingTask), AWAIT_TIMEOUT);//in order to release the waiter for next tests
 
     });
 
@@ -90,9 +91,9 @@ describe('Machine API Tests', () => {
             //ubaSN: "some new ubaSN",
         };
 
-        await expectedFailedQueryUbaDevice(pendingUbaDevice, "ubaDeviceByConstraint already exists.");
+        await withTimeout( expectedFailedQueryUbaDevice(pendingUbaDevice, "ubaDeviceByConstraint already exists."), AWAIT_TIMEOUT);
         pendingUbaDevice.ubaSN = "not exist ubaSN";
-        await expectedFailedQueryUbaDevice(pendingUbaDevice, "ubaSN does not exist.");
+        await withTimeout( expectedFailedQueryUbaDevice(pendingUbaDevice, "ubaSN does not exist."), AWAIT_TIMEOUT);
 
         const ubaDeviceToAdd = {
             ubaSN: "123211223",
@@ -104,14 +105,14 @@ describe('Machine API Tests', () => {
             fwVersion: "7.5.3.0",
             hwVersion: "5.2",
         };
-        await addUbaAndExecutePendingTask(ubaDeviceToAdd);
+        await withTimeout( addUbaAndExecutePendingTask(ubaDeviceToAdd), AWAIT_TIMEOUT);
         pendingUbaDevice.ubaSN = ubaDeviceToAdd.ubaSN;
-        await expectedFailedQueryUbaDevice(pendingUbaDevice, "ubaSN already exists.");
+        await withTimeout( expectedFailedQueryUbaDevice(pendingUbaDevice, "ubaSN already exists."), AWAIT_TIMEOUT);
 
         pendingUbaDevice.machineMac = "not exist machineMac";
-        await expectedFailedQueryUbaDevice(pendingUbaDevice, "Machine with mac");
+        await withTimeout( expectedFailedQueryUbaDevice(pendingUbaDevice, "Machine with mac"), AWAIT_TIMEOUT);
         delete pendingUbaDevice.address;
-        await expectedFailedQueryUbaDevice(pendingUbaDevice, "Missing parameters.");
+        await withTimeout( expectedFailedQueryUbaDevice(pendingUbaDevice, "Missing parameters."), AWAIT_TIMEOUT);
 
         //flow of uba service cant find the ubaDevice and message returned to end user through web ui
         const pendingUbaDevice3 = {//a new uba that isnt in the system yet
@@ -129,12 +130,12 @@ describe('Machine API Tests', () => {
             .catch(err => {
                 queryUbaDeviceError = err;
             });
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        await verifyAmountOfPendingTasks(machineToAdd.mac, 1);
+        await withTimeout( new Promise(resolve)), 1500);
+        await withTimeout( verifyAmountOfPendingTasks(machineToAdd.mac, 1), AWAIT_TIMEOUT);
 
         let pendingTask = { pendingUbaDevice: { ...pendingUbaDevice3, fwVersion: "7.5.3.0", hwVersion: "5.2", actionResult: ACTION_RESULT.UBA_DEVICE_NOT_FOUND.code, action: UBA_DEVICE_ACTIONS.QUERY} };
-        await ubaDeviceExecutePendingTask(pendingTask);
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await withTimeout( ubaDeviceExecutePendingTask(pendingTask), AWAIT_TIMEOUT);
+        await withTimeout( new Promise(resolve), 1500);
         expect(queryUbaDeviceRes).toBeDefined();
         expect(queryUbaDeviceRes.status).toBe(400);
         expect(queryUbaDeviceRes.body.error).toContain(ACTION_RESULT.UBA_DEVICE_NOT_FOUND.message);
@@ -147,7 +148,7 @@ describe('Machine API Tests', () => {
             address: "967896",
         };
         const pendingExecutedRequestInfo = { ubaSN: "14566", ubaChannel: "AB", actionResult: ACTION_RESULT.SUCCESS.code, action: "query" };
-        await addOrEditQueryUbaFlow(pendingUbaDevice, pendingExecutedRequestInfo);
+        await withTimeout( addOrEditQueryUbaFlow(pendingUbaDevice, pendingExecutedRequestInfo), AWAIT_TIMEOUT);
 
         //add the uba device to the system
         const ubaDeviceToAdd = {
@@ -160,10 +161,10 @@ describe('Machine API Tests', () => {
             fwVersion: "7.5.3.0",
             hwVersion: "5.2",
         };
-        await addUba(ubaDeviceToAdd);
+        await withTimeout( addUba(ubaDeviceToAdd), AWAIT_TIMEOUT);
 
         //check that the ubadevice will receive a pending task to add to watch list
-        const pendingTasksRes = await verifyAmountOfPendingTasks(machineToAdd.mac, 1);
+        const pendingTasksRes = await withTimeout( verifyAmountOfPendingTasks(machineToAdd.mac, 1), AWAIT_TIMEOUT);
         expect(pendingTasksRes.body.pendingConnectionUbaDevices[0].machineMac).toBe(ubaDeviceToAdd.machineMac);
         expect(pendingTasksRes.body.pendingConnectionUbaDevices[0].comPort).toBe(ubaDeviceToAdd.comPort);
         expect(pendingTasksRes.body.pendingConnectionUbaDevices[0].address).toBe(ubaDeviceToAdd.address);
@@ -172,9 +173,9 @@ describe('Machine API Tests', () => {
 
         //ubaDevice reports that it executed the pending task
         const pendingTask = { pendingUbaDevice: { ...ubaDeviceToAdd, actionResult: ACTION_RESULT.SUCCESS.code, action: UBA_DEVICE_ACTIONS.ADD_TO_WATCH_LIST} };
-        await ubaDeviceExecutePendingTask(pendingTask);
+        await withTimeout( ubaDeviceExecutePendingTask(pendingTask), AWAIT_TIMEOUT);
 
-        await verifyAmountOfPendingTasks(machineToAdd.mac, 0);
+        await withTimeout( verifyAmountOfPendingTasks(machineToAdd.mac, 0), AWAIT_TIMEOUT);
     });
 
     test('edit uba flow - queryUbaDevice & pendingTasksExecuted & ADD_TO_WATCH_LIST & REMOVE_FROM_WATCH_LIST full flow success', async () => {
@@ -185,12 +186,12 @@ describe('Machine API Tests', () => {
             ubaSN: ubaDeviceToAdd1.ubaSN,
         };
         const pendingExecutedRequestInfo = { ubaSN: ubaDeviceToAdd1.ubaSN, ubaChannel: ubaDeviceToAdd1.ubaChannel, actionResult: ACTION_RESULT.SUCCESS.code, action: "query" };
-        await addOrEditQueryUbaFlow(pendingUbaDevice, pendingExecutedRequestInfo);
+        await withTimeout( addOrEditQueryUbaFlow(pendingUbaDevice, pendingExecutedRequestInfo), AWAIT_TIMEOUT);
 
         //change only the name of the uba device
-        await editUba(ubaDeviceToAdd1.ubaSN, {name: 'changeOnlyName 123'});
+        await withTimeout( editUba(ubaDeviceToAdd1.ubaSN, {name: 'changeOnlyName 123'}), AWAIT_TIMEOUT);
 
-        let pendingTasksRes = await verifyAmountOfPendingTasks(machineToAdd.mac, 1);
+        let pendingTasksRes = await withTimeout( verifyAmountOfPendingTasks(machineToAdd.mac, 1), AWAIT_TIMEOUT);
         expect(pendingTasksRes.body.pendingConnectionUbaDevices[0].machineMac).toBe(ubaDeviceToAdd1.machineMac);
         expect(pendingTasksRes.body.pendingConnectionUbaDevices[0].comPort).toBe(ubaDeviceToAdd1.comPort);
         expect(pendingTasksRes.body.pendingConnectionUbaDevices[0].address).toBe(ubaDeviceToAdd1.address);
@@ -199,13 +200,13 @@ describe('Machine API Tests', () => {
 
         //ubaDevice reports that it executed the pending task
         let pendingTask = { pendingUbaDevice: { ...ubaDeviceToAdd1, actionResult: ACTION_RESULT.SUCCESS.code, action: UBA_DEVICE_ACTIONS.ADD_TO_WATCH_LIST} };
-        await ubaDeviceExecutePendingTask(pendingTask);
-        await verifyAmountOfPendingTasks(machineToAdd.mac, 0);
+        await withTimeout( ubaDeviceExecutePendingTask(pendingTask), AWAIT_TIMEOUT);
+        await withTimeout( verifyAmountOfPendingTasks(machineToAdd.mac, 0), AWAIT_TIMEOUT);
 
         //now edit the port
-        await editUba(ubaDeviceToAdd1.ubaSN, {comPort: 'COM11'});
+        await withTimeout( editUba(ubaDeviceToAdd1.ubaSN, {comPort: 'COM11'}), AWAIT_TIMEOUT);
         //verify that there are 2 pending tasks: one to remove from watch list and one to add to watch list
-        pendingTasksRes = await verifyAmountOfPendingTasks(machineToAdd.mac, 2);
+        pendingTasksRes = await withTimeout( verifyAmountOfPendingTasks(machineToAdd.mac, 2), AWAIT_TIMEOUT);
         expect(pendingTasksRes.body.pendingConnectionUbaDevices[0].machineMac).toBe(ubaDeviceToAdd1.machineMac);
         expect(pendingTasksRes.body.pendingConnectionUbaDevices[0].comPort).toBe(ubaDeviceToAdd1.comPort);
         expect(pendingTasksRes.body.pendingConnectionUbaDevices[0].address).toBe(ubaDeviceToAdd1.address);
@@ -219,11 +220,11 @@ describe('Machine API Tests', () => {
 
         //mark them as executed
         pendingTask = { pendingUbaDevice: { ...ubaDeviceToAdd1, actionResult: ACTION_RESULT.SUCCESS.code, action: UBA_DEVICE_ACTIONS.REMOVE_FROM_WATCH_LIST} };
-        await ubaDeviceExecutePendingTask(pendingTask);
+        await withTimeout( ubaDeviceExecutePendingTask(pendingTask), AWAIT_TIMEOUT);
         pendingTask = { pendingUbaDevice: { ...ubaDeviceToAdd1, comPort: 'COM11', actionResult: ACTION_RESULT.SUCCESS.code, action: UBA_DEVICE_ACTIONS.ADD_TO_WATCH_LIST} };
-        await ubaDeviceExecutePendingTask(pendingTask);
+        await withTimeout( ubaDeviceExecutePendingTask(pendingTask), AWAIT_TIMEOUT);
 
-        await verifyAmountOfPendingTasks(machineToAdd.mac, 0);
+        await withTimeout( verifyAmountOfPendingTasks(machineToAdd.mac, 0), AWAIT_TIMEOUT);
     });
 
     test('delete uba flow - pendingTasksExecuted & REMOVE_FROM_WATCH_LIST full flow success', async () => {
@@ -237,58 +238,58 @@ describe('Machine API Tests', () => {
             fwVersion: "7.5.3.0",
             hwVersion: "5.2",
         };
-        await addUbaAndExecutePendingTask(ubaDeviceToAdd);
+        await withTimeout( addUbaAndExecutePendingTask(ubaDeviceToAdd), AWAIT_TIMEOUT);
 
-        let response = await request(global.__SERVER__).delete(APIS.ubaDevicesApi + "/" + ubaDeviceToAdd.ubaSN);
+        let response = await withTimeout( request(global.__SERVER__).delete(APIS.ubaDevicesApi + "/" + ubaDeviceToAdd.ubaSN), AWAIT_TIMEOUT);
         expect(response.status).toBe(204);
-        let pendingTasksRes = await verifyAmountOfPendingTasks(machineToAdd.mac, 1);
+        let pendingTasksRes = await withTimeout( verifyAmountOfPendingTasks(machineToAdd.mac, 1), AWAIT_TIMEOUT);
         expect(pendingTasksRes.body.pendingConnectionUbaDevices[0].machineMac).toBe(ubaDeviceToAdd.machineMac);
         expect(pendingTasksRes.body.pendingConnectionUbaDevices[0].comPort).toBe(ubaDeviceToAdd.comPort);
         expect(pendingTasksRes.body.pendingConnectionUbaDevices[0].address).toBe(ubaDeviceToAdd.address);
         expect(pendingTasksRes.body.pendingConnectionUbaDevices[0].action).toBe(UBA_DEVICE_ACTIONS.REMOVE_FROM_WATCH_LIST);
 
         let pendingTask = { pendingUbaDevice: { ...ubaDeviceToAdd, actionResult: ACTION_RESULT.SUCCESS.code, action: UBA_DEVICE_ACTIONS.REMOVE_FROM_WATCH_LIST} };
-        await ubaDeviceExecutePendingTask(pendingTask);
+        await withTimeout( ubaDeviceExecutePendingTask(pendingTask), AWAIT_TIMEOUT);
     });
 
     const expectedFailedExecutePendingTask = async (pendingTask, expectedBody) => {
-        const res = await request(global.__SERVER__).post(APIS.pendingTasksApi).send(pendingTask)
+        const res = await withTimeout( request(global.__SERVER__).post(APIS.pendingTasksApi).send(pendingTask), AWAIT_TIMEOUT);
         expect(res.status).toBe(400);
         expect(res.body.error).toContain(expectedBody);
     }
 
     const addUbaAndExecutePendingTask = async (ubaDeviceToAdd) => {
-        await addUba(ubaDeviceToAdd);
+        await withTimeout( addUba(ubaDeviceToAdd), AWAIT_TIMEOUT);
         let pendingTask = { pendingUbaDevice: { ...ubaDeviceToAdd, actionResult: ACTION_RESULT.SUCCESS.code, action: UBA_DEVICE_ACTIONS.ADD_TO_WATCH_LIST} };
-        await ubaDeviceExecutePendingTask(pendingTask);
-        await verifyAmountOfPendingTasks(ubaDeviceToAdd.machineMac, 0);
+        await withTimeout( ubaDeviceExecutePendingTask(pendingTask), AWAIT_TIMEOUT);
+        await withTimeout( verifyAmountOfPendingTasks(ubaDeviceToAdd.machineMac, 0), AWAIT_TIMEOUT);
     };
 
     const expectedFailedQueryUbaDevice = async (pendingUbaDevice, expectedBody) => {
-        const requestPromise = await request(global.__SERVER__).post(APIS.queryUbaDevicesApi).send(pendingUbaDevice);
+        const requestPromise = await withTimeout( request(global.__SERVER__).post(APIS.queryUbaDevicesApi).send(pendingUbaDevice), AWAIT_TIMEOUT);
         expect(requestPromise.status).toBe(400);
         expect(requestPromise.body.error).toContain(expectedBody);
     }
 
 
     const editUba = async (ubaSN, ubaDeviceToEdit) => {
-        const response = await request(global.__SERVER__).patch(APIS.ubaDevicesApi + "/" + ubaSN).send(ubaDeviceToEdit);
+        const response = await withTimeout( request(global.__SERVER__).patch(APIS.ubaDevicesApi + "/" + ubaSN).send(ubaDeviceToEdit), AWAIT_TIMEOUT);
         expect(response.status).toBe(200);
     }
 
      const addUba = async (ubaDeviceToAdd) => {
-        const response = await request(global.__SERVER__).post(APIS.ubaDevicesApi).send(ubaDeviceToAdd);
+        const response = await withTimeout( request(global.__SERVER__).post(APIS.ubaDevicesApi).send(ubaDeviceToAdd), AWAIT_TIMEOUT);
         expect(response.status).toBe(201);
         expect(response.body.length).toBe(2);
     }
 
     const ubaDeviceExecutePendingTask = async (pendingTask) => {
-        const pendingTaskExecutedRes = await request(global.__SERVER__).post(APIS.pendingTasksApi).send(pendingTask)
+        const pendingTaskExecutedRes = await withTimeout( request(global.__SERVER__).post(APIS.pendingTasksApi).send(pendingTask), AWAIT_TIMEOUT)
         expect(pendingTaskExecutedRes.status).toBe(200);
     }
 
     const verifyAmountOfPendingTasks = async (machineMac, pendingConnectionUbaDevicesNum) => {
-        let pendingTasksRes = await request(global.__SERVER__).get(APIS.pendingTasksApi + '?machineMac=' + machineMac);
+        let pendingTasksRes = await withTimeout( request(global.__SERVER__).get(APIS.pendingTasksApi + '?machineMac=' + machineMac), AWAIT_TIMEOUT);
         expect(pendingTasksRes.status).toBe(200);
         expect(pendingTasksRes.body.pendingRunningTests.length).toBe(0);
         expect(pendingTasksRes.body.pendingReports.length).toBe(0);
@@ -297,7 +298,7 @@ describe('Machine API Tests', () => {
     };
 
     const addOrEditQueryUbaFlow = async (pendingUbaDevice, pendingExecutedRequestInfo) => {
-        await verifyAmountOfPendingTasks(machineToAdd.mac, 0);
+        await withTimeout( verifyAmountOfPendingTasks(machineToAdd.mac, 0), AWAIT_TIMEOUT);
 
         let queryUbaDeviceRes, queryUbaDeviceError;
         const requestPromise = request(global.__SERVER__)
@@ -309,10 +310,10 @@ describe('Machine API Tests', () => {
             .catch(err => {
                 queryUbaDeviceError = err;
             });
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await withTimeout( new Promise(resolve), 1500);
         
         //this is like the uba service call that happens every second
-        pendingTasksRes = await verifyAmountOfPendingTasks(machineToAdd.mac, 1);
+        pendingTasksRes = await withTimeout( verifyAmountOfPendingTasks(machineToAdd.mac, 1), AWAIT_TIMEOUT);
         expect(pendingTasksRes.body.pendingConnectionUbaDevices[0].machineMac).toBe(pendingUbaDevice.machineMac);
         expect(pendingTasksRes.body.pendingConnectionUbaDevices[0].comPort).toBe(pendingUbaDevice.comPort);
         expect(pendingTasksRes.body.pendingConnectionUbaDevices[0].address).toBe(pendingUbaDevice.address);
@@ -322,9 +323,9 @@ describe('Machine API Tests', () => {
                 ubaSN: pendingExecutedRequestInfo.ubaSN, ubaChannel: pendingExecutedRequestInfo.ubaChannel, name: "uba name", fwVersion: "7.5.3.0", hwVersion: "5.2",
                 actionResult: pendingExecutedRequestInfo.actionResult, action: pendingExecutedRequestInfo.action } };
         //this is the uba service call that quries the uba device and then calls pendingTasksExecuted
-        await ubaDeviceExecutePendingTask(pendingTask);
+        await withTimeout( ubaDeviceExecutePendingTask(pendingTask), AWAIT_TIMEOUT);
 
-        await requestPromise;
+        await withTimeout( requestPromise, AWAIT_TIMEOUT);
         if (queryUbaDeviceError) {
             console.error('Request failed:', queryUbaDeviceError);
             expect(queryUbaDeviceRes.status).toBe(200);//in order to fail the test if it was not successful
@@ -344,7 +345,7 @@ describe('Machine API Tests', () => {
         }
 
         //verify there are no other pending tasks
-        await verifyAmountOfPendingTasks(machineToAdd.mac, 0);
+        await withTimeout( verifyAmountOfPendingTasks(machineToAdd.mac, 0), AWAIT_TIMEOUT);
     };
 
 });

@@ -6,10 +6,11 @@ const {
 	addInstantTestResults,
 	getPendingRunningTests
 } = require('../services/runningTestService');
+const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 
 exports.addInstantTestResults = async (req, res) => {
 	try {
-		await addInstantTestResults(req.body);
+		await withTimeout(addInstantTestResults(req.body), AWAIT_TIMEOUT);
 		res.status(201).json( { success: true } );
 	} catch (error) {
 		logger.error('addInstantTestResults', error);
@@ -20,7 +21,7 @@ exports.addInstantTestResults = async (req, res) => {
 //this is fetching the graph data for the instantTestResults
 exports.getInstantTestResults = async (req, res) => {
 	try {
-		const result = await getInstantTestResults(req.params?.runningTestID);
+		const result = await withTimeout(getInstantTestResults(req.params?.runningTestID), AWAIT_TIMEOUT);
 		res.json(result);
 	} catch (error) {
 		logger.error('getInstantTestResults', error);
@@ -30,7 +31,7 @@ exports.getInstantTestResults = async (req, res) => {
 
 exports.getAllPendingRunningTests = async (req, res) => {
 	try {
-		const result = await getPendingRunningTests();
+		const result = await withTimeout(getPendingRunningTests(), AWAIT_TIMEOUT);
 		res.json(result);
 	} catch (error) {
 		logger.error('getAllPendingRunningTests', error);
@@ -42,7 +43,7 @@ exports.getAllPendingRunningTests = async (req, res) => {
 //When starting a test then first deleting running tests on the related ubaSNs + channels
 exports.runTest = async (req, res) => {
 	try {
-		const {ids} = await runTest(req.body);
+		const {ids} = await withTimeout(runTest(req.body), AWAIT_TIMEOUT);
 		res.end();
 	} catch (error) {
 		logger.error('runTest', error);
@@ -57,7 +58,7 @@ exports.changeRunningTestStatus = async (req, res) => {
     return res.status(400).json({ error: 'Invalid newTestStatus value: ' + req.body?.newTestStatus });
   }
   try {
-    await changeRunningTestStatus(req.body?.runningTestID, req.body?.testRoutineChannels, req.body?.ubaSN, req.body?.newTestStatus);
+    await withTimeout(changeRunningTestStatus(req.body?.runningTestID, req.body?.testRoutineChannels, req.body?.ubaSN, req.body?.newTestStatus), AWAIT_TIMEOUT);
     res.end();
   } catch (err) {
     logger.error(`changeRunningTestStatus newTestStatus: [${req.body?.newTestStatus}] [${req.body?.runningTestID}] [${req.body?.testRoutineChannels}] [${req.body?.ubaSN}] test`, err);

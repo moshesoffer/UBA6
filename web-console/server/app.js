@@ -19,6 +19,7 @@ const pendingTasksRouter = require('./routes/pendingTasksRoutes');
 const pool = require('./db');
 const { clearAllLastInstantTestResults } = require('./utils/testResultsHelper');
 const { releaseAllWaiters } = require('./utils/ubaCommunicatorHelper');
+const { withTimeout, AWAIT_TIMEOUT } = require('./utils/requestSync');
 
 // Ensure the reports data path exists
 createFolderIfNotExists(reportsDataPath);
@@ -28,22 +29,22 @@ setupSwagger(app);
 app.use(helmet());
 
 if (process.env.ENABLE_CORS_FOR_LOCALHOST) {
-	logger.info('CORS is enabled for localhost environment');
-	app.use(cors({
-	  origin: 'http://localhost:3000', // React development server
-	  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Allowed HTTP methods
-	  credentials: true, // Allow cookies
-	}));
-  } else {
-	logger.info('CORS is disabled');
-  }
-  
-  // Use the logging middleware for all routes
-  app.use(logRoute);
-  
-  // Increase limit to 200mb
-  app.use(express.json({ limit: '200mb' }));
-  app.use(express.urlencoded({ limit: '200mb', extended: true }));
+  logger.info('CORS is enabled for localhost environment');
+  app.use(cors({
+    origin: 'http://localhost:3000', // React development server
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Allowed HTTP methods
+    credentials: true, // Allow cookies
+  }));
+} else {
+  logger.info('CORS is disabled');
+}
+
+// Use the logging middleware for all routes
+app.use(logRoute);
+
+// Increase limit to 200mb
+app.use(express.json({ limit: '200mb' }));
+app.use(express.urlencoded({ limit: '200mb', extended: true }));
 //app.use(express.json());
 //app.use(express.urlencoded({extended: false}));
 
@@ -52,8 +53,8 @@ if (process.env.ENABLE_CORS_FOR_LOCALHOST) {
 app.get('/health', async (req, res) => {
   let connection;
   try {
-    connection = await pool.getConnection();
-    await connection.ping();
+    connection = await withTimeout(pool.getConnection(), AWAIT_TIMEOUT);
+    await withTimeout(connection.ping(), AWAIT_TIMEOUT);
     res.status(200).json({ status: 'ok', db: 'up' });
   } catch (err) {
     res.status(500).json({ status: 'error', db: 'down' });
@@ -84,23 +85,23 @@ app.use(express.static(path.join(__dirname, 'dist')));
 app.use('/*', express.static(path.join(__dirname, 'dist')));
 
 // Error handler.
-app.use(function(err, req, res, next) {
-	// Set locals, only providing error in development.
-	res.locals.message = err.message;
-	res.locals.error = req.app.get('env') === 'development' ? err : {};
+app.use(function (err, req, res, next) {
+  // Set locals, only providing error in development.
+  res.locals.message = err.message;
+  res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-	// Render the error page.
-	res.status(err.status || 500);
-	res.render('error');
+  // Render the error page.
+  res.status(err.status || 500);
+  res.render('error');
 });
 
 //keeping server alive
 process.on('uncaughtException', (error) => {
-	logger.error('Uncaught Exception:', error);
+  logger.error('Uncaught Exception:', error);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-	logger.error('Unhandled Rejection:', reason);
+  logger.error('Unhandled Rejection:', reason);
 });
 
 

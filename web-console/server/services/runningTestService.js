@@ -12,6 +12,7 @@ const { instantTestResultsModel, runningTestsModel, ubaDeviceModel, machineModel
 const { selectQuery, updateModel, createModel } = require('../db/genericCRUD');
 const {status} = require(`../utils/constants`);
 const { setLastInstantTestResult } = require('../utils/testResultsHelper');
+const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 
 const addInstantTestResults = async (instantTestResults) => {
 	let connection;
@@ -25,7 +26,7 @@ const addInstantTestResults = async (instantTestResults) => {
 			} else {
 				logger.info(`addInstantTestResults item with isLogData false ${item.runningTestID}`);
 				if(instantTestResultsExistsMap.get(item.runningTestID) !== true) {
-					const amount = await getInstantTestResultsAmount(item.runningTestID);
+					const amount = await withTimeout(getInstantTestResultsAmount(item.runningTestID), AWAIT_TIMEOUT);
 					logger.info(`addInstantTestResults amount for runningTestID ${item.runningTestID} is ${amount}`);
 					if(amount === 0) {
 						logger.info(`addInstantTestResults inserting first item with isLogData false ${item.runningTestID}`);
@@ -41,17 +42,17 @@ const addInstantTestResults = async (instantTestResults) => {
 			return;
 		}
 
-        connection = await pool.getConnection();
-        await connection.beginTransaction();
+        connection = await withTimeout(pool.getConnection(), AWAIT_TIMEOUT);
+        await withTimeout(connection.beginTransaction(), AWAIT_TIMEOUT);
 		logger.info(`addInstantTestResults going to insert [${insertArr.length}] instant test results`);
 		for (const item of insertArr) {
-			await createModel(instantTestResultsModel, item, connection);
+			await withTimeout(createModel(instantTestResultsModel, item, connection), AWAIT_TIMEOUT);
 		}
 		logger.info(`addInstantTestResults finished to add`);
         
-        await connection.commit();
+        await withTimeout(connection.commit(), AWAIT_TIMEOUT);
     } catch (error) {
-        if (connection) await connection.rollback(); // Rollback on error
+        if (connection) await withTimeout(connection.rollback(), AWAIT_TIMEOUT); // Rollback on error
         logger.error('addInstantTestResults Transaction error:', error);
         throw error;
     } finally {
@@ -61,7 +62,7 @@ const addInstantTestResults = async (instantTestResults) => {
 
 //this returns the latest test results for each running test
 const getAllLatestInstantTestResults = async () => {
-	return await selectQuery(instantTestResultsModel.tableName, instantTestResultsModel.selectAllQuery);
+	return await withTimeout(selectQuery(instantTestResultsModel.tableName, instantTestResultsModel.selectAllQuery), AWAIT_TIMEOUT);
 };
 
 const getInstantTestResultsAmount = async runningTestID => {
@@ -70,7 +71,7 @@ const getInstantTestResultsAmount = async runningTestID => {
 		FROM \`${instantTestResultsModel.tableName}\`
 		WHERE \`runningTestID\` = ?;
 	`;
-	const rows = await selectQuery(instantTestResultsModel.tableName, query, [runningTestID]);
+	const rows = await withTimeout(selectQuery(instantTestResultsModel.tableName, query, [runningTestID]), AWAIT_TIMEOUT);
 	return rows[0]?.amount;
 }
 
@@ -81,7 +82,7 @@ const getLatestInstantTestResults = async runningTestID => {
 	FROM \`${instantTestResultsModel.tableName}\` AS i
 	WHERE i.\`runningTestID\` = ? ORDER BY \`timestamp\` DESC LIMIT 1;
 	`;
-	return await selectQuery(instantTestResultsModel.tableName, query, [runningTestID]);
+	return await withTimeout(selectQuery(instantTestResultsModel.tableName, query, [runningTestID]), AWAIT_TIMEOUT);
 };
 
 const getInstantTestResults = async runningTestID => {
@@ -90,7 +91,7 @@ const getInstantTestResults = async runningTestID => {
 	FROM \`${instantTestResultsModel.tableName}\` AS i
 	WHERE i.\`runningTestID\` = ?;
 	`;
-	return await selectQuery(instantTestResultsModel.tableName, query, [runningTestID]);
+	return await withTimeout(selectQuery(instantTestResultsModel.tableName, query, [runningTestID]), AWAIT_TIMEOUT);
 };
 
 const getPendingRunningTests = async (machineMac) => {
@@ -102,10 +103,10 @@ const getPendingRunningTests = async (machineMac) => {
 	`;
 	if(machineMac){
 		query += ` AND ud.\`machineMac\` = ?;`;
-		return await selectQuery(instantTestResultsModel.tableName, query, [machineMac]);
+		return await withTimeout(selectQuery(instantTestResultsModel.tableName, query, [machineMac]), AWAIT_TIMEOUT);
 	} else {
 		query += `;`;
-		return await selectQuery(instantTestResultsModel.tableName, query);
+		return await withTimeout(selectQuery(instantTestResultsModel.tableName, query), AWAIT_TIMEOUT);
 	}
 };
 
@@ -115,7 +116,7 @@ const getRunningAmount = async () => {
 		FROM \`${runningTestsModel.tableName}\`
 		WHERE (\`status\` & (${status.IS_TEST_RUNNING})) != 0;
 	`;
-	const rows = await selectQuery(runningTestsModel.tableName, query);
+	const rows = await withTimeout(selectQuery(runningTestsModel.tableName, query), AWAIT_TIMEOUT);
 	return rows[0]?.running;
 }
 
@@ -190,7 +191,7 @@ const createRunningTest = async (connection, ubaSNs, data, status) => {
 		
 
 		logger.info(`createRunningTest Executing query: [${query}] [${updateValuesCompleted}]`);
-		const [result,] = await connection.execute(query, updateValuesCompleted);
+		const [result,] = await withTimeout(connection.execute(query, updateValuesCompleted), AWAIT_TIMEOUT);
 		if (result?.affectedRows < 1) {
 			throw new Error(`Error creating RunningTests.`);
 		}
@@ -202,7 +203,7 @@ const createRunningTest = async (connection, ubaSNs, data, status) => {
 }
 
 const changeTestStatus = async (runningTestID, newStatus, openedConnection) => {
-    await updateModel(runningTestsModel, runningTestID, {status: newStatus}, openedConnection);
+    await withTimeout(updateModel(runningTestsModel, runningTestID, {status: newStatus}, openedConnection), AWAIT_TIMEOUT);
 }
 
 const deleteRunningTest = async (connection, ubaSNs) => {
@@ -224,7 +225,7 @@ const deleteRunningTest = async (connection, ubaSNs) => {
 				(\`ubaSN\`, \`channel\`) IN (${updatePlaceholders.join(', ')});
 			`;
 		logger.info(`SELECT RunningTests`);
-		const [selectResult,] = await connection.execute(selectQuery, updateValues);
+		const [selectResult,] = await withTimeout(connection.execute(selectQuery, updateValues), AWAIT_TIMEOUT);
 		let resultArray = Object.keys(selectResult).map(key => selectResult[key]);
 		logger.info(`resultArray.length ${resultArray.length}`);
 		const runningTests = resultArray.filter(item => { return isTestRunning(item.status); });
@@ -241,7 +242,7 @@ const deleteRunningTest = async (connection, ubaSNs) => {
 			`;
 
 		logger.info(`deleteRunningTest Executing query: [${query}] [${updateValues}]`);
-		const [result,] = await connection.execute(query, updateValues);
+		const [result,] = await withTimeout(connection.execute(query, updateValues), AWAIT_TIMEOUT);
 		logger.info(`result?.affectedRows ${result?.affectedRows} ${resultArray.length}`)
 		if (result?.affectedRows !== resultArray.length) {
 			throw new Error(`Error deleteRunningTest.`);
@@ -259,7 +260,7 @@ const getRunningTestsByUbaSN = async (ubaSN, connection) => {
 	FROM \`${runningTestsModel.tableName}\` AS rt
 	WHERE rt.\`ubaSN\` = ?;
 	`;
-    const rows = await selectQuery(runningTestsModel.tableName, query, [ubaSN,], connection);
+    const rows = await withTimeout(selectQuery(runningTestsModel.tableName, query, [ubaSN,], connection), AWAIT_TIMEOUT);
     if(rows.length > 2) {
         throw new Error(`Error getRunningTestsByUbaSN cant be more than 2 channels for same ubaSN.`);
     }
@@ -275,7 +276,7 @@ const getRunningTestByIdWithJoins = async (runningTestID, connection) => {
 	JOIN \`${cellModel.tableName}\` AS cm ON rt.\`cellPN\` = cm.\`itemPN\`
 	WHERE rt.\`id\` = ?;
 	`;
-	const rows = await selectQuery(runningTestsModel.tableName, query, [runningTestID], connection);
+	const rows = await withTimeout(selectQuery(runningTestsModel.tableName, query, [runningTestID], connection), AWAIT_TIMEOUT);
 	if(rows.length !== 1) {
 		throw new Error(`Error getRunningTestByIdWithJoins cant be more than 1 running test for same id.`);
 	}

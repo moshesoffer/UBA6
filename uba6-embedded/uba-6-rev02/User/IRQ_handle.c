@@ -23,7 +23,7 @@
 #define LCD_REFRESH
 
 #ifdef LCD_REFRESH
-#define LCD_REFRESH_PRESS_DELAY  300 /*ms*/
+#define LCD_REFRESH_PRESS_DELAY  200 /*ms*/
 uint32_t lcd_last_press_time = 0;
 uint32_t lcd_refresh_consecutive_press = 0;
 #endif/*LCD_REFRESH*/

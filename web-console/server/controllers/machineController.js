@@ -1,9 +1,10 @@
 const logger = require('../utils/logger');
 const { getMachines, createMachine, updateMachine, deleteMachine } = require('../services/machineService');
+const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 
 exports.getMachines = async (req, res) => {
 	try {
-		const result = await getMachines();
+		const result = await withTimeout(getMachines(), AWAIT_TIMEOUT);
 		res.json(result);
 	} catch (error) {
 		logger.error('getMachines', error);
@@ -13,7 +14,7 @@ exports.getMachines = async (req, res) => {
 
 exports.createMachine = async (req, res) => {
 	try {
-		await createMachine(req.body);
+		await withTimeout(createMachine(req.body), AWAIT_TIMEOUT);
 		res.status(201).json( { success: true } );
 	} catch (error) {
 		logger.error('createMachine', error);
@@ -23,7 +24,7 @@ exports.createMachine = async (req, res) => {
 
 exports.updateMachine = async (req, res) => {
 	try {
-		await updateMachine(req.params?.mac, req.body);
+		await withTimeout(updateMachine(req.params?.mac, req.body), AWAIT_TIMEOUT);
 		res.end();
 	} catch (error) {
 		logger.error('updateMachine', error);
@@ -33,7 +34,7 @@ exports.updateMachine = async (req, res) => {
 
 exports.deleteMachine = async (req, res) => {
 	try {
-		await deleteMachine(req.params?.mac);
+		await withTimeout(deleteMachine(req.params?.mac), AWAIT_TIMEOUT);
 		res.status(204).end();
 	} catch (error) {
 		logger.error('deleteMachine', error);

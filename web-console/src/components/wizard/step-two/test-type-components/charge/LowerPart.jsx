@@ -306,7 +306,7 @@ export default function LowerPart(props) {
 					</FormHelperText>
 				</FormControl>
 			</Grid>
-
+			
 			<Grid item lg={8} >
 				<Stack direction="row" alignItems="center" spacing={1}>
 					<FormControlLabel

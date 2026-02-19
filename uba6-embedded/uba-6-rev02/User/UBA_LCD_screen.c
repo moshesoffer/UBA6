@@ -1399,7 +1399,7 @@ void UBA_LCD_screen_display_test_info(UBA_LCD_screen *screen) {
 					}
 				}
 			}
-			screen->state.next = UBA_LCD_SCREEN_DISPLAY_SETTING; //Moshe UBA_LCD_SCREEN_DISPLAY_BPT;
+			screen->state.next = UBA_LCD_SCREEN_DISPLAY_BPT; UBA_LCD_SCREEN_DISPLAY_SETTING; //Moshe UBA_LCD_SCREEN_DISPLAY_BPT;
 		}
 		UBA_button_clear_panding(screen->main_buttons.bnt_select_p);
 		UBA_button_clear_panding(screen->secondery_buttons.bnt_select_p);

@@ -9,6 +9,7 @@ const { v4: uuidv4 } = require('uuid');
 const path = require('node:path');
 const fs = require('fs');
 const {status} = require(`../utils/constants`);
+const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 
 const getReports = async metadata => {
 	let connection;
@@ -22,7 +23,7 @@ const getReports = async metadata => {
 	try {
 		checkOrderParameter(metadata);
 		const offset = metadata.page * metadata.rowsPerPage;
-		connection = await pool.getConnection();
+		connection = await withTimeout( pool.getConnection(), AWAIT_TIMEOUT);
 
 		if (validateObject(metadata.filters, true)) {
 			const filterKeys = Object.keys(metadata.filters);
@@ -77,9 +78,9 @@ const getReports = async metadata => {
 		`;
 
 		logger.info(`getReports Executing query: [${query}] [${updateValues}]`);
-		const [rows,] = await connection.execute(query, updateValues);
+		const [rows,] = await withTimeout( connection.execute(query, updateValues), AWAIT_TIMEOUT);
 		logger.info(`getReports Executing queryCount: [${queryCount}] [${updateQueryCount}]`);
-		const [countResults,] = await connection.execute(queryCount, updateQueryCount);
+		const [countResults,] = await withTimeout( connection.execute(queryCount, updateQueryCount), AWAIT_TIMEOUT);
 		const count = countResults[0].count;
 
 		return {
@@ -101,7 +102,7 @@ const createReport = async (data, connection) => {
 	data.plan = JSON.stringify(dataPlan);
 	const id = uuidv4(); // Generate a UUID
 	data.id = id;
-	await createModel(reportModel, data, connection);
+	await withTimeout( createModel(reportModel, data, connection), AWAIT_TIMEOUT);
 	return id;
 }
 
@@ -115,7 +116,7 @@ const createTestResultsFile = async (id, data, doValidateTestResults = true) => 
 }
 
 const updateReport = async (id, data, connection) => {
-	await updateModel(reportModel, id, data, connection);
+	await withTimeout( updateModel(reportModel, id, data, connection), AWAIT_TIMEOUT);
 }
 
 const getTestResults = async ids => {
@@ -144,7 +145,7 @@ const getTestResults = async ids => {
 
 const getReportWithTestResults = async id => {
 	const query = `SELECT r.* FROM \`${reportModel.tableName}\` as r WHERE r.\`id\` = ?;`;
-	const rows = await selectQuery(reportModel.tableName, query, [id]);
+	const rows = await withTimeout( selectQuery(reportModel.tableName, query, [id]), AWAIT_TIMEOUT);
 	if(!rows || rows.length === 0) return [];
 	rows[0].reportID = id;
 	const testResults = readTextFromFile(path.join(reportsDataPath, id, testResultsFileName));
@@ -160,10 +161,10 @@ const getPendingReports = async (machineMac) => {
 	`;
 	if(machineMac){
 		query += ` AND r.\`machineMac\` = ?;`;
-		return await selectQuery(reportModel.tableName, query, [machineMac]);
+		return await withTimeout( selectQuery(reportModel.tableName, query, [machineMac]), AWAIT_TIMEOUT);
 	} else {
 		query += `;`;
-		return await selectQuery(reportModel.tableName, query);
+		return await withTimeout( selectQuery(reportModel.tableName, query), AWAIT_TIMEOUT);
 	}
 };
 

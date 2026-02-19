@@ -1,10 +1,11 @@
 const logger = require('../utils/logger');
 const { getPendingTasks, queryUbaDevice, pendingTasksExecuted } = require('../services/pendingTasksService');
+const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 
 //being called from uba service
 exports.getPendingTasks = async (req, res) => {
     try {
-        const pendingTasks = await getPendingTasks(req.query?.machineMac);
+        const pendingTasks = await withTimeout(getPendingTasks(req.query?.machineMac), AWAIT_TIMEOUT);
         res.json(pendingTasks);
     } catch (error) {
 		logger.error('getPendingTasks', error);
@@ -16,7 +17,7 @@ exports.getPendingTasks = async (req, res) => {
 //being called from uba service
 exports.pendingTasksExecuted = async (req, res) => {
     try {
-        await pendingTasksExecuted(req.body);
+        await withTimeout(pendingTasksExecuted(req.body), AWAIT_TIMEOUT);
         res.status(200).json({ success: true });
     } catch (error) {
         logger.error('pendingTasksExecuted', error);
@@ -27,7 +28,7 @@ exports.pendingTasksExecuted = async (req, res) => {
 //this is being trigger from web ui CM
 exports.queryUbaDevice = async (req, res) => {
 	try {
-		const result = await queryUbaDevice(req.body);
+		const result = await withTimeout(queryUbaDevice(req.body), AWAIT_TIMEOUT);
 		res.status(201).json( result );//the result is coming from uba device it self
 	} catch (error) {
 		logger.error('queryUbaDevice', error);

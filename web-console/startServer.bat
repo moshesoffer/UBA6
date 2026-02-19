@@ -17,6 +17,12 @@ start cmd /k "npm run dev"
 REM Wait a bit to make sure the front-end starts (optional)
 timeout /t 2
 
+REM run service
+REM @echo off
+REM taskkill /IM UBAService.exe /F 2>nul
+REM start "" /B "C:\work\DEV\UBA6\uba6_windwos_tools\UBAService\bin\Debug\net8.0\UBAService.exe"
+REM exit
+
 REM Change to server directory
 cd server
 

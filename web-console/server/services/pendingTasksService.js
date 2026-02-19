@@ -6,14 +6,15 @@ const { getWaiter, sendConnectionPendingTaskToUba, UI_FLOWS, UBA_DEVICE_ACTIONS,
 const { getUbaDeviceByUbaSN, getUbaDeviceByConstraint } = require('../services/ubaDeviceService');
 const { getMachine } = require('../services/machineService');
 const { getPendingReports } = require('../services/reportService');
+const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 
 //this is being called by the uba service
 const getPendingTasks = async (machineMac) => {
     try {
         const pendingTasks = {pendingConnectionUbaDevices: [], pendingRunningTests: [], pendingReports: []};
-        const pendingRunningTests = await getPendingRunningTests(machineMac);
+        const pendingRunningTests = await withTimeout(getPendingRunningTests(machineMac), AWAIT_TIMEOUT);
         pendingTasks.pendingRunningTests = pendingRunningTests;
-        const pendingReports = await getPendingReports(machineMac);
+        const pendingReports = await withTimeout(getPendingReports(machineMac), AWAIT_TIMEOUT);
         pendingTasks.pendingReports = pendingReports;
         
         for (const pendingRunningTest of pendingRunningTests) {
@@ -87,7 +88,7 @@ const pendingTasksExecuted = async (pendingTask) => {
              if(!fwVersion || !hwVersion) {
                 throw new Error(`Missing versions required parameters.`);
             }
-            const ubaDevice = await getUbaDeviceByUbaSN(ubaSN);
+            const ubaDevice = await withTimeout(getUbaDeviceByUbaSN(ubaSN), AWAIT_TIMEOUT);
             if(waiter.body.uiFlow === UI_FLOWS.QUERY_ADD_UBA_DEVICE) {
                 if(ubaDevice) {
                     logger.info(`ubaSN already exists, releasing waiter for pending task ${PENDING_TASKS_TYPES.CONNECTION_UBA_DEVICE} for machine ${machineMac} with key ${key}`);
@@ -126,28 +127,28 @@ const queryUbaDevice = async (pendingUbaDevice) => {
 		throw new Error(`Missing parameters.`);
 	}
 	
-    const machine = await getMachine(machineMac);
+    const machine = await withTimeout(getMachine(machineMac), AWAIT_TIMEOUT);
     if(!machine) {
         throw new Error(`Machine with mac ${machineMac} does not exist.`);
     }
-	const ubaDeviceByConstraint = await getUbaDeviceByConstraint(machineMac, address, comPort);
+	const ubaDeviceByConstraint = await withTimeout(getUbaDeviceByConstraint(machineMac, address, comPort), AWAIT_TIMEOUT);
 
 	if(!ubaSN) {
 		//this is add pending uba device
 		if (ubaDeviceByConstraint) {
 			throw new Error(`ubaDeviceByConstraint already exists.`);
 		}
-		return await sendConnectionPendingTaskToUba( machineMac, address, comPort, undefined, undefined, undefined, UBA_DEVICE_ACTIONS.QUERY, UI_FLOWS.QUERY_ADD_UBA_DEVICE );
+		return await withTimeout(sendConnectionPendingTaskToUba( machineMac, address, comPort, undefined, undefined, undefined, UBA_DEVICE_ACTIONS.QUERY, UI_FLOWS.QUERY_ADD_UBA_DEVICE ), AWAIT_TIMEOUT);
 	} else {
 		//this is edit pending uba device
-		const ubaDeviceBySN = await getUbaDeviceByUbaSN(ubaSN);
+		const ubaDeviceBySN = await withTimeout(getUbaDeviceByUbaSN(ubaSN), AWAIT_TIMEOUT);
 		if (!ubaDeviceBySN) {
 			throw new Error(`ubaSN does not exist.`);
 		}
 		if(ubaDeviceByConstraint && ubaDeviceByConstraint.ubaSN !== ubaSN) {
 			throw new Error(`ubaSN already exists.`);
 		}
-		return await sendConnectionPendingTaskToUba( machineMac, address, comPort, ubaSN, ubaChannel, undefined, UBA_DEVICE_ACTIONS.QUERY, UI_FLOWS.QUERY_EDIT_UBA_DEVICE );
+		return await withTimeout(sendConnectionPendingTaskToUba( machineMac, address, comPort, ubaSN, ubaChannel, undefined, UBA_DEVICE_ACTIONS.QUERY, UI_FLOWS.QUERY_EDIT_UBA_DEVICE ), AWAIT_TIMEOUT);
 	}
 };
 
