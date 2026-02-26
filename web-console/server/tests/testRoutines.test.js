@@ -73,7 +73,8 @@ describe('TestRoutines API Tests', () => {
     afterAll(async () => {
         console.log('TestRoutines Test suite finished');
         if(connection) await withTimeout( connection.end(), AWAIT_TIMEOUT);
-        await withTimeout( new Promise(resolve => setTimeout(resolve, 500)), AWAIT_TIMEOUT);//waiting for winston server logs to finish
+        //delay - waiting for winston server logs to finish
+        //await new Promise(resolve => setTimeout(resolve, 500));
     });
     afterEach(async () => {
         await withTimeout( clearMemInServer(), AWAIT_TIMEOUT);

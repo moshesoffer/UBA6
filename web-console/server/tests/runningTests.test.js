@@ -94,7 +94,8 @@ describe('Machine API Tests', () => {
     afterAll(async () => {
         console.log('Machine Test suite finished');
         if(connection) await withTimeout(connection.end(), AWAIT_TIMEOUT);
-        await withTimeout(new Promise(resolve => setTimeout(resolve, 500)), AWAIT_TIMEOUT);//waiting for winston server logs to finish
+        //delay - waiting for winston server logs to finish
+        //await new Promise(resolve => setTimeout(resolve, 500));
     });
     afterEach(async () => {
         await withTimeout(clearMemInServer(), AWAIT_TIMEOUT);
@@ -102,7 +103,7 @@ describe('Machine API Tests', () => {
 
     test('start runningTest', async () => {
       try {
-        let ubaDevices = await withTimeout(validateRunningTests(3, 0, 0), AWAIT_TIMEOUT);
+        let ubaDevices = await withTimeout(validateRunningTests(3/*StandBy*/, 0/*Running*/, 0/*Pending*/), AWAIT_TIMEOUT);
         let runningTestOfDevice1 = ubaDevices.find(obj => obj.ubaSN===ubaDeviceToAdd1.ubaSN);
         let pendingTasksRes = await withTimeout(request(global.__SERVER__).get(APIS.pendingTasksApi + '?machineMac=' + machineToAdd.mac), AWAIT_TIMEOUT);
         expect(pendingTasksRes.body.pendingRunningTests.length).toBe(0);

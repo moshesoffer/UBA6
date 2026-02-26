@@ -80,6 +80,7 @@ const getCountUbaDeviceByMachineMac = async (machineMac, connection) => {
 		WHERE machineMac = ?;
 	`;
 	const rows = await withTimeout(selectQuery(ubaDeviceModel.tableName, query, [machineMac]), AWAIT_TIMEOUT);
+	logger.info(`getCountUbaDeviceByMachineMac ubaCount: ${rows[0]?.ubaCount}`);
 	return rows[0]?.ubaCount;
 
 };

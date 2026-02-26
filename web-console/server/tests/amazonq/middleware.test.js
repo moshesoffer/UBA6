@@ -3,32 +3,34 @@ const express = require('express');
 const logRoute = require('../../middleware/loggerMiddleware');
 const runSchema = require('../prepareDb');
 const { APIS } = require('../../utils/constants');
+const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 
 describe('Middleware Tests', () => {
 
     beforeAll(async () => {
-        await runSchema();
+        await withTimeout(runSchema(), AWAIT_TIMEOUT);
     });
 
     afterAll(async () => {
         console.log('Middleware Test suite finished');
-        await new Promise(resolve => setTimeout(resolve, 500));
+        //delay - waiting for winston server logs to finish
+        //await new Promise(resolve => setTimeout(resolve, 500));
     });
 
     test('logger middleware - adds request ID', async () => {
-        const response = await request(global.__SERVER__)
-            .get(APIS.cellsApi);
+        const response = await withTimeout(request(global.__SERVER__)
+            .get(APIS.cellsApi), AWAIT_TIMEOUT);
         
         expect(response.status).toBe(200);
         // Request ID should be generated and logged (check logs for UUID format)
     });
 
     test('logger middleware - handles different HTTP methods', async () => {
-        const getResponse = await request(global.__SERVER__)
-            .get(APIS.cellsApi);
+        const getResponse = await withTimeout(request(global.__SERVER__)
+            .get(APIS.cellsApi), AWAIT_TIMEOUT);
         expect(getResponse.status).toBe(200);
 
-        const postResponse = await request(global.__SERVER__)
+        const postResponse = await withTimeout(request(global.__SERVER__)
             .post(APIS.cellsApi)
             .send({
                 chemistry: 'Li-Ion',
@@ -42,13 +44,13 @@ describe('Middleware Tests', () => {
                 minTemp: -10,
                 maxTemp: 50,
                 chargeOption: 'Primary'
-            });
+            }), AWAIT_TIMEOUT);
         expect([201]).toContain(postResponse.status);
     });
 
     test('logger middleware - handles query parameters', async () => {
-        const response = await request(global.__SERVER__)
-            .get(APIS.cellsApi + '?test=value&another=param');
+        const response = await withTimeout(request(global.__SERVER__)
+            .get(APIS.cellsApi + '?test=value&another=param'), AWAIT_TIMEOUT);
         
         expect(response.status).toBe(200);
     });

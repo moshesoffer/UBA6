@@ -46,8 +46,21 @@ namespace UBA6Library {
             _logger = logger;
         }
 
+        //timout control for async requests
+        public const int AWAIT_TIMEOUT = 5000;
+        static async Task<T> WithTimeout<T>(Task<T> task, int milliseconds)
+        {
+            using var cts = new System.Threading.CancellationTokenSource(milliseconds);
+
+            var completedTask = await Task.WhenAny(task, Task.Delay(-1, cts.Token));
+
+            if (completedTask != task)
+                throw new TimeoutException($"Timeout after {milliseconds}ms");
+
+            return await task;
+        }
+
         public UBA_Interface(ILogger<UBA_Interface> logger, string portName, int baudRate = 115200) : this(logger) {
-            //portName = "com 3";//==>Moshe
             sp = new SerialPort(portName, baudRate);
             sp.ReadBufferSize = 4096;
             sp.Parity = Parity.None;
@@ -159,18 +172,28 @@ namespace UBA6Library {
                     return;
                 }
                 if (messageSize == 0) {
-                    ulong messageLength = DecodeVarint(sp.BaseStream);
-                    _logger.LogDebug($"Message Length: {messageLength}");
-                    messageSize = (int)messageLength;
+                    try {
+                        ulong messageLength = DecodeVarint(sp.BaseStream);
+                        _logger.LogDebug($"Message Length: {messageLength}");
+                        messageSize = (int)messageLength;
+                    } catch {
+                        _logger.LogInformation($"DecodeVarint read failed.");
+                    }
                 }
-                if (sp.BytesToRead < messageSize) {
-                    int delay = 50 + ((messageSize - sp.BytesToRead) / 10);
-                    _logger.LogWarning(delay > 100 ? $"Large delay {delay} ms for message size {messageSize} bytes" : $"Waiting {delay} ms for full message of size {messageSize} bytes");
-                    await Task.Delay(delay); // Wait a bit to ensure the message is fully received
+                //double check message size
+                if (messageSize == 0) {
+                    return;
                 }
-                lock (_serialReadLock) {
-                    buffer = new byte[messageSize];// create buffer with size of message
-                    int bytesRead = sp.BaseStream.Read(buffer, 0, messageSize); // read the message from the stream
+
+                buffer = new byte[messageSize];// create buffer with size of message
+                try
+                {
+                    int bytesRead = 0;
+                    while (bytesRead < messageSize) {
+                        ////Moshe - concatenate read buffer parts
+                        int currBytes = sp.BaseStream.Read(buffer, bytesRead, messageSize-bytesRead); // read the message from the stream
+                        bytesRead += currBytes;
+                    }
                     if (bytesRead == messageSize) { // check if we read the full message
                         var parser = new MessageParser<Message>(() => new Message());
                         Message message = parser.ParseFrom(buffer, 0, messageSize);
@@ -181,10 +204,16 @@ namespace UBA6Library {
                         throw new Exception($"Buffer length({bytesRead})!= Message Size({messageSize})");
                     }
                 }
+                catch /*(OperationCanceledException)*/
+                {
+                    ////throw new TimeoutException("Serial read timed out.");
+                    _logger.LogInformation($"Serial read timed out.");
+                }
             } catch (Exception ex) {
                 _logger.LogDebug($"Buffer (hex): {BitConverter.ToString(buffer)} - Exception {ex}");
                 _logger.LogInformation($"Error reading from serial: {ex.Message} , Resetting the serial port");
-                sp.DiscardInBuffer();
+                //Moshe
+                ////sp.DiscardInBuffer();
             } finally {
                 messageSize = 0;
             }
@@ -209,7 +238,8 @@ namespace UBA6Library {
                     messageQueue.TryDequeue(out msg, out _);
                 }
                 if (msg != null) {
-                    if (Monitor.TryEnter(_serialReadLock)) {
+                    //Moshe
+                    if (Monitor.TryEnter(_serialReadLock, 5000)) {   
                         try {
                             if (sp?.IsOpen == false) {
                                 sp.Open();
@@ -226,15 +256,15 @@ namespace UBA6Library {
                                 this.SwitchCom(sp.PortName, true);
                             }
                         } finally {
-                            Monitor.Exit(_serialReadLock);
                         }
                     } else {
                         messageQueue.Enqueue(msg, 1);
                         _logger.LogWarning("Serial port is busy reading, skipping write for this cycle.");
                     }
+                    Monitor.Exit(_serialReadLock);
                 } else {
                 }
-                await Task.Delay(50, cancellationToken); // Avoid busy-waiting
+                await Task.Delay(50, cancellationToken); // Avoid busy-רקשגןמע
             }
         }
         /// <summary>
@@ -261,16 +291,19 @@ namespace UBA6Library {
             if (queryMessage == null) {
                 return false;
             } else {
-                if (queryMessage.PyloadCase != Message.PyloadOneofCase.Query) {
-                    _logger.LogError(queryMessage.PyloadCase + " is not a Query message");
-                } else if (responseMessage.PyloadCase != Message.PyloadOneofCase.QueryResponse) {
-                    _logger.LogError(responseMessage.PyloadCase + " is not a QueryResponse message");
-                } else if ((queryMessage.Query.Recipient & responseMessage.QueryResponse.Recipient) != responseMessage.QueryResponse.Recipient) {
-                    _logger.LogError($" {responseMessage.PyloadCase} QueryResponse recipient{responseMessage.QueryResponse.Recipient} does not match Query recipient {queryMessage.Query.Recipient}");
-                } else if (queryMessage.Head.Id != responseMessage.QueryResponse.ResponseId) {
-                    _logger.LogError($" {responseMessage.PyloadCase} QueryResponse ID {responseMessage.QueryResponse.ResponseId} does not match Query ID{queryMessage.Head.Id}");
-                } else {
-                    _logger.LogDebug($"Message {responseMessage} is a Response to {queryMessage} message");
+                //verify response message
+                if (queryMessage.PyloadCase == Message.PyloadOneofCase.Query) {
+                    if ((queryMessage.Query.Recipient & responseMessage.QueryResponse.Recipient) != responseMessage.QueryResponse.Recipient) {
+                        ////_logger.LogError($" {responseMessage.PyloadCase} QueryResponse recipient{responseMessage.QueryResponse.Recipient} does not match Query recipient {queryMessage.Query.Recipient}");
+                    } else if (queryMessage.Head.Id != responseMessage.QueryResponse.ResponseId) {
+                        ////_logger.LogError($" {responseMessage.PyloadCase} QueryResponse ID {responseMessage.QueryResponse.ResponseId} does not match Query ID {queryMessage.Head.Id}");
+                    } else {
+                        ////_logger.LogInformation($"Message {responseMessage} is a Response to {queryMessage} message");
+                        ////_logger.LogInformation($"Message ID {responseMessage.QueryResponse.ResponseId} is a Response to Query ID {queryMessage.Head.Id}");
+                        return true;
+                    }
+                } else if ((queryMessage.PyloadCase == Message.PyloadOneofCase.QueryResponse) ||
+                           (queryMessage.PyloadCase == Message.PyloadOneofCase.Tr)) {
                     return true;
                 }
             }
@@ -286,7 +319,7 @@ namespace UBA6Library {
                 if ((queryMessage.PyloadCase != Message.PyloadOneofCase.Cmd) && (queryMessage.Cmd.CommandCase != UBA_PROTO_CMD.command_message.CommandOneofCase.File)) {
                     _logger.LogError(queryMessage.PyloadCase + " is not a File Command Request message");
                 } else if (responseMessage.PyloadCase != Message.PyloadOneofCase.File) {
-                    _logger.LogError($"Payload: {responseMessage.PyloadCase} is not a file chank ({queryMessage.Cmd.File.ChunkIndex}) message");
+                    _logger.LogError($"Payload: {responseMessage.PyloadCase} is not a file chunk ({queryMessage.Cmd.File.ChunkIndex}) message");
                 } else if (queryMessage.Cmd.File.ChunkIndex != responseMessage.File.ChunkIndex) {
                     _logger.LogError($"File Chunk missmatch {queryMessage.Cmd.File.ChunkIndex} != {responseMessage.File.ChunkIndex}");
                 } else {
@@ -330,25 +363,25 @@ namespace UBA6Library {
             }*/
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             if (send?.PyloadCase == Message.PyloadOneofCase.Query) {
-                Message? res = await EnqueueMessageAndWaitForResponseAsync(new Message(send), MessagePriority.DEVICE_QUERY, timeout);
+                Message? res = await WithTimeout(EnqueueMessageAndWaitForResponseAsync(new Message(send), MessagePriority.DEVICE_QUERY, timeout), timeout);
                 if (res != null) {
                     _logger.LogDebug($"Received Query Response : {res.QueryResponse.Recipient} in {stopwatch.ElapsedMilliseconds} ms");
                     return new Message(res);
                 }
             } else if (send.PyloadCase == Message.PyloadOneofCase.Cmd && send.Cmd?.CommandCase == UBA_PROTO_CMD.command_message.CommandOneofCase.File && send.Cmd.File.Id == UBA_PROTO_FM.CMD_ID.ChunkRequest) {
-                Message? res = await EnqueueMessageAndWaitFileChunkAsync(send);
+                Message? res = await WithTimeout(EnqueueMessageAndWaitFileChunkAsync(send), AWAIT_TIMEOUT);
                 if (res != null) {
                     _logger.LogDebug($"Received File Chunk : {res.File.ChunkIndex} in {stopwatch.ElapsedMilliseconds} ms");
                     return new Message(res);
                 }
             } else if (send.PyloadCase == Message.PyloadOneofCase.Cmd && send.Cmd?.CommandCase == UBA_PROTO_CMD.command_message.CommandOneofCase.File && send.Cmd.File.Id == UBA_PROTO_FM.CMD_ID.FileListRequest) {
-                Message? res = await EnqueueMessageAndWaitFileList(send);
+                Message? res = await WithTimeout(EnqueueMessageAndWaitFileList(send), AWAIT_TIMEOUT);
                 if (res != null) {
                     _logger.LogDebug($"Received File List : {res.FmList.Filenames.Count} / {res.FmList.TotalFiles} in {stopwatch.ElapsedMilliseconds} ms");
                     return new Message(res); ;
                 }
             } else if (send.PyloadCase == Message.PyloadOneofCase.Cmd && send.Cmd?.CommandCase == UBA_PROTO_CMD.command_message.CommandOneofCase.File && send.Cmd.File.Id == UBA_PROTO_FM.CMD_ID.BptFile) {
-                Message? res = await EnqueueMessageAndWaitFileList(send);
+                Message? res = await WithTimeout(EnqueueMessageAndWaitFileList(send), AWAIT_TIMEOUT);
                 if (res != null) {
                     _logger.LogDebug($"Received File List : {res.FmList.Filenames.Count} / {res.FmList.TotalFiles} in {stopwatch.ElapsedMilliseconds} ms");
                     return new Message(res); ;
@@ -369,12 +402,12 @@ namespace UBA6Library {
                 return null;
             }*/
             Message queryMessage = UBA_Message_Factory.CreateQeuryMessage(targateAddress, recipient);
-            Message? responseMessage = await EnqueueMessageAndWaitForResponseAsync(queryMessage, MessagePriority.QUERY_MESSAGE, timeout);
+            Message? responseMessage = await WithTimeout(EnqueueMessageAndWaitForResponseAsync(queryMessage, MessagePriority.QUERY_MESSAGE, timeout), timeout);
 
             return responseMessage;
         }
 
-        public async Task<Message?> EnqueueMessageAndWaitForResponseAsync(Message? message, MessagePriority priority = MessagePriority.DEFUALT, int timeout = 5000) {
+        public async Task<Message?> EnqueueMessageAndWaitForResponseAsync(Message? message, MessagePriority priority = MessagePriority.DEFUALT, int timeout = 50) {
             if (message == null) throw new ArgumentNullException(nameof(message));       
             var tcs = new TaskCompletionSource<Message?>();
             EventHandler<ProtoMessageEventArg>? handler = null;
@@ -387,16 +420,18 @@ namespace UBA6Library {
                 }
             };
             MessageReceived += handler;
-            try {
+            
+            try { 
                 EnqueueMessage(message, priority);
                 using (timeoutCts) {
+                    var delayTask = Task.Delay(timeout);
                     var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
                     stopwatch.Stop();
                     if (completedTask == tcs.Task) {
                         _logger.LogDebug($"Received response for Message ID: {originalId} in {stopwatch.ElapsedMilliseconds} ms");
                         return tcs.Task.Result;
                     } else {
-                        _logger.LogError($"Timeout waiting for response with Message ID: {originalId} after {stopwatch.ElapsedMilliseconds} ms");
+                        _logger.LogError($"1-Timeout waiting for response with Message ID: {originalId} after {stopwatch.ElapsedMilliseconds} ms");
                         return null;
                     }
                 }
@@ -405,7 +440,7 @@ namespace UBA6Library {
             }
         }
 
-        public async Task<Message?> EnqueueMessageAndWaitFileChunkAsync(Message message, MessagePriority priority = MessagePriority.FILE_DATA_REQUEST, int timeout = 50000) {
+        public async Task<Message?> EnqueueMessageAndWaitFileChunkAsync(Message message, MessagePriority priority = MessagePriority.FILE_DATA_REQUEST, int timeout = 250) {
             if (message == null) throw new ArgumentNullException(nameof(message));          
             var tcs = new TaskCompletionSource<Message?>();
             EventHandler<ProtoMessageEventArg>? handler = null;
@@ -424,7 +459,7 @@ namespace UBA6Library {
                         _logger.LogDebug($"Received response for Message ID: {message.Head.Id}");
                         return tcs.Task.Result;
                     } else {
-                        _logger.LogError($"Timeout waiting for response with Message ID: {message.Head.Id}");
+                        _logger.LogError($"2-Timeout waiting for response with Message ID: {message.Head.Id}");
                         return null;
                     }
                 }
@@ -432,7 +467,7 @@ namespace UBA6Library {
                 MessageReceived -= handler;
             }
         }
-        public async Task<Message?> EnqueueMessageAndWaitFileList(Message message, MessagePriority priority = MessagePriority.FILE_NAME_REQUEST, int timeout = 50000) {
+        public async Task<Message?> EnqueueMessageAndWaitFileList(Message message, MessagePriority priority = MessagePriority.FILE_NAME_REQUEST, int timeout = 250) {
             if (message == null) throw new ArgumentNullException(nameof(message));
           
             var tcs = new TaskCompletionSource<Message?>();
@@ -452,10 +487,10 @@ namespace UBA6Library {
                         _logger.LogDebug($"Received response for Message ID: {message.Head.Id}");
                         return tcs.Task.Result;
                     } else {
-                        _logger.LogError($"Timeout waiting for response with Message ID: {message.Head.Id}");
+                        _logger.LogError($"3-Timeout waiting for response with Message ID: {message.Head.Id}");
                         return null;
                     }
-                }
+                }               
             } finally {
                 MessageReceived -= handler;
             }

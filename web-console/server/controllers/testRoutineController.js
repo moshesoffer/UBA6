@@ -42,7 +42,3 @@ exports.deleteTestRoutine = async (req, res) => {
 	}
 };
 
-/*const sleepsss = async(ms) => {
-	return new Promise((resolve) => setTimeout(resolve, ms));
-};*/
-

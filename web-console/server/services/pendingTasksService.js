@@ -35,7 +35,9 @@ const getPendingTasks = async (machineMac) => {
                 pendingTasks.pendingConnectionUbaDevices.push(withoutOthers);
             }
         }
-        logger.info(`getPendingTasks for machineMac: ${machineMac}, pendingTasks: ${JSON.stringify(pendingTasks)}`);
+
+        logger.info(`getPendingTasks for machineMac: ${machineMac}`);
+        //logger.info(`getPendingTasks for machineMac: ${machineMac}, pendingTasks: ${JSON.stringify(pendingTasks)}`);
         return pendingTasks;
     } catch (error) {
         logger.error('getPendingTasks', error);

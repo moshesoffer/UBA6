@@ -50,10 +50,10 @@ namespace UBA6Library {
         private void UBA_Interface_MessageReceived(object? sender, ProtoMessageEventArg e) {
 
             if (e.Msg.Head?.SenderAddress == Address) { 
-                _logger.LogDebug($"UBA6 received message for address {Address}: {e.Msg.PyloadCase}");
+                ////_logger.LogDebug($"UBA6 received message for address {Address}: {e.Msg.PyloadCase}");
                 MessageReceived?.Invoke(this, e);
             } else {
-                _logger.LogDebug($"UBA6 received message for different address: {e.Msg?.Head?.TargetAddress}, expected: {Address}");
+                ////_logger.LogDebug($"UBA6 received message for different address: {e.Msg?.Head?.TargetAddress}, expected: {Address}");
             }
         }       
       
@@ -99,7 +99,14 @@ namespace UBA6Library {
             SentMessage(UBA_Message_Factory.CreateMessage(this.Address,
                 ProtoHelper.CreateBPTCommand(UBA_PROTO_BPT.CMD_ID.Clear, ch)));
         }
-
+        public void PendingBPT(UBA_PROTO_CHANNEL.ID ch) {
+            SentMessage(UBA_Message_Factory.CreateMessage(this.Address,
+                ProtoHelper.CreateBPTCommand(UBA_PROTO_BPT.CMD_ID.Pending, ch)));
+        }
+        public void AbortedBPT(UBA_PROTO_CHANNEL.ID ch) {
+            SentMessage(UBA_Message_Factory.CreateMessage(this.Address,
+                ProtoHelper.CreateBPTCommand(UBA_PROTO_BPT.CMD_ID.Clear, ch)));
+        }
 
 
         public async Task<Message> GetMessage(RECIPIENT r = RECIPIENT.Device) {

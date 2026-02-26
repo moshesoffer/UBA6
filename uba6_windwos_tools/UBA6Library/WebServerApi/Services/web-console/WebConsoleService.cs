@@ -13,6 +13,7 @@ using UBA6Library.WebServerApi.Services.WebConsole.Controllers;
 using UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests;
 using UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.Models;
 using UBA6Library.WebServerApi.Services.WebConsole.Model;
+using System.Text.Json;
 
 namespace UBA6Library.WebServerApi.Services.WebConsole {
     public class WebConsoleService : WebService {
@@ -62,56 +63,77 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
             await MachinesController.WebRq.Post<object, MachineDTO>(Client, nm);
         }
 
-        public async Task<List<UbaDeviceDto>> GetStaionUBAs() {
-            _logger.LogInformation("Retrieving UBA devices for the station...");
-            UBADevicesResponseDTO m = await UBADevices.WebRq.Get<UBADevicesResponseDTO>(Client);
-            foreach (UbaDeviceDto uba in m.UbaDevices) {
-                _logger.LogInformation($"UBA Device: {uba.Name}, SN: {uba.UbaSN}, MAC: {uba.MachineMac}");
-
-            }
-
-
-
-            return new List<UbaDeviceDto>();
-
-        }
 
         public override string ToString() {
             return $"{serviceName} v{version}";
-        }
+        }                                     
         public async Task<List<UbaDeviceDto>> GetStationUBAs() {
-            _logger.LogInformation("Retrieving UBA devices for the station...");
+            ////_logger.LogInformation("Retrieving UBA devices for the station...");
             UBADevicesResponseDTO m = await UBADevices.WebRq.Get<UBADevicesResponseDTO>(Client);
             List<UbaDeviceDto> matchingUBAs = m.UbaDevices
                 .Where(uba => uba.MachineMac == GetMacAddress())
                 .ToList();
 
-            foreach (UbaDeviceDto uba in matchingUBAs) {
-                _logger.LogInformation($"UBA Device: {uba.Name}, SN: {uba.UbaSN}, MAC: {uba.MachineMac}");
+            //remove duplications    
+            foreach (var uba in matchingUBAs.ToList()) {
+                string UbaSN = uba.UbaSN;
+                var count = 0;
+                var index = 0;
+                foreach (var uba1 in matchingUBAs.ToList()) {
+                    if (matchingUBAs.Any(uba => uba1.UbaSN.Equals(UbaSN))) {
+                        count = count + 1;
+                        if (count > 1)
+                        {
+                            count = count - 1;
+                            matchingUBAs.RemoveRange(index,1);//RemoveAt(index); 
+                        }
+                    }
+                    index++;
+                }
             }
+
+            ////_logger.LogInformation($"=========> List Count: {matchingUBAs.Count()}");
+            ////foreach (UbaDeviceDto uba in matchingUBAs) {
+            ////    _logger.LogInformation($"UBA Device: {uba.Name}, SN: {uba.UbaSN}, MAC: {uba.MachineMac}");
+            ////}
             return matchingUBAs;
         }
        
+        public async Task DeleteStationUBA(UbaDeviceDto ubaDeviceDto)
+        {
+            _logger.LogInformation($"Updating UBA List");
+            UBADevicesResponseDTO m = await UBADevices.WebRq.Get<UBADevicesResponseDTO>(Client);
+            var devicesToDelete = m.UbaDevices
+                .Where(uba => uba.MachineMac == ubaDeviceDto.Address)
+                .ToList();
+
+            foreach (var uba in devicesToDelete)
+            {
+                string json = JsonSerializer.Serialize(new { ubaSN = uba.MachineMac });
+                await UBADevices.WebRq.Delete<object>(Client, json);
+                break;
+            }
+        }
 
         public async Task ChangeRunningTestStatus(GETPendingTestResponseDTO pt, int status) {
-            _logger.LogInformation($"Changing status of running test {pt.Id} to {status}...");
+            ////_logger.LogInformation($"Changing status of running test {pt.Id} to {status}...");
             PATCH_ChangeTR_StatusRequest pATCH_ChangeTR_StatusRequest = new PATCH_ChangeTR_StatusRequest();
             pATCH_ChangeTR_StatusRequest.RunningTestID = pt.Id;
             pATCH_ChangeTR_StatusRequest.TestRoutineChannels = pt.Channel;
             pATCH_ChangeTR_StatusRequest.UbaSN = pt.UbaSN;
             pATCH_ChangeTR_StatusRequest.NewTestStatus = status == 0 ? 1 : status; 
             await RT_Controller.ChangeRunningTestStatus.Patch<object, PATCH_ChangeTR_StatusRequest>(Client, pATCH_ChangeTR_StatusRequest);
-            _logger.LogInformation($"Running test {pATCH_ChangeTR_StatusRequest.RunningTestID} status changed to {pATCH_ChangeTR_StatusRequest.NewTestStatus}.");
+            ////_logger.LogInformation($"Running test {pATCH_ChangeTR_StatusRequest.RunningTestID} status changed to {pATCH_ChangeTR_StatusRequest.NewTestStatus}.");
         }
         public async Task ChangeRunningTestStatus(UbaDeviceDto dto, int status) {
-            _logger.LogInformation($"Changing status of running test {dto.RunningTestID} to {status}...");
+            ////_logger.LogInformation($"Changing status of running test {dto.RunningTestID} to {status}...");
             PATCH_ChangeTR_StatusRequest pATCH_ChangeTR_StatusRequest = new PATCH_ChangeTR_StatusRequest();
             pATCH_ChangeTR_StatusRequest.RunningTestID = dto.RunningTestID;
             pATCH_ChangeTR_StatusRequest.TestRoutineChannels = dto.Channel;
             pATCH_ChangeTR_StatusRequest.UbaSN = dto.UbaSN;
             pATCH_ChangeTR_StatusRequest.NewTestStatus = status == 0 ? 1 : status;
             await RT_Controller.ChangeRunningTestStatus.Patch<object, PATCH_ChangeTR_StatusRequest>(Client, pATCH_ChangeTR_StatusRequest);
-            _logger.LogInformation($"Running test {pATCH_ChangeTR_StatusRequest.RunningTestID} status changed to {pATCH_ChangeTR_StatusRequest.NewTestStatus}.");
+            ////_logger.LogInformation($"Running test {pATCH_ChangeTR_StatusRequest.RunningTestID} status changed to {pATCH_ChangeTR_StatusRequest.NewTestStatus}.");
         }
 
         public async Task UpdateChannelReadingData(Guid runningTestID, UBA_PROTO_CHANNEL.status msg) {
@@ -130,7 +152,7 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
             await RT_Controller.InstantTestResults.Post<object, List<InstantTestResultsDTO>>(Client, sadas);
         }
 
-        public async Task UpdateTestReadingData(Guid runningTestID, UBA_PROTO_BPT.status_message msg,bool isLog = false) {
+        public async Task UpdateTestReadingData(Guid runningTestID, UBA_PROTO_BPT.status_message msg, bool isLog = false) {
             InstantTestResultsDTO instantTestResultsDTO = new InstantTestResultsDTO();
             instantTestResultsDTO.RunningTestID = runningTestID;
             instantTestResultsDTO.Timestamp = DateTime.UtcNow;

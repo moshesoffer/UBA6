@@ -8,6 +8,8 @@ const path = require('node:path');
 const { readTextFromFile } = require('../utils/helper');
 const { machine } = require('node:os');
 const { clearMemInServer } = require('./testHelper');
+const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
+
 describe('Final Reports API Tests', () => {
 
     let connection;
@@ -62,14 +64,14 @@ describe('Final Reports API Tests', () => {
     };
 
     beforeAll(async () => {
-        await runSchema();
-        connection = await mysql.createConnection(global.__MYSQL_CONFIG__);
-        let response = await request(global.__SERVER__)
+        await withTimeout(runSchema(), AWAIT_TIMEOUT);
+        connection = await withTimeout(mysql.createConnection(global.__MYSQL_CONFIG__), AWAIT_TIMEOUT);
+        let response = await withTimeout(request(global.__SERVER__)
             .post(APIS.createReportApi)
-            .send(reportToAdd);
+            .send(reportToAdd), AWAIT_TIMEOUT);
         expect(response.status).toBe(201);
 
-        let [rows] = await connection.query(`SELECT * FROM \`${reportModel.tableName}\`;`);
+        let [rows] = await withTimeout(connection.query(`SELECT * FROM \`${reportModel.tableName}\`;`), AWAIT_TIMEOUT);
         expect(rows.length).toBe(1);
 
         const folderPath = path.join(reportsDataPath, rows[0].id);
@@ -80,7 +82,7 @@ describe('Final Reports API Tests', () => {
         const testResults = JSON.parse(content);
         expect(testResults.length).toBe(reportToAdd.testResults.length);
         
-        response = await request(global.__SERVER__).post(APIS.getReportsApi).send(searchBody);
+        response = await withTimeout(request(global.__SERVER__).post(APIS.getReportsApi).send(searchBody), AWAIT_TIMEOUT);
         expect(response.status).toBe(200);
         expect(response.body.rows.length).toBe(1);
         expect(response.body.count).toBe(1);
@@ -91,7 +93,7 @@ describe('Final Reports API Tests', () => {
         });
         expect(response.body.rows[0].timeOfTest).toBe('00:07:40');
 
-        response = await request(global.__SERVER__).post(APIS.reportsGraphApi).send([reportIdAdded]);
+        response = await withTimeout(request(global.__SERVER__).post(APIS.reportsGraphApi).send([reportIdAdded]), AWAIT_TIMEOUT);
         expect(response.status).toBe(200);
         expect(response.body.length).toBe(1);
         expect(response.body[0].testResults).toHaveLength(reportToAdd.testResults.length);
@@ -99,18 +101,19 @@ describe('Final Reports API Tests', () => {
 
     afterAll(async () => {
         console.log('Final Reports Test suite finished');
-        if(connection) await connection.end();
-        await new Promise(resolve => setTimeout(resolve, 500));//waiting for winston server logs to finish
+        if(connection) await withTimeout(connection.end(), AWAIT_TIMEOUT);
+        //delay - waiting for winston server logs to finish
+        //await new Promise(resolve => setTimeout(resolve, 500));
     });
     afterEach(async () => {
-        await clearMemInServer();
+        await withTimeout(clearMemInServer(), AWAIT_TIMEOUT);
     });
 
     test('add a new Report - fail', async () => {
         const { testResults, ...reportWithoutTestResults } = reportToAdd;
-        const response = await request(global.__SERVER__)
+        const response = await withTimeout(request(global.__SERVER__)
             .post(APIS.createReportApi)
-            .send(reportWithoutTestResults);
+            .send(reportWithoutTestResults), AWAIT_TIMEOUT);
         expect(response.status).toBe(500);//missing testResults
     });
 
@@ -130,11 +133,11 @@ describe('Final Reports API Tests', () => {
             ignoredParam: 'something',
             status: 1,
         };
-        response = await request(global.__SERVER__)
+        response = await withTimeout(request(global.__SERVER__)
             .patch(APIS.updateReportApi + "/" + reportIdAdded)
-            .send(newObj);
+            .send(newObj), AWAIT_TIMEOUT);
         expect(response.status).toBe(200);
-        response = await request(global.__SERVER__).post(APIS.getReportsApi).send(searchBody);
+        response = await withTimeout(request(global.__SERVER__).post(APIS.getReportsApi).send(searchBody), AWAIT_TIMEOUT);
         
         const obj2 = response.body.rows[0];
         expect(obj2).not.toHaveProperty('ignoredParam');
@@ -153,18 +156,18 @@ describe('Final Reports API Tests', () => {
     });
 
     test('update a Report - fail', async () => {
-        response = await request(global.__SERVER__)
+        response = await withTimeout(request(global.__SERVER__)
             .patch(APIS.updateReportApi + "/" + reportIdAdded)
             .send({
                 notExist: 'notExist',
-            });
+            }), AWAIT_TIMEOUT);
         expect(response.status).toBe(500);//nothing to update
         
-        response = await request(global.__SERVER__)
+        response = await withTimeout(request(global.__SERVER__)
             .patch(APIS.updateReportApi + "/" + 'notexist')
             .send({
                 cellBatch: 'something',
-            });
+            }), AWAIT_TIMEOUT);
         expect(response.status).toBe(500);//Report not exists
     });
 
@@ -174,9 +177,9 @@ describe('Final Reports API Tests', () => {
             if (field === 'notes' || field === 'customer' || field === 'workOrderNumber' || field === 'approvedBy' || field === 'conductedBy' || field === 'cellSupplier' || field === 'cellBatch') continue; // nullable fields
             const reportCopy = { ...reportToAdd };
             delete reportCopy[field];
-            const response = await request(global.__SERVER__)
+            const response = await withTimeout(request(global.__SERVER__)
                 .post(APIS.createReportApi)
-                .send(reportCopy);
+                .send(reportCopy), AWAIT_TIMEOUT);
             expect(response.status).toBe(500);
         }
     });
@@ -185,58 +188,58 @@ describe('Final Reports API Tests', () => {
     test('co-pilot-varchar-max-length', async () => {
         const longString = 'x'.repeat(300);
         const tooLong = { ...reportToAdd, testName: longString, batteryPN: longString, batterySN: longString };
-        const response = await request(global.__SERVER__)
+        const response = await withTimeout(request(global.__SERVER__)
             .post(APIS.createReportApi)
-            .send(tooLong);
+            .send(tooLong), AWAIT_TIMEOUT);
         expect(response.status).toBe(500);
     });
 
     // co-pilot-unique-constraint
     test('co-pilot-unique-constraint', async () => {
-        await request(global.__SERVER__).post(APIS.createReportApi).send(reportToAdd);
-        const response = await request(global.__SERVER__).post(APIS.createReportApi).send(reportToAdd);
+        await withTimeout(request(global.__SERVER__).post(APIS.createReportApi).send(reportToAdd), AWAIT_TIMEOUT);
+        const response = await withTimeout(request(global.__SERVER__).post(APIS.createReportApi).send(reportToAdd), AWAIT_TIMEOUT);
         expect([409, 500]).toContain(response.status);
     });
 
     // co-pilot-invalid-data-types
     test('co-pilot-invalid-data-types', async () => {
         const invalidReport = { ...reportToAdd, noCellSerial: 'not-a-number', noCellParallel: 'not-a-number' };
-        const response = await request(global.__SERVER__)
+        const response = await withTimeout(request(global.__SERVER__)
             .post(APIS.createReportApi)
-            .send(invalidReport);
+            .send(invalidReport), AWAIT_TIMEOUT);
         expect(response.status).toBe(500);
     });
 
     // co-pilot-get-nonexistent-report
     test('co-pilot-get-nonexistent-report', async () => {
-        const response = await request(global.__SERVER__).post(APIS.getReportsApi).send({ ...searchBody, filters: { ...searchBody.filters, batterySN: 'notexist' } });
+        const response = await withTimeout(request(global.__SERVER__).post(APIS.getReportsApi).send({ ...searchBody, filters: { ...searchBody.filters, batterySN: 'notexist' } }), AWAIT_TIMEOUT);
         expect(response.status).toBe(200);
         expect(response.body.rows.length).toBe(0);
     });
 
     // co-pilot-empty-payload
     test('co-pilot-empty-payload', async () => {
-        const response = await request(global.__SERVER__)
+        const response = await withTimeout(request(global.__SERVER__)
             .post(APIS.createReportApi)
-            .send({});
+            .send({}), AWAIT_TIMEOUT);
         expect(response.status).toBe(500);
     });
 
     // co-pilot-invalid-json-plan
     test('co-pilot-invalid-json-plan', async () => {
         const invalidPlan = { ...reportToAdd, plan: 'not-a-json' };
-        const response = await request(global.__SERVER__)
+        const response = await withTimeout(request(global.__SERVER__)
             .post(APIS.createReportApi)
-            .send(invalidPlan);
+            .send(invalidPlan), AWAIT_TIMEOUT);
         expect(response.status).toBe(500);
     });
 
     // co-pilot-invalid-status-enum
     test('co-pilot-invalid-status-enum', async () => {
         const invalidStatus = { ...reportToAdd, status: 999 };
-        const response = await request(global.__SERVER__)
+        const response = await withTimeout(request(global.__SERVER__)
             .post(APIS.createReportApi)
-            .send(invalidStatus);
+            .send(invalidStatus), AWAIT_TIMEOUT);
         expect(response.status).toBe(500);
     });
 

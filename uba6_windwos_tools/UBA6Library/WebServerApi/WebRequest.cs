@@ -141,7 +141,7 @@ namespace UBA6Library.WebServerApi {
         //============================================GET============================================
         protected async Task<TRes> Get<TRes>(HttpClient client, Uri uri) {
             AmicellUtil.Util.EnsureFlagIsSet(this.requestType, RequestType.GET);
-            Console.WriteLine($"Get ======= URL:{uri.ToString()}");
+            ////Console.WriteLine($"Get ======= URL:{uri.ToString()}");
             var response = await client.GetAsync(uri);
             var contents = await response.Content.ReadAsStringAsync();
             statusCodeHandle(response.StatusCode, contents);
@@ -150,6 +150,7 @@ namespace UBA6Library.WebServerApi {
 
         public async Task<TRes> Get<TRes>(HttpClient client, string surfix) {
             Uri uri = this.Uri(surfix);
+            ////Console.WriteLine($"Get ======= URL:{uri.ToString()}");
             return await this.Get<TRes>(client, uri);
         }
 
@@ -180,7 +181,7 @@ namespace UBA6Library.WebServerApi {
         //============================================POST============================================
         protected async Task<TRes> Post<TRes, TArg>(HttpClient client, Uri uri, HttpContent httpContent) {
             AmicellUtil.Util.EnsureFlagIsSet(this.requestType, RequestType.POST);
-            Console.WriteLine($"Post ======= URL:{uri.ToString()}");
+            ////Console.WriteLine($"Post ======= URL:{uri.ToString()}");
             var response = await client.PostAsync(uri, httpContent);
             Debug.WriteLine($"the URI: {uri.ToString()} - httpContent: {httpContent}");
             var contents = await response.Content.ReadAsStringAsync();
@@ -193,7 +194,7 @@ namespace UBA6Library.WebServerApi {
         }
 
         protected async Task<TRes> Post<TRes, TArg>(HttpClient client, Uri uri, string json) {
-            Console.WriteLine(json);
+            ////Console.WriteLine(json);
             Debug.WriteLine("POST JSON :" + json);
             StringContent httpContent = new StringContent(json, Encoding.UTF8, "application/json");
             return await Post<TRes, TArg>(client, uri, httpContent);
@@ -215,7 +216,7 @@ namespace UBA6Library.WebServerApi {
         //============================================PUT============================================
         protected async Task<TRes?> Put<TRes, TArg>(HttpClient client, Uri uri, HttpContent httpContent) {
             AmicellUtil.Util.EnsureFlagIsSet(this.requestType, RequestType.PUT);
-            Console.WriteLine($"Put ======= URL:{uri.ToString()}");
+            ////Console.WriteLine($"Put ======= URL:{uri.ToString()}");
             var response = await client.PutAsync(uri, httpContent);
             Debug.WriteLine($"the URI: {uri.ToString()} - httpContent: {httpContent}");
             if (typeof(TRes) == typeof(object) || response.Content.Headers.ContentLength == 0) {
@@ -231,7 +232,7 @@ namespace UBA6Library.WebServerApi {
         }
 
         protected async Task<TRes?> Put<TRes, TArg>(HttpClient client, Uri uri, string json) {
-            Console.WriteLine(json);
+            ////Console.WriteLine(json);
             Debug.WriteLine("Put JSON :" + json);
             StringContent httpContent = new StringContent(json, Encoding.UTF8, "application/json");
             return await Put<TRes?, TArg>(client, uri, httpContent);
@@ -252,7 +253,7 @@ namespace UBA6Library.WebServerApi {
         //============================================PATCH============================================
         protected async Task<TRes> Patch<TRes, TArg>(HttpClient client, Uri uri, HttpContent httpContent) {
             AmicellUtil.Util.EnsureFlagIsSet(this.requestType, RequestType.PATCH);
-            Console.WriteLine($"Patch ======= URL:{uri.ToString()}");
+            ////Console.WriteLine($"Patch ======= URL:{uri.ToString()}");
             var response = await client.PatchAsync(uri, httpContent);
             var contents = await response.Content.ReadAsStringAsync();
             statusCodeHandle(response.StatusCode, contents);
@@ -261,7 +262,7 @@ namespace UBA6Library.WebServerApi {
         }
 
         protected async Task<TRes> Patch<TRes, TArg>(HttpClient client, Uri uri, string json) {
-            Console.WriteLine(json);
+            ////Console.WriteLine(json);
             StringContent httpContent = new StringContent(json, Encoding.UTF8, "application/json");
             return await Patch<TRes, TArg>(client, uri, httpContent);
         }
@@ -293,7 +294,7 @@ namespace UBA6Library.WebServerApi {
             Uri t = this.Uri(surfix, Query);
             string json = JsonSerializer.Serialize<TArg>(obj);
             Console.WriteLine("============================JSON object:=================================");
-            Console.WriteLine(json);
+            ////Console.WriteLine(json);
             return await Patch<TRes, TArg>(client, t, json);
         }
 
@@ -305,7 +306,7 @@ namespace UBA6Library.WebServerApi {
 
         protected async Task<TRes?> Delete <TRes>(HttpClient client, Uri uri) {
             AmicellUtil.Util.EnsureFlagIsSet(this.requestType, RequestType.DELETE);
-            Console.WriteLine($"Delete ======= URL:{uri.ToString()}");
+            ////Console.WriteLine($"Delete ======= URL:{uri.ToString()}");
             var response = await client.DeleteAsync(uri);
             var contents = await response.Content.ReadAsStringAsync();
             statusCodeHandle(response.StatusCode, contents, new List<HttpStatusCode>() { HttpStatusCode.OK, HttpStatusCode.NoContent });

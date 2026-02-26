@@ -1,3 +1,5 @@
+const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
+
 const username = 'amicell';
 const password = '1q!QazAZ';
 
@@ -6,7 +8,7 @@ exports.login = async (req, res) => {
 		name: 'Natasha Cherkover'
 	};
 
-	await new Promise(resolve => setTimeout(() => resolve(), 2000));
+	await withTimeout(new Promise(resolve), AWAIT_TIMEOUT);
 
 	if (req.body?.username === username && req.body?.password === password) {
 		res.json(displayName);
@@ -20,7 +22,8 @@ exports.login = async (req, res) => {
 };
 
 exports.logout = async (req, res) => {
-	await new Promise(resolve => setTimeout(() => resolve(), 2000));
+	await withTimeout(new Promise(resolve), AWAIT_TIMEOUT);
+
 	res.end();
 };
 
