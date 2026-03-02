@@ -99,15 +99,6 @@ namespace UBA6Library {
             SentMessage(UBA_Message_Factory.CreateMessage(this.Address,
                 ProtoHelper.CreateBPTCommand(UBA_PROTO_BPT.CMD_ID.Clear, ch)));
         }
-        public void PendingBPT(UBA_PROTO_CHANNEL.ID ch) {
-            SentMessage(UBA_Message_Factory.CreateMessage(this.Address,
-                ProtoHelper.CreateBPTCommand(UBA_PROTO_BPT.CMD_ID.Pending, ch)));
-        }
-        public void AbortedBPT(UBA_PROTO_CHANNEL.ID ch) {
-            SentMessage(UBA_Message_Factory.CreateMessage(this.Address,
-                ProtoHelper.CreateBPTCommand(UBA_PROTO_BPT.CMD_ID.Clear, ch)));
-        }
-
 
         public async Task<Message> GetMessage(RECIPIENT r = RECIPIENT.Device) {
            return await UBA_Interface.GetMessage(r,this.Address);

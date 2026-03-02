@@ -38,6 +38,7 @@ typedef enum UBA_LCD_SCREEN_DISPLAY_STATE {
 	UBA_LCD_SCREEN_DISPLAY_TEST_SELECT, // show the list of test
 	UBA_LCD_SCREEN_DISPLAY_TEST_INFO, // show the test info
 	UBA_LCD_SCREEN_DISPLAY_SETTING, // show the device settings
+	UBA_LCD_SCREEN_DISPLAY_EXE_CMD, // show the execute command data info
 	UBA_LCD_SCREEN_DISPLAY_OFF, // turn off the display
 	UBA_LCD_SCREEN_STATE_MAX,
 	UBA_LCD_SCREEN_STATE_INVALID,
@@ -313,6 +314,7 @@ typedef struct UBA_LCD_STATIC_PAGE {
 
 // @formatter:on
 void UBA_LCD_screen_run(UBA_LCD_screen *screen);
+void UBA_LCD_screen_event(UBA_LCD_screen *screen, UBA_LCD_SCREEN_DISPLAY_STATE next_state);
 
 #endif /* UBA_LCD_SCREEN_H_ */
 

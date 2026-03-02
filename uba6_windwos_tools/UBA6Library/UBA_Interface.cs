@@ -355,7 +355,7 @@ namespace UBA6Library {
             return BitConverter.ToUInt32(buffer, 0);
         }
 
-        public async Task<Message?> GetMessage(Message? send, int timeout = 5000) {
+        public async Task<Message?> GetMessage(Message? send, int timeout = 1000) {
            /* if (sp == null || !sp.IsOpen) {
                 _logger.LogError("Serial port is not open.");
                 failes++;
@@ -391,7 +391,7 @@ namespace UBA6Library {
         }
 
 
-        public async Task<Message?> GetMessage(UBA_PROTO_QUERY.RECIPIENT recipient, UInt32 targateAddress = 0xffffffff, int timeout = 5000) {
+        public async Task<Message?> GetMessage(UBA_PROTO_QUERY.RECIPIENT recipient, UInt32 targateAddress = 0xffffffff, int timeout = 1000) {
           /*  if (sp == null || !sp.IsOpen) {
                 _logger.LogError("Serial port is not open.");
                 failes++;

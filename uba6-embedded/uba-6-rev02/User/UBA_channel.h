@@ -70,6 +70,7 @@ typedef struct UBA_channel {
 	}target;
 	float capacity;
 
+	void *current_screen;
 	UBA_channel_shadow shadow;
 } UBA_channel;
 

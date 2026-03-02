@@ -61,6 +61,7 @@ extern "C" {
 #define MSG_Header_target_address_tag            2
 #define MSG_Header_length_tag                    3
 #define MSG_Header_id_tag                        4
+
 #define MSG_Message_head_tag                     1
 #define MSG_Message_cmd_tag                      2
 #define MSG_Message_tr_tag                       3

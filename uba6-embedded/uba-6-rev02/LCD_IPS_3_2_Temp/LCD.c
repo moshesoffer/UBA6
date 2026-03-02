@@ -212,7 +212,7 @@ static void LCD_init_screens(UBA_LCD *LCD) {
 	LCD->screen_ch_A.bpt = &UBA_6_device_g.BPT_A;
 	LCD->screen_ch_A.ch_control = UBA_CHANNLE_ID_A;
 	//shadow
-	LCD->screen_ch_A.bpt->shadow.test_name[0] = 'x';
+	LCD->screen_ch_A.bpt->shadow.test_name[0] = ' '; //non-zero length
 	LCD->screen_ch_A.bpt->shadow.current_state = UBA_BPT_STATE_INVALID;
 	LCD->screen_ch_A.bpt->shadow.error = UBA_PROTO_UBA6_ERROR_LINE_NOT_AVAILABLE;
 	LCD->screen_ch_A.bpt->shadow.bnt_back_stop.text[0] = '\0';
@@ -228,7 +228,7 @@ static void LCD_init_screens(UBA_LCD *LCD) {
 	LCD->screen_ch_B.bpt = &UBA_6_device_g.BPT_B;
 	LCD->screen_ch_B.ch_control = UBA_CHANNLE_ID_B;
 	//shadow
-	LCD->screen_ch_B.bpt->shadow.test_name[0] = 'x';
+	LCD->screen_ch_B.bpt->shadow.test_name[0] = ' '; //non-zero length
 	LCD->screen_ch_B.bpt->shadow.current_state = UBA_BPT_STATE_INVALID;
 	LCD->screen_ch_B.bpt->shadow.error = UBA_PROTO_UBA6_ERROR_LINE_NOT_AVAILABLE;
 	LCD->screen_ch_B.bpt->shadow.bnt_back_stop.text[0] = '\0';
@@ -244,7 +244,7 @@ static void LCD_init_screens(UBA_LCD *LCD) {
 	LCD->screen_ch_AB.bpt = &UBA_6_device_g.BPT_AB;
 	LCD->screen_ch_AB.ch_control = UBA_CHANNLE_ID_AB;
 	//shadow
-	LCD->screen_ch_AB.bpt->shadow.test_name[0] = 'x';
+	LCD->screen_ch_AB.bpt->shadow.test_name[0] = ' '; //non-zero length
 	LCD->screen_ch_AB.bpt->shadow.current_state = UBA_BPT_STATE_INVALID;
 	LCD->screen_ch_AB.bpt->shadow.error = UBA_PROTO_UBA6_ERROR_LINE_NOT_AVAILABLE;
 	LCD->screen_ch_AB.bpt->shadow.bnt_back_stop.text[0] = '\0';
@@ -289,7 +289,7 @@ static void LCD_side_by_side(UBA_LCD *LCD) {
 	UBA_LCD_screen_run(&LCD->screen_ch_A);
 	UBA_LCD_screen_run(&LCD->screen_ch_B);
 	if ((LCD->screen_ch_A.state.current == UBA_LCD_SCREEN_DISPLAY_OFF) || (LCD->screen_ch_B.state.current == UBA_LCD_SCREEN_DISPLAY_OFF)) {
-//Moshe	- no rason to change state;	LCD->state.next = UBA_LCD_STATE_FULL_SCREEN;
+//Moshe	- no reason to change state;	LCD->state.next = UBA_LCD_STATE_FULL_SCREEN;
 	}
 }
 
@@ -300,7 +300,7 @@ static void LCD_side_by_side_exit(UBA_LCD *LCD) {
 
 static void LCD_full_screen_enter(UBA_LCD *LCD) {
 	LCD_update_state(LCD);
-//Mshe
+//Moshe
 //	LCD->screen_ch_AB.state.next = UBA_LCD_SCREEN_DISPLAY_INIT;
 }
 static void LCD_full_screen(UBA_LCD *LCD) {

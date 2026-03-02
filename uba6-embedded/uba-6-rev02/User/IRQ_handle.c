@@ -20,7 +20,7 @@
 #define UBA_COMP "IRQ handle"
 
 //refresh LCD (presss button)
-#define LCD_REFRESH
+#undef LCD_REFRESH
 
 #ifdef LCD_REFRESH
 #define LCD_REFRESH_PRESS_DELAY  200 /*ms*/

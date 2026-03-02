@@ -485,6 +485,11 @@ void UBA_channel_init_g(void) {
 	UBA_CH_AB.id = UBA_CHANNLE_ID_AB;
 	memcpy(UBA_CH_AB.name, "Channel AB", 11);
 
+	//init current screen;
+	UBA_CH_A.current_screen = NULL;
+	UBA_CH_B.current_screen = NULL;
+	UBA_CH_AB.current_screen = NULL;
+	
 	//init shadow
 	UBA_CH_A.shadow.ch_name_changed = false;
 	UBA_CH_A.shadow.state = UBA_CHANNEL_STATE_INVALID;

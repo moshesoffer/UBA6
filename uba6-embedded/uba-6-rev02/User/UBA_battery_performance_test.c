@@ -21,6 +21,8 @@
 #include "UBA_PROTO_DATA_LOG.pb.h"
 #include "UBA_file_manager.h"
 #include "UBA_UART_comm.h"
+#include "LCD.h"
+#include "UBA_LCD_screen.h"
 
 #define UBA_COMP "BPT"
 
@@ -313,6 +315,7 @@ void UBA_BPT_run_step_enter(UBA_BPT *bpt) {
 
 void UBA_BPT_run_step(UBA_BPT *bpt) {
 	UBA_channel_run(bpt->ch);
+
 	if (HAL_GetTick() - bpt->log_tick_ms > bpt->log_intreval) {
 		UBA_BPT_save_data_log(bpt);
 	}
@@ -488,9 +491,14 @@ UBA_PROTO_UBA6_ERROR UBA_BPT_pair(UBA_BPT *bpt, UBA_channel *ch, int list_index)
 
 UBA_STATUS_CODE UBA_BPT_begin(UBA_BPT *bpt, uint8_t list_index) {
 	UART_LOG_BPT_INFO("BPT Start index:%u", list_index);
+
 	if (UBA_BPT_isPause(bpt)) {
-		return UBA_BPT_start(bpt);
+		if (bpt->ch->current_screen != NULL) {
+			UBA_LCD_screen_event(bpt->ch->current_screen, UBA_LCD_SCREEN_DISPLAY_EXE_CMD);
+		}
+		return UBA_BPT_start(bpt); // resume the test
 	}
+
 	if (UBA_BPT_isRunning(bpt)) {
 		UART_LOG_ERROR(UBA_COMP, "Test is already running , channel is busy");
 		return UBA_STATUS_CODE_BUSY;
@@ -498,6 +506,10 @@ UBA_STATUS_CODE UBA_BPT_begin(UBA_BPT *bpt, uint8_t list_index) {
 		if (list_index < UBA_TR_LIST_SIZE) {
 			UBA_TR_unpack(&TR_file.list[list_index], bpt); // load the test roution
 			bpt->TR_selected_index = list_index;
+
+			if (bpt->ch->current_screen != NULL) {
+				UBA_LCD_screen_event(bpt->ch->current_screen, UBA_LCD_SCREEN_DISPLAY_EXE_CMD);
+			}
 			return UBA_BPT_start(bpt); // start the test
 		} else {
 			UART_LOG_ERROR(UBA_COMP, "the selected test index existed the length of the list");

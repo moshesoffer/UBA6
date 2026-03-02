@@ -20,7 +20,7 @@ UBA_button UBA_BTN_CH_2_DOWN;
 UBA_button UBA_BTN_CH_1_SELECT;
 UBA_button UBA_BTN_CH_2_SELECT;
 
-int UBA_button_clear_panding(UBA_button *bnt) {
+int UBA_button_clear_pending(UBA_button *bnt) {
 	if (bnt != NULL) {
 		bnt->state = UBA_BUTTON_STATE_RELEASE;
 	}

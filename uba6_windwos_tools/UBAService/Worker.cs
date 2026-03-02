@@ -59,7 +59,7 @@ namespace UBAService {
                             GETPendingTasksDTO pt = await wcs.GetPendingTasks();
                             if (pt != null) {
                                 if (pt?.PendingRunningTests?.Count == 0 && pt?.PendingConnectionUbaDevices?.Count == 0) {
-                                    await refreshChannleReading();
+                                    await refreshChannleReading(stoppingToken);
 
                                 } else if (pt?.PendingRunningTests?.Count > 0) {
                                     await resolvePendingRunningTest(pt?.PendingRunningTests);
@@ -68,7 +68,7 @@ namespace UBAService {
                                     await resolvePendingUBA(pt?.PendingConnectionUbaDevices);
                                     await addIntreface(stoppingToken);
                                 }
-                                await updateUBA2List(stoppingToken);
+                                await updateUBA2List(pt?.PendingRunningTests);
                             }
                         } catch {
                             _logger.LogError("GetPendingTasks failed");
@@ -88,7 +88,7 @@ namespace UBAService {
             return existingUba;            
         }
 
-        private async Task refreshChannleReading() {
+        private async Task refreshChannleReading(CancellationToken stoppingToken) {
             ////_logger.LogInformation("refreshChannleReading: Refresh UBA Channel");
             List<UbaDeviceDto> ubaDeviceDtos = await wcs.GetStationUBAs();
             if (ubaDeviceDtos == null || ubaDeviceDtos.Count == 0) {
@@ -107,7 +107,7 @@ namespace UBAService {
                             }
                         }
                     } catch {
-                        _logger.LogError($"No Response from UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac}");
+                        _logger.LogError($"1-No Response from UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac}");
                     }
                 }
             }
@@ -134,7 +134,7 @@ namespace UBAService {
                         await WithTimeout(uba.GetMessage(UBA_PROTO_QUERY.RECIPIENT.Device), AWAIT_TIMEOUT);
                         _logger.LogInformation("Response from UBA Device: {uba.Address}");
                     } catch {
-                        _logger.LogError("No Response from UBA Device: {uba.Address}");
+                        _logger.LogError("2-No Response from UBA Device: {uba.Address}");
                     }
 
                     if ((((RunningTestsController.Status)pendingTest.Status) & RunningTestsController.Status.RUNNING) > 0) {
@@ -281,7 +281,7 @@ namespace UBAService {
                             UBA_Interface? intrefaceCOM = UBA_Interfaces.FirstOrDefault(ui => ui.PortName == ubaDto.ComPort);
                             UBA6 newUba = new UBA6(_ubaLogger, intrefaceCOM, ubaDto.UbaSN);
                             newUba.Address = uint.TryParse(ubaDto.Address, out var addr) ? addr : 0;
-                            var result = await WithTimeout (newUba.GetMessage(UBA_PROTO_QUERY.RECIPIENT.Device), AWAIT_TIMEOUT);
+                            var result = await WithTimeout (newUba.GetMessage(UBA_PROTO_QUERY.RECIPIENT.Device), 1000);
                             if (result != null) {
                                 UBAs.Add(newUba);
                                 _logger.LogInformation($"Added new UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac}");
@@ -294,7 +294,7 @@ namespace UBAService {
                             } else {
                                 //remove UBA device - no response
                                 newUba = null;
-                                _logger.LogError($"No Response from UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac}");
+                                _logger.LogError($"3-No Response from UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac}");
                             }
                         //}                     
                     }
@@ -304,7 +304,7 @@ namespace UBAService {
             }
         }
         protected async Task 
-            updateUBA2List(CancellationToken stoppingToken) {
+            updateUBA2List(List<GETPendingTestResponseDTO>? pt) {
             ////_logger.LogInformation("updateUBA2List: Update UBA devices to list");
             try {
                 List<UbaDeviceDto> ubaDeviceDtos = await wcs.GetStationUBAs();
@@ -321,14 +321,20 @@ namespace UBAService {
 
                             //check if to add UBA device to UBAs list
                             if (UBAs.Find(uba => uba.SerialNumber.Equals(newUba.SerialNumber)) == null) {
-                                var result = await WithTimeout (newUba.GetMessage(UBA_PROTO_QUERY.RECIPIENT.Device), AWAIT_TIMEOUT);
+                                var result = await WithTimeout (newUba.GetMessage(UBA_PROTO_QUERY.RECIPIENT.Device), 1000);
                                 if (result != null) {
                                     UBAs.Add(newUba);
                                     _logger.LogInformation($"Added new UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac}");
                                 } else {
+                                    _logger.LogError($"4-No Response from UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac}");
+
+                                    foreach (GETPendingTestResponseDTO pendingTest in pt) {
+                                        _logger.LogInformation("==> STOPPED...");
+                                        newUba.StopBPT(util.GetChannelFormDTO(pendingTest));
+                                    }
+
                                     //remove UBA device - no response
                                     newUba = null;
-                                    _logger.LogError($"No Response from UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac}");
                                 }
                             }
 
