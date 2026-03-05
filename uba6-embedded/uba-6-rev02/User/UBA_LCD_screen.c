@@ -95,6 +95,10 @@ void UBA_LCD_screen_display_test_info_enter(UBA_LCD_screen *screen);
 void UBA_LCD_screen_display_test_info(UBA_LCD_screen *screen);
 void UBA_LCD_screen_display_test_info_exit(UBA_LCD_screen *screen);
 
+void UBA_LCD_screen_display_test_step_enter(UBA_LCD_screen *screen);
+void UBA_LCD_screen_display_test_step(UBA_LCD_screen *screen);
+void UBA_LCD_screen_display_test_step_exit(UBA_LCD_screen *screen);
+
 void UBA_LCD_screen_display_setting_enter(UBA_LCD_screen *screen);
 void UBA_LCD_screen_display_setting(UBA_LCD_screen *screen);
 void UBA_LCD_screen_display_setting_exit(UBA_LCD_screen *screen);
@@ -128,6 +132,7 @@ static const struct UBABPTSMA_rule rule_g[UBA_LCD_SCREEN_STATE_MAX] ={
 		UBABPTSMA(UBA_LCD_SCREEN_DISPLAY_BPT,			UBA_LCD_screen_display_bpt_enter,			UBA_LCD_screen_display_bpt,			UBA_LCD_screen_display_bpt_exit),
 		UBABPTSMA(UBA_LCD_SCREEN_DISPLAY_TEST_SELECT,	UBA_LCD_screen_display_test_select_enter,	UBA_LCD_screen_display_test_select,	UBA_LCD_screen_display_test_select_exit),
 		UBABPTSMA(UBA_LCD_SCREEN_DISPLAY_TEST_INFO,		UBA_LCD_screen_display_test_info_enter,		UBA_LCD_screen_display_test_info,	UBA_LCD_screen_display_test_info_exit),
+		UBABPTSMA(UBA_LCD_SCREEN_DISPLAY_TEST_STEP,     UBA_LCD_screen_display_test_step_enter,		UBA_LCD_screen_display_test_step,	UBA_LCD_screen_display_test_step_exit),
 		UBABPTSMA(UBA_LCD_SCREEN_DISPLAY_SETTING,		UBA_LCD_screen_display_setting_enter,		UBA_LCD_screen_display_setting,		UBA_LCD_screen_display_setting_exit),
 		UBABPTSMA(UBA_LCD_SCREEN_DISPLAY_EXE_CMD,       UBA_LCD_screen_display_exe_cmd_enter,		UBA_LCD_screen_display_exe_cmd,		UBA_LCD_screen_display_exe_cmd_exit),
 		UBABPTSMA(UBA_LCD_SCREEN_DISPLAY_OFF,			UBA_LCD_screen_display_off_enter,			UBA_LCD_screen_display_off,			UBA_LCD_screen_display_off_exit),
@@ -1131,6 +1136,7 @@ void UBA_LCD_screen_display_bpt(UBA_LCD_screen *screen) {
 			UBA_LCD_screen_draw_bpt(screen, UBA_LCD_REFRESH_TYPE_UI);
 		}
 	}
+
 	if ((HAL_GetTick() - screen->start_tick) >= refreshTime) {
 		screen->start_tick = HAL_GetTick();
 		UBA_LCD_screen_draw_bpt(screen, UBA_LCD_REFRESH_TYPE_DATA | UBA_LCD_REFRESH_TYPE_STATUS | UBA_LCD_REFRESH_TYPE_UI | UBA_LCD_REFRESH_TYPE_EWI);
@@ -1322,7 +1328,7 @@ void UBA_LCD_screen_display_test_info_enter(UBA_LCD_screen *screen) {
 	UBA_LCD *LCD_handler = (UBA_LCD *) screen->LCD_handler;
 	UBA_LCD_POSITION_INFO *position = LCD_handler->screen_position;
 	int i = 0;
-	int from;
+	int from = 0;
 
 	UBA_LCD_screen_update_state(screen);
 
@@ -1421,7 +1427,7 @@ void UBA_LCD_screen_display_test_info_enter(UBA_LCD_screen *screen) {
 	screen->pages.test_info.bnt_select.elemnt.button.size = 2;
 	screen->pages.test_info.bnt_select.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;
 	screen->pages.test_info.bnt_select.elemnt.button.color_text = UBA_GFX_COLOR_BLACK;
-	sprintf(screen->pages.test_info.bnt_select.elemnt.button.text, "SELECT");
+	sprintf(screen->pages.test_info.bnt_select.elemnt.button.text, "STEP");
 
 	UBA_LCD_screen_dispaly_test_info_refresh(&screen->pages.test_info, UBA_LCD_REFRESH_TYPE_ALL);
 }
@@ -1472,7 +1478,8 @@ void UBA_LCD_screen_display_test_info(UBA_LCD_screen *screen) {
 					}
 				}
 			}
-			screen->state.next = UBA_LCD_SCREEN_DISPLAY_BPT; //UBA_LCD_SCREEN_DISPLAY_SETTING; //Moshe UBA_LCD_SCREEN_DISPLAY_BPT;
+			screen->state.next = UBA_LCD_SCREEN_DISPLAY_TEST_STEP; //UBA_LCD_SCREEN_DISPLAY_TEST_STEP; //UBA_LCD_SCREEN_DISPLAY_SETTING; //Moshe UBA_LCD_SCREEN_DISPLAY_BPT;
+			screen->tr_step_display_index = 0;
 		}
 		UBA_button_clear_pending(screen->main_buttons.bnt_select_p);
 		UBA_button_clear_pending(screen->secondery_buttons.bnt_select_p);
@@ -1488,6 +1495,230 @@ void UBA_LCD_screen_display_test_info_exit(UBA_LCD_screen *screen) {
 	UBA_button_clear_pending(screen->secondery_buttons.bnt_down_p);
 	UBA_button_clear_pending(screen->secondery_buttons.bnt_select_p);
 }
+
+void UBA_LCD_screen_display_test_step_enter(UBA_LCD_screen *screen) {
+	UBA_LCD *LCD_handler = (UBA_LCD *) screen->LCD_handler;
+	UBA_LCD_POSITION_INFO *position = LCD_handler->screen_position;
+	int i = 0;
+	int from = 0;
+
+	UBA_LCD_screen_update_state(screen);
+
+	screen->pages.test_info.frame.id = UBA_GFX_ELEMNET_FRAME;
+	screen->pages.test_info.frame.pos.x = position[screen->ch_control-1].start_x;
+	screen->pages.test_info.frame.pos.y = position[screen->ch_control-1].start_y;
+	screen->pages.test_info.frame.effect = UBA_GFX_EFFECT_SOLID;
+	screen->pages.test_info.frame.elemnt.frame.width = position[screen->ch_control-1].width;
+	screen->pages.test_info.frame.elemnt.frame.heigth = position[screen->ch_control-1].height;
+	screen->pages.test_info.frame.elemnt.frame.color_fill = UBA_GFX_COLOR_WHITE;
+	screen->pages.test_info.frame.elemnt.frame.color_border = UBA_GFX_COLOR_BLACK;
+
+	screen->pages.test_info.title.id = UBA_GFX_ELEMNET_TEXT;
+	screen->pages.test_info.title.pos.x = position[screen->ch_control-1].width / 2 + position[screen->ch_control-1].start_x;
+	screen->pages.test_info.title.pos.y = LINE(1);
+	screen->pages.test_info.title.effect = UBA_GFX_EFFECT_SOLID;
+	screen->pages.test_info.title.elemnt.text.size = 2;
+	screen->pages.test_info.title.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
+	screen->pages.test_info.title.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
+	if ((screen->tr) != NULL) {
+		if (((screen->tr)->config[screen->tr_step_display_index].type_id) == TR_STEP_TYPE_STEP_TYPE_CHARGE)
+			sprintf(screen->pages.test_info.title.elemnt.text.text, "%d-Charge", screen->tr_step_display_index+1);
+		else if (((screen->tr)->config[screen->tr_step_display_index].type_id) == TR_STEP_TYPE_STEP_TYPE_DISCHARGE)
+			sprintf(screen->pages.test_info.title.elemnt.text.text, "%d-Discharge", screen->tr_step_display_index+1);
+		else
+			sprintf(screen->pages.test_info.title.elemnt.text.text, "Step %d", screen->tr_step_display_index+1);
+	}
+
+	for (int i = 0; i < 10; i++) {
+		screen->pages.test_info.test_info[i].effect = UBA_GFX_EFFECT_INVISIBLE;
+	}
+
+
+	for (i = 0; i < 10; i++) {
+		screen->pages.test_info.test_info[i].id = UBA_GFX_ELEMNET_TEXT;
+		screen->pages.test_info.test_info[i].pos.x = position[screen->ch_control-1].start_x;// + BORDER_PADDING;
+		screen->pages.test_info.test_info[i].pos.y = (i % 2) == 0 ? LINE((4 + (i/2 * 3)))  : LINE((4 + (i/2 * 3 + 1)));
+		screen->pages.test_info.test_info[i].effect = UBA_GFX_EFFECT_SOLID;
+		screen->pages.test_info.test_info[i].elemnt.text.size = (i % 2) == 0 ? 1 : 2;
+		screen->pages.test_info.test_info[i].elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
+		screen->pages.test_info.test_info[i].elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
+//		sprintf(screen->pages.test_info.test_info[i].elemnt.text.text, "info[%d]", i);
+	}
+
+	TR_config_step config[10];
+	int index = screen->tr_step_display_index;
+	switch ((screen->tr)->config[index].type_id)
+	{
+		case TR_STEP_TYPE_STEP_TYPE_CHARGE:
+			from = 0;
+			i = 0;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 1;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  charge current: ");
+			i++;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 2;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  %d mA", (screen->tr)->config[index].type.charge.current);
+
+			i++;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 1;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  charge per cell: ");
+			i++;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 2;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  %d V", (screen->tr)->config[index].type.charge.voltage);
+			
+#if 0
+			i++;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 1;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  min temperature: ");
+			i++;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 2;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  %d C", (screen->tr)->config[index].type.charge.min_temperature); //float
+#endif			
+			i++;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 1;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  max temperature: ");
+			i++;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 2;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  %d C", (screen->tr)->config[index].type.charge.sc.max_temperature); //float
+			
+			i++;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 1;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  cut-off current: ");
+			i++;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 2;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  %d mA", (screen->tr)->config[index].type.charge.sc.cut_off_current); 
+
+			i++;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 1;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  limit capacity: ");
+			i++;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 2;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  %d ", (screen->tr)->config[index].type.charge.sc.limit_capacity); 
+			break;
+
+		case TR_STEP_TYPE_STEP_TYPE_DISCHARGE:
+			from = 0;
+			i = 0;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 1;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  charge current: ");
+			i++;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 2;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  %d mA", (screen->tr)->config[index].type.discharge.current.value);
+
+			i++;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 1;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  min temperature: ");
+			i++;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 2;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  %d C", (screen->tr)->config[index].type.discharge.min_temperature); //float
+
+			i++;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 1;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  max temperature: ");
+			i++;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 2;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  %d C", (screen->tr)->config[index].type.discharge.sc.max_temperature); //float
+			
+			i++;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 1;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  cut-off voltage: ");
+			i++;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 2;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  %d V", (screen->tr)->config[index].type.discharge.sc.cut_off_voltag); 
+
+			i++;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 1;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  limit capacity: ");
+			i++;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 2;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  %d ", (screen->tr)->config[index].type.discharge.sc.limit_capacity); 
+			break;
+	}
+
+
+
+	screen->pages.test_info.bnt_back.id = UBA_GFX_ELEMNET_BUTTON;
+	screen->pages.test_info.bnt_back.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING + 30;
+	screen->pages.test_info.bnt_back.pos.y = LINE(22);
+	screen->pages.test_info.bnt_back.effect = UBA_GFX_EFFECT_SOLID;
+	screen->pages.test_info.bnt_back.elemnt.button.size = 2;
+	screen->pages.test_info.bnt_back.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;
+	screen->pages.test_info.bnt_back.elemnt.button.color_text = UBA_GFX_COLOR_BLACK;
+	sprintf(screen->pages.test_info.bnt_back.elemnt.button.text, "BACK");
+
+	if (screen->tr_step_display_index+1 < (screen->tr)->length) {
+		screen->pages.test_info.bnt_select.id = UBA_GFX_ELEMNET_BUTTON;
+		screen->pages.test_info.bnt_select.pos.x = position[screen->ch_control-1].start_x + position[screen->ch_control-1].width - 40;
+		screen->pages.test_info.bnt_select.pos.y = LINE(22);
+		screen->pages.test_info.bnt_select.effect = UBA_GFX_EFFECT_SELECTED;
+		screen->pages.test_info.bnt_select.elemnt.button.size = 2;
+		screen->pages.test_info.bnt_select.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;
+		screen->pages.test_info.bnt_select.elemnt.button.color_text = UBA_GFX_COLOR_BLACK;
+		sprintf(screen->pages.test_info.bnt_select.elemnt.button.text, "STEP");
+	}
+	else {
+		screen->pages.test_info.bnt_select.effect = UBA_GFX_EFFECT_INVISIBLE;
+	}
+
+	UBA_LCD_screen_dispaly_test_info_refresh(&screen->pages.test_info, UBA_LCD_REFRESH_TYPE_FRAME | UBA_LCD_REFRESH_TYPE_INFO | UBA_LCD_REFRESH_TYPE_UI);
+}
+
+void UBA_LCD_screen_display_test_step(UBA_LCD_screen *screen) {
+	if (screen->tr_step_display_index+1 < (screen->tr)->length) {
+		if ((UBA_button_is_pending(screen->main_buttons.bnt_up_p) || UBA_button_is_pending(screen->main_buttons.bnt_down_p))
+			|| (UBA_button_is_pending(screen->secondery_buttons.bnt_up_p) || UBA_button_is_pending(screen->secondery_buttons.bnt_down_p))) {
+			if (screen->pages.test_info.bnt_back.effect == UBA_GFX_EFFECT_SELECTED) {
+				screen->pages.test_info.bnt_back.effect = UBA_GFX_EFFECT_VISIBLE;
+				screen->pages.test_info.bnt_select.effect = UBA_GFX_EFFECT_SELECTED;
+			} else if (screen->pages.test_info.bnt_select.effect == UBA_GFX_EFFECT_SELECTED) {
+				screen->pages.test_info.bnt_back.effect = UBA_GFX_EFFECT_SELECTED;
+				screen->pages.test_info.bnt_select.effect = UBA_GFX_EFFECT_VISIBLE;
+			}
+			UBA_LCD_screen_dispaly_test_info_refresh(&screen->pages.test_info, UBA_LCD_REFRESH_TYPE_UI);
+			UBA_button_clear_pending(screen->main_buttons.bnt_up_p);
+			UBA_button_clear_pending(screen->main_buttons.bnt_down_p);
+			UBA_button_clear_pending(screen->secondery_buttons.bnt_up_p);
+			UBA_button_clear_pending(screen->secondery_buttons.bnt_down_p);
+		}
+	} else {
+		if (screen->pages.test_info.bnt_back.effect != UBA_GFX_EFFECT_SELECTED) {
+		 	screen->pages.test_info.bnt_back.effect = UBA_GFX_EFFECT_SELECTED;
+			screen->pages.test_info.bnt_select.effect = UBA_GFX_EFFECT_INVISIBLE;
+			UBA_LCD_screen_dispaly_test_info_refresh(&screen->pages.test_info, UBA_LCD_REFRESH_TYPE_UI);
+		}
+	}
+
+	if (UBA_button_is_pending(screen->main_buttons.bnt_select_p) || UBA_button_is_pending(screen->secondery_buttons.bnt_select_p)) {
+		if (screen->tr_step_display_index+1 < (screen->tr)->length) {
+			if (screen->pages.test_info.bnt_select.effect == UBA_GFX_EFFECT_SELECTED) {
+				screen->tr_step_display_index++;
+				screen->state.next = UBA_LCD_SCREEN_DISPLAY_TEST_STEP;
+				UBA_LCD_screen_dispaly_test_info_refresh(&screen->pages.test_info, UBA_LCD_REFRESH_TYPE_FRAME | UBA_LCD_REFRESH_TYPE_INFO | UBA_LCD_REFRESH_TYPE_UI);
+			} else if (screen->pages.test_info.bnt_back.effect == UBA_GFX_EFFECT_SELECTED) {
+				screen->state.next = UBA_LCD_SCREEN_DISPLAY_TEST_INFO; 
+				screen->tr_step_display_index = 0;
+			}
+		}
+		else {
+			if (screen->pages.test_info.bnt_back.effect == UBA_GFX_EFFECT_SELECTED) {
+				screen->state.next = UBA_LCD_SCREEN_DISPLAY_TEST_INFO; 
+				screen->tr_step_display_index = 0;
+			}			
+			UBA_button_clear_pending(screen->main_buttons.bnt_select_p);
+			UBA_button_clear_pending(screen->secondery_buttons.bnt_select_p);
+			UBA_LCD_screen_dispaly_test_info_refresh(&screen->pages.test_info, UBA_LCD_REFRESH_TYPE_UI);
+		}
+	}
+}
+
+void UBA_LCD_screen_display_test_step_exit(UBA_LCD_screen *screen) {
+	UBA_button_clear_pending(screen->main_buttons.bnt_up_p);
+	UBA_button_clear_pending(screen->main_buttons.bnt_down_p);
+	UBA_button_clear_pending(screen->main_buttons.bnt_select_p);
+	UBA_button_clear_pending(screen->secondery_buttons.bnt_up_p);
+	UBA_button_clear_pending(screen->secondery_buttons.bnt_down_p);
+	UBA_button_clear_pending(screen->secondery_buttons.bnt_select_p);
+}
+
 
 void UBA_LCD_screen_display_setting_enter(UBA_LCD_screen *screen) {
 	UBA_LCD *LCD_handler = (UBA_LCD *) screen->LCD_handler;
@@ -1521,7 +1752,7 @@ void UBA_LCD_screen_display_setting_enter(UBA_LCD_screen *screen) {
 	screen->pages.test_info.bnt_select.elemnt.button.color_text = UBA_GFX_COLOR_BLACK;
 	sprintf(screen->pages.test_info.bnt_back.elemnt.button.text, "BACK");
 
-	UBA_LCD_screen_dispaly_test_info_refresh(&screen->pages.test_info, UBA_LCD_REFRESH_TYPE_FRAME | UBA_LCD_REFRESH_TYPE_UI);
+	UBA_LCD_screen_dispaly_test_info_refresh(&screen->pages.test_info, UBA_LCD_REFRESH_TYPE_UI);
 }
 
 void UBA_LCD_screen_display_setting(UBA_LCD_screen *screen) {
@@ -1680,9 +1911,40 @@ void UBA_LCD_screen_display_exe_cmd_enter(UBA_LCD_screen *screen) {
 }
 
 void UBA_LCD_screen_display_exe_cmd(UBA_LCD_screen *screen) {
+	uint32_t refreshTime = ((screen->pages.screen_bpt.channel.status.effect == UBA_GFX_EFFECT_BLINK_FAST) ?
+							UBA_LCD_FAST_REFRESH_TIME : UBA_LCD_SLOW_REFRESH_TIME);
+
+	if ((UBA_button_is_pending(screen->main_buttons.bnt_up_p) || UBA_button_is_pending(screen->main_buttons.bnt_down_p))
+			|| (UBA_button_is_pending(screen->secondery_buttons.bnt_up_p) || UBA_button_is_pending(screen->secondery_buttons.bnt_down_p))) {
+		UBA_LCD_screen_bnt_press_up_or_down(screen, &screen->pages.screen_bpt);
+		UBA_button_clear_pending(screen->main_buttons.bnt_up_p);
+		UBA_button_clear_pending(screen->main_buttons.bnt_down_p);
+		UBA_button_clear_pending(screen->secondery_buttons.bnt_up_p);
+		UBA_button_clear_pending(screen->secondery_buttons.bnt_down_p);
+	}
+	if (UBA_button_is_pending(screen->main_buttons.bnt_select_p) || UBA_button_is_pending(screen->secondery_buttons.bnt_select_p)) {
+		if (UBA_LCD_screen_bnt_press_select(screen)) {
+			screen->state.next = UBA_LCD_SCREEN_DISPLAY_TEST_SELECT;
+		} else {
+			UBA_button_clear_pending(screen->main_buttons.bnt_select_p);
+			UBA_button_clear_pending(screen->secondery_buttons.bnt_select_p);
+			UBA_LCD_screen_draw_bpt(screen, UBA_LCD_REFRESH_TYPE_UI);
+		}
+	}
+	if ((HAL_GetTick() - screen->start_tick) >= refreshTime) {
+		screen->start_tick = HAL_GetTick();
+		UBA_LCD_screen_draw_bpt(screen, UBA_LCD_REFRESH_TYPE_DATA | UBA_LCD_REFRESH_TYPE_STATUS | UBA_LCD_REFRESH_TYPE_UI | UBA_LCD_REFRESH_TYPE_EWI);
+	}
 }
 
 void UBA_LCD_screen_display_exe_cmd_exit(UBA_LCD_screen *screen) {
+	UBA_button_clear_pending(screen->main_buttons.bnt_up_p);
+	UBA_button_clear_pending(screen->main_buttons.bnt_down_p);
+	UBA_button_clear_pending(screen->main_buttons.bnt_select_p);
+	UBA_button_clear_pending(screen->secondery_buttons.bnt_up_p);
+	UBA_button_clear_pending(screen->secondery_buttons.bnt_down_p);
+	UBA_button_clear_pending(screen->secondery_buttons.bnt_select_p);
+
 	screen->state.next = UBA_LCD_SCREEN_DISPLAY_BPT;
 }
 

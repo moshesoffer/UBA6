@@ -37,6 +37,7 @@ typedef enum UBA_LCD_SCREEN_DISPLAY_STATE {
 	UBA_LCD_SCREEN_DISPLAY_BPT, // show the BPT data and info
 	UBA_LCD_SCREEN_DISPLAY_TEST_SELECT, // show the list of test
 	UBA_LCD_SCREEN_DISPLAY_TEST_INFO, // show the test info
+	UBA_LCD_SCREEN_DISPLAY_TEST_STEP, // show the test steps
 	UBA_LCD_SCREEN_DISPLAY_SETTING, // show the device settings
 	UBA_LCD_SCREEN_DISPLAY_EXE_CMD, // show the execute command data info
 	UBA_LCD_SCREEN_DISPLAY_OFF, // turn off the display
@@ -237,6 +238,7 @@ typedef struct UBA_LCD_screen {
 	UBA_BPT *bpt;
 	UBA_CHANNLE_ID ch_control; // the control id of the screen
 	uint8_t tr_list_select_index;
+	uint8_t tr_step_display_index;
 } UBA_LCD_screen;
 
 // @formatter:off
