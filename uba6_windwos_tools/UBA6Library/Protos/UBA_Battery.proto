@@ -9,7 +9,7 @@ package Battery;
 
  enum TYPE {
 	TYPE_NONE = 0 ;
-	TYPE_PRIMERY = 1;
+	TYPE_PRIMARY = 1;
 	TYPE_SECONDERY = 2;
 	TYPE_MAX = 3;
 	TYPE_INVALID = 4;
@@ -49,6 +49,7 @@ message Cell{
 message Battery{
     TYPE type = 1;
 	string serial_number = 2 [(nanopb).max_size = 10];
-	uint32 number_of_cells = 3  [(nanopb).int_size = IS_8]; 
-	uint32 max_voltage = 4; // in mV    
+	string part_number = 3 [(nanopb).max_size = 10];
+	uint32 number_of_cells = 4  [(nanopb).int_size = IS_8]; 
+	uint32 max_voltage = 5; // in mV    
 }

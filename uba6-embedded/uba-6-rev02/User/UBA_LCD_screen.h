@@ -166,7 +166,7 @@ typedef struct UBA_LCD_page_test_list_select {
 typedef struct UBA_LCD_page_test_info {
 	UBA_GFX frame;
 	UBA_GFX title;
-	UBA_GFX test_info[6];
+	UBA_GFX test_info[12];
 	UBA_GFX EWI_msg;
 	UBA_GFX bnt_back;
 	UBA_GFX bnt_select;

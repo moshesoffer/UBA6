@@ -42,5 +42,7 @@ CMakeCache.txt
 *.ibt
 *.ibd
 *.pid
+*.bak
+*.tmp
 
 

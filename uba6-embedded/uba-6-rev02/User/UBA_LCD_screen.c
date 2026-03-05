@@ -1308,7 +1308,7 @@ void UBA_LCD_screen_dispaly_test_info_refresh(UBA_LCD_page_test_info *test_info,
 	}
 	if ((rt & UBA_LCD_REFRESH_TYPE_INFO) == UBA_LCD_REFRESH_TYPE_INFO) {
 		UBA_GFX_draw_text_center(&test_info->title);
-		for (i = 0; i < 6; i++) {
+		for (i = 0; i < 10; i++) {
 			UBA_GFX_draw_text(&test_info->test_info[i]);
 		}
 	}
@@ -1322,6 +1322,7 @@ void UBA_LCD_screen_display_test_info_enter(UBA_LCD_screen *screen) {
 	UBA_LCD *LCD_handler = (UBA_LCD *) screen->LCD_handler;
 	UBA_LCD_POSITION_INFO *position = LCD_handler->screen_position;
 	int i = 0;
+	int from;
 
 	UBA_LCD_screen_update_state(screen);
 
@@ -1342,38 +1343,67 @@ void UBA_LCD_screen_display_test_info_enter(UBA_LCD_screen *screen) {
 	screen->pages.test_info.title.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
 	screen->pages.test_info.title.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
 	if ((screen->tr) != NULL) {
-		sprintf(screen->pages.test_info.title.elemnt.text.text, " %.*s",
+		sprintf(screen->pages.test_info.title.elemnt.text.text, "%.*s",
 				UBA_LCD_screen_line_max_str_length(screen, screen->pages.test_info.title.elemnt.text.size), (screen->tr)->name);
 	}
-	for (i = 0; i < 6; i++) {
+
+	for (i = 0; i < 10; i++) {
 		screen->pages.test_info.test_info[i].id = UBA_GFX_ELEMNET_TEXT;
-		screen->pages.test_info.test_info[i].pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING;
-		screen->pages.test_info.test_info[i].pos.y = LINE((5 + (i * 2)));
+		screen->pages.test_info.test_info[i].pos.x = position[screen->ch_control-1].start_x;// + BORDER_PADDING;
+		screen->pages.test_info.test_info[i].pos.y = (i % 2) == 0 ? LINE((4 + (i/2 * 3)))  : LINE((4 + (i/2 * 3 + 1)));
 		screen->pages.test_info.test_info[i].effect = UBA_GFX_EFFECT_SOLID;
-		screen->pages.test_info.test_info[i].elemnt.text.size = 2;
+		screen->pages.test_info.test_info[i].elemnt.text.size = (i % 2) == 0 ? 1 : 2;
 		screen->pages.test_info.test_info[i].elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
 		screen->pages.test_info.test_info[i].elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
-		sprintf(screen->pages.test_info.test_info[i].elemnt.text.text, "info[%d]", i);
+//		sprintf(screen->pages.test_info.test_info[i].elemnt.text.text, "info[%d]", i);
 	}
+
+	from = 0;
 	i = 0;
-	sprintf(screen->pages.test_info.test_info[i++].elemnt.text.text, "1.Type:");
+	screen->pages.test_info.test_info[i].elemnt.text.size = 1;
+	sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  battery P/N: ");
+	i++;
+	screen->pages.test_info.test_info[i].elemnt.text.size = 2;
+	sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  %.*s", (screen->tr)->battery.part_number);
+	
+	i++;
+	screen->pages.test_info.test_info[i].elemnt.text.size = 1;
+	sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  battery S/N: ");
+	i++;
+	screen->pages.test_info.test_info[i].elemnt.text.size = 2;
+	sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  %.*s", (screen->tr)->battery.serial_number);
+	
+	i++;
+	screen->pages.test_info.test_info[i].elemnt.text.size = 1;
+	sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  battery type: ");
+	i++;
+	//from = strlen(screen->pages.test_info.test_info[i].elemnt.text.text);
 	switch (screen->tr->battery.type) {
-		case UBA_BATTERY_TYPE_PRIMERY:
-			sprintf(screen->pages.test_info.test_info[i++].elemnt.text.text, "Primary");
+		case UBA_BATTERY_TYPE_PRIMARY:
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  primary");
 			break;
 		case UBA_BATTERY_TYPE_SECONDERY:
-			sprintf(screen->pages.test_info.test_info[i++].elemnt.text.text, "Secondary");
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  secondary");
 			break;
 		default:
-			sprintf(screen->pages.test_info.test_info[i++].elemnt.text.text, "Unknown");
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  unknown");
 			break;
 	}
-	sprintf(screen->pages.test_info.test_info[i++].elemnt.text.text, "2.S/N:");
-	sprintf(screen->pages.test_info.test_info[i].elemnt.text.text, " %.*s",
-			UBA_LCD_screen_line_max_str_length(screen, screen->pages.test_info.test_info[i].elemnt.text.size), (screen->tr)->battery.serial_number);
+
 	i++;
-	sprintf(screen->pages.test_info.test_info[i++].elemnt.text.text, "3.Cell Num:");
-	sprintf(screen->pages.test_info.test_info[i].elemnt.text.text, " %04u", (screen->tr)->battery.number_of_cells);
+	screen->pages.test_info.test_info[i].elemnt.text.size = 1;
+	sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  cell num: ");
+	i++;
+	screen->pages.test_info.test_info[i].elemnt.text.size = 2;
+	sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  %d", (screen->tr)->battery.number_of_cells);
+
+	i++;
+	screen->pages.test_info.test_info[i].elemnt.text.size = 1;
+	sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  plan step num: ");
+	i++;
+	screen->pages.test_info.test_info[i].elemnt.text.size = 2;
+	sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  %d", (screen->tr)->length);
+
 
 	screen->pages.test_info.bnt_back.id = UBA_GFX_ELEMNET_BUTTON;
 	screen->pages.test_info.bnt_back.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING + 30;

@@ -53,6 +53,7 @@ typedef struct _Battery_Cell {
 typedef struct _Battery_Battery {
     Battery_TYPE type;
     char serial_number[10];
+    char part_number[10];
     uint8_t number_of_cells;
     uint32_t max_voltage; /* in mV */
 } Battery_Battery;
@@ -109,8 +110,9 @@ extern "C" {
 #define Battery_Cell_temperature_tag             7
 #define Battery_Battery_type_tag                 1
 #define Battery_Battery_serial_number_tag        2
-#define Battery_Battery_number_of_cells_tag      3
-#define Battery_Battery_max_voltage_tag          4
+#define Battery_Battery_part_number_tag          3
+#define Battery_Battery_number_of_cells_tag      4
+#define Battery_Battery_max_voltage_tag          5
 
 /* Struct field encoding specification for nanopb */
 #define Battery_Voltage_limits_FIELDLIST(X, a) \
@@ -149,8 +151,9 @@ X(a, STATIC,   SINGULAR, MESSAGE,  temperature,       7)
 #define Battery_Battery_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, UENUM,    type,              1) \
 X(a, STATIC,   SINGULAR, STRING,   serial_number,     2) \
-X(a, STATIC,   SINGULAR, UINT32,   number_of_cells,   3) \
-X(a, STATIC,   SINGULAR, UINT32,   max_voltage,       4)
+X(a, STATIC,   SINGULAR, STRING,   part_number,       3) \
+X(a, STATIC,   SINGULAR, UINT32,   number_of_cells,   4) \
+X(a, STATIC,   SINGULAR, UINT32,   max_voltage,       5)
 #define Battery_Battery_CALLBACK NULL
 #define Battery_Battery_DEFAULT NULL
 

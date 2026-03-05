@@ -46,6 +46,10 @@ const addInstantTestResults = async (instantTestResults) => {
         await withTimeout(connection.beginTransaction(), AWAIT_TIMEOUT);
 		logger.info(`addInstantTestResults going to insert [${insertArr.length}] instant test results`);
 		for (const item of insertArr) {
+			logger.info("runningTestID being inserted:", item.runningTestID);
+
+
+
 			await withTimeout(createModel(instantTestResultsModel, item, connection), AWAIT_TIMEOUT);
 		}
 		logger.info(`addInstantTestResults finished to add`);
@@ -94,19 +98,42 @@ const getInstantTestResults = async runningTestID => {
 	return await withTimeout(selectQuery(instantTestResultsModel.tableName, query, [runningTestID]), AWAIT_TIMEOUT);
 };
 
+//Moshe
+//    		   r.\`batteryPN\`,
+//    		   r.\`batterySN\`,
+//		   	   r.\`cellPN\`,
+//		   	   r.\`noCellParallel\`, 
+//		   	   r.\`maxPerBattery\`, 
+//		   	   r.\`ratedBatteryCapacity\`
+
 const getPendingRunningTests = async (machineMac) => {
 	let query = `
-		SELECT r.\`id\`, r.\`ubaSN\`, r.\`channel\`, r.\`status\`, r.\`testRoutineChannels\`, ud.\`machineMac\` ,r.\`noCellSerial\`, r.\`testName\`, r.\`plan\`, r.\`timestampStart\`
+		SELECT r.\`id\`,
+			   r.\`ubaSN\`, 
+			   r.\`channel\`, 
+			   r.\`status\`, 
+			   r.\`testRoutineChannels\`, 
+			   ud.\`machineMac\`,
+			   r.\`noCellSerial\`, 
+			   r.\`testName\`, 
+			   r.\`plan\`, 
+			   r.\`timestampStart\`,
+    		   r.\`batteryPN\`,
+    		   r.\`batterySN\`,
+		   	   r.\`cellPN\`,
+		   	   r.\`noCellParallel\`, 
+		   	   r.\`maxPerBattery\`, 
+		   	   r.\`ratedBatteryCapacity\`
 		FROM \`${runningTestsModel.tableName}\` AS r
 		JOIN \`${ubaDeviceModel.tableName}\` AS ud ON r.\`ubaSN\` = ud.\`ubaSN\`
 		WHERE (r.\`status\` & (${status.PENDING})) != 0
 	`;
 	if(machineMac){
 		query += ` AND ud.\`machineMac\` = ?;`;
-		return await withTimeout(selectQuery(instantTestResultsModel.tableName, query, [machineMac]), AWAIT_TIMEOUT);
+		return await withTimeout(selectQuery(runningTestsModel.tableName, query, [machineMac]), AWAIT_TIMEOUT);
 	} else {
 		query += `;`;
-		return await withTimeout(selectQuery(instantTestResultsModel.tableName, query), AWAIT_TIMEOUT);
+		return await withTimeout(selectQuery(runningTestsModel.tableName, query), AWAIT_TIMEOUT);
 	}
 };
 

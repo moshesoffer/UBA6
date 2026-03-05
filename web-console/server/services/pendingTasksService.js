@@ -16,7 +16,7 @@ const getPendingTasks = async (machineMac) => {
         pendingTasks.pendingRunningTests = pendingRunningTests;
         const pendingReports = await withTimeout(getPendingReports(machineMac), AWAIT_TIMEOUT);
         pendingTasks.pendingReports = pendingReports;
-        
+
         for (const pendingRunningTest of pendingRunningTests) {
             const pendingReport = pendingReports.find(report => report.ubaSN === pendingRunningTest.ubaSN && report.channel === pendingRunningTest.channel && new Date(report.timestampStart).getTime() == new Date(pendingRunningTest.timestampStart).getTime());
             if(pendingReport){
@@ -36,8 +36,8 @@ const getPendingTasks = async (machineMac) => {
             }
         }
 
-        logger.info(`getPendingTasks for machineMac: ${machineMac}`);
-        //logger.info(`getPendingTasks for machineMac: ${machineMac}, pendingTasks: ${JSON.stringify(pendingTasks)}`);
+        //logger.info(`getPendingTasks for machineMac: ${machineMac}`);
+        logger.info(`getPendingTasks for machineMac: ${machineMac}, pendingTasks: ${JSON.stringify(pendingTasks.pendingRunningTests)}`);
         return pendingTasks;
     } catch (error) {
         logger.error('getPendingTasks', error);

@@ -1,7 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.Design.Serialization;
 using System.Globalization;
 using System.Text.Json.Serialization;
+using Google.Protobuf;
 
 namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.Models {
     public class GETPendingTestResponseDTO {
@@ -34,6 +36,21 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
         [JsonPropertyName("reportId")]
         public Guid? ReportId { get; set; }
 
+        //Battery - Moshe
+        [JsonPropertyName("batteryPN")]
+        public string BatteryPN { get; set; }
+    
+        [JsonPropertyName("batterySN")]
+        public string BatterySN { get; set; }
+    
+        [JsonPropertyName("cellPN")]
+        public string CellPN { get; set; }
+    
+        [JsonPropertyName("noCellParallel")]
+        public uint NoCellParallel { get; set; }
+    
+        [JsonPropertyName("ratedBatteryCapacity")]
+        public double RatedBatteryCapacity { get; set; }
     }
 
     public class PlanStepDTO {
@@ -404,9 +421,23 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
                 "A-and-B" => UBA_PROTO_BPT.MODE.DualChannel,
               _ => throw new ArgumentException("Invalid test routine channels")
             };
-            msg.Name = pn.TestName.Substring(0, pn.TestName.Length > 10 ? 10: pn.TestName.Length-1);
+          //msg.Name = pn.TestName.Substring(0, pn.TestName.Length > 10 ? 10: pn.TestName.Length-1);
+            msg.Name = pn.TestName?.Substring(0, Math.Min(12-1, pn.TestName.Length));
             msg.Length = (uint)pn.Plan.Count;
             msg.LogInterval = ProtoHelper.DEFAULT_TR_LOG_INTRVAL_MS;
+
+            msg.Battery = new UBA_Battery.Battery();
+            msg.Battery.Type = UBA_Battery.TYPE.Primary;
+            msg.Battery.NumberOfCells = pn.NoCellParallel;
+
+          //msg.Battery.SerialNumber = pn.BatterySN.Substring(0, Math.Min(10, pn.BatterySN.Length));
+            msg.Battery.SerialNumber = pn.BatterySN?.Substring(0, Math.Min(10-1, pn.BatterySN.Length));
+          //msg.Battery.PartNumber = string.IsNullOrEmpty(pn.BatteryPN)
+          //        ? pn.BatteryPN
+          //        : pn.BatteryPN.Substring(0, Math.Min(10, pn.BatteryPN.Length));
+            msg.Battery.PartNumber = pn.BatteryPN?.Substring(0, Math.Min(10-1, pn.BatteryPN.Length));
+            msg.Battery.MaxVoltage = 100;
+
             UBA_PROTO_TR.config_step step = new UBA_PROTO_TR.config_step();
             for (int i = 0; i < pn.Plan.Count; i++) {
                 PlanStepDTO ps = pn.Plan[i];

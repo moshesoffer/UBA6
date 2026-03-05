@@ -4,7 +4,7 @@
 //#define FONT_1206
 #define BASIC_FONT
 #ifdef BASIC_FONT
-#define CHAR_WIDTH 6
+#define CHAR_WIDTH  6
 #define CHAR_HEIGHT 8
 
 static const unsigned char font[96][6] = {

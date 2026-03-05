@@ -262,6 +262,7 @@ const runningTestsModel = {
     },
 };
 
+
 //UBADevice-RunningTest is 1 to many. RunningTests has unique constraint on ubaSN+channel
 const ubaDeviceModel = {
     uuid: false,

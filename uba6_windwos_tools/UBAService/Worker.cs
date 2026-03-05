@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Collections.Generic;
@@ -75,7 +76,7 @@ namespace UBAService {
                             continue;
                         }
                     }
-                    await Task.Delay(250/*msec delay*/, stoppingToken);
+                    await Task.Delay(200/*msec delay*/, stoppingToken);
                 }
             } catch (Exception ex) {
                 _logger.LogError(ex, "An error occurred in the UBA Service: {Message}", ex.Message);
@@ -143,7 +144,12 @@ namespace UBAService {
                         Test_Routine_Message msg = new Test_Routine_Message();
                         msg.Index = util.GetIndexFormDTO(pendingTest);
                         msg.Tr = util.GETPendingTestResponseDTO2TR_Message(pendingTest);
-                        await uba.SentMessageAsync(UBA_Message_Factory.CreateMessage(uba.Address, msg), UBA_Interface.MessagePriority.TEST_ROUTINE);
+                        try { 
+                            await uba.SentMessageAsync(UBA_Message_Factory.CreateMessage(uba.Address, msg), UBA_Interface.MessagePriority.TEST_ROUTINE);
+                        }
+                        catch {
+                            _logger.LogInformation($"SentMessageAsync fail");
+                        };
                         //await Task.Delay(500);
                         uba.StartBPT(util.GetChannelFormDTO(pendingTest), util.GetIndexFormDTO(pendingTest));
 
