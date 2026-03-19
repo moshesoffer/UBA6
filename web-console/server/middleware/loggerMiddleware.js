@@ -10,7 +10,8 @@ const logRoute = (req, res, next) => {
         const startTime = Date.now();
         const params = JSON.stringify(req.params);
         const query = JSON.stringify(req.query);
-        logger.debug(`Started [${req.originalUrl}]-[${req.method}] params:[${params}] query:[${query}] hostname:[${req.hostname}] protocol:[${req.protocol}]`);
+        //Moshe
+        //logger.debug(`Started [${req.originalUrl}]-[${req.method}] params:[${params}] query:[${query}] hostname:[${req.hostname}] protocol:[${req.protocol}]`);
         /*
         const body = JSON.stringify(req.body);
         const headers = JSON.stringify(req.headers);
@@ -21,7 +22,8 @@ const logRoute = (req, res, next) => {
 
         res.on('finish', () => {
             const duration = Date.now() - startTime;
-            logger.debug(`Completed ${req.method} ${req.originalUrl} with status ${res.statusCode} in ${duration}ms`);
+            //Moshe
+            //logger.debug(`Completed ${req.method} ${req.originalUrl} with status ${res.statusCode} in ${duration}ms`);
         });
 
         next();

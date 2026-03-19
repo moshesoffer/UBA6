@@ -13,11 +13,13 @@ const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 //fetching all data for main page
 exports.getUbaDevices = async (req, res) => {
 	try {
+		//Moshe
 		logger.debug(`uba-devices going to call all promises`);
 		//TODO getRunningAmount might be not needed because calling getUbaDevices already returns running tests and then can see what is running
 		//TODO also getAllLatestInstantTestResults instead of calling db, go over all getUbaDevices running tests and get info from memory and if its not in memory then fetch from db and put in memory that way also next time it will be called we wont need to call db.
 		const [running, ubaDevices, latestInstantTestResults] = await withTimeout(Promise.all([getRunningAmount(), getUbaDevices(), getAllLatestInstantTestResults()]), AWAIT_TIMEOUT);
 		const ubaDevicesUniqueSN = [...new Map(ubaDevices.map(item => [item.ubaSN, item.ubaSN])).values()];
+		//Moshe
 		logger.debug(`uba-devices going to enrichUbaDevices`);
 		const ubaEnriched = enrichUbaDevices(ubaDevices, latestInstantTestResults);
 		result = {
@@ -53,7 +55,8 @@ const enrichUbaDevices = (ubaDevices, latestInstantTestResults) => ubaDevices.ma
 			let mostLatestObj = result;
 			const lastInstantFromMem = getLastInstantTestResult(result.runningTestID);
 			if (lastInstantFromMem && lastInstantFromMem.timestamp.getTime() >= result.timestamp.getTime()) {
-				logger.debug(`Using last instant test result from memory for runningTestID ${lastInstantFromMem.memCreatedTime}`);
+				//Moshe
+				//logger.debug(`Using last instant test result from memory for runningTestID ${lastInstantFromMem.memCreatedTime}`);
 				mostLatestObj = lastInstantFromMem;
 			}
 			({

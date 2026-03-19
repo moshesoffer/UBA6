@@ -157,9 +157,9 @@ typedef enum UBA_BPT_STATE {
 	UBA_BPT_STATE_STANDBY = UBA_PROTO_BPT_STATE_STANDBY,
 	UBA_BPT_STATE_PAUSE = UBA_PROTO_BPT_STATE_PAUSE,
 	UBA_BPT_STATE_RUN_STEP = UBA_PROTO_BPT_STATE_RUN_STEP,
-	UBA_BPT_STATE_STEP_COMPLEATE = UBA_PROTO_BPT_STATE_STEP_COMPLEATE,
+	UBA_BPT_STATE_STEP_COMPLETE = UBA_PROTO_BPT_STATE_STEP_COMPLETE,
 	UBA_BPT_STATE_TEST_FAILED = UBA_PROTO_BPT_STATE_TEST_FAILED,
-	UBA_BPT_STATE_TEST_COMPLEATE = UBA_PROTO_BPT_STATE_TEST_COMPLEATE,
+	UBA_BPT_STATE_TEST_COMPLETE = UBA_PROTO_BPT_STATE_TEST_COMPLETE,
 	UBA_BPT_STATE_MAX,
 	UBA_BPT_STATE_INVALID,
 } UBA_BPT_STATE;
@@ -173,19 +173,25 @@ typedef struct UBA_BPT_SHADOW {
 		uint16_t color_text;
 		uint16_t color_bg;
 		char text[11];
-	} bnt_back_stop;
+	} btn_back_stop;
 	struct {
 		UBA_GFX_EFFECT effect;
 		uint16_t color_text;
 		uint16_t color_bg;
 		char text[11];
-	} bnt_pause_start;
+	} btn_pause_start;
 	struct {
 		UBA_GFX_EFFECT effect;
 		uint16_t color_text;
 		uint16_t color_bg;
 		char text[11];
-	} bnt_select;
+	} btn_select;
+	struct {
+		UBA_GFX_EFFECT effect;
+		uint16_t color_text;
+		uint16_t color_bg;
+		char text[11];
+	} btn_next;
 } UBA_BPT_SHADOW;
 
 typedef struct UBA_BPT {
@@ -202,10 +208,13 @@ typedef struct UBA_BPT {
 	UBA_BPT_step *head_step;
 	UBA_BPT_step *current_step;
 	uint8_t last_step_index;
+	bool force_step_stop;
 	UBA_channel *ch;
 	struct {
 		RTC_DateTypeDef date;
 		RTC_TimeTypeDef time;
+		bool update_pause_seconds;
+		uint32_t add_pause_seconds;
 	} start_date_time;
 	uint8_t filename[UBA_BPT_FILENAME_MAX_SIZE]; /*the file name that the data will be store at*/
 	uint8_t TR_selected_index;

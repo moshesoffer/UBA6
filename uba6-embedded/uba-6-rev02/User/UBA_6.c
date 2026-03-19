@@ -99,15 +99,23 @@ bool UBA_6_set_RTC(UBA_6 *uba, uint32_t unix_ts) {
 void UBA_6_fan_control(UBA_6 *uba) {
 
 	if (uba->isFan_on) {
-		if (UBA_BPT_isRunning(&uba->BPT_A) || UBA_BPT_isRunning(&uba->BPT_B) || UBA_BPT_isRunning(&uba->BPT_AB)) {
+		if ((UBA_BPT_isPause(&uba->BPT_A))|| UBA_BPT_isPause(&uba->BPT_B) || UBA_BPT_isPause(&uba->BPT_AB)) {
+			HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_RESET);
+			UART_LOG_WARNNING(UBA_COMP, "=======================FAN Off========================================");
+			uba->isFan_on = false;
+		
+		} else if(UBA_BPT_isRunning(&uba->BPT_A) || UBA_BPT_isRunning(&uba->BPT_B) || UBA_BPT_isRunning(&uba->BPT_AB)) {
 
 		} else {
 			HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_RESET);
 			UART_LOG_WARNNING(UBA_COMP, "=======================FAN Off========================================");
 			uba->isFan_on = false;
 		}
+
 	} else {
-		if (UBA_BPT_isRunning(&uba->BPT_A) || UBA_BPT_isRunning(&uba->BPT_B) || UBA_BPT_isRunning(&uba->BPT_AB)) {
+		if (UBA_BPT_isPause(&uba->BPT_A) || UBA_BPT_isPause(&uba->BPT_B) || UBA_BPT_isPause(&uba->BPT_AB)) {
+
+		} else if (UBA_BPT_isRunning(&uba->BPT_A) || UBA_BPT_isRunning(&uba->BPT_B) || UBA_BPT_isRunning(&uba->BPT_AB)) {
 			HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_SET);
 			uba->isFan_on = true;
 			UART_LOG_WARNNING(UBA_COMP, "=======================FAN ON========================================");
@@ -167,6 +175,7 @@ void UBA_6_single_channels(UBA_6 *uba) {
 	} else {
 		UART_LOG_CRITICAL(UBA_COMP, "A Test is not single channel");
 	}
+
 	if (uba->BPT_B.type == UBA_BPT_TYPE_SINGLE_CHANNEL) {
 		UBA_BPT_run(&uba->BPT_B);
 	} else {
@@ -178,6 +187,7 @@ void UBA_6_single_channels(UBA_6 *uba) {
 
 void UBA_6_single_channels_exit(UBA_6 *uba) {
 }
+
 void UBA_6_dual_channel_enter(UBA_6 *uba) {
 	UBA_6_update_state(uba);
 	UBA_LCD_g.state.next = UBA_LCD_STATE_FULL_SCREEN;

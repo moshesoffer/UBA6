@@ -1,9 +1,10 @@
 const logger = require('../utils/logger');
 const { getCells, createCell, updateCell, deleteCell } = require('../services/cellService');
+const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 
 exports.getCells = async (req, res) => {
 	try {
-		const result = await getCells();
+		const result = await withTimeout( getCells(), AWAIT_TIMEOUT);
 		res.json(result);
 	} catch (error) {
 		logger.error('getCells', error);
@@ -13,7 +14,7 @@ exports.getCells = async (req, res) => {
 
 exports.createCell = async (req, res) => {
 	try {
-		await createCell(req.body);
+		await withTimeout( createCell(req.body), AWAIT_TIMEOUT);
 		res.status(201).json( { success: true } );
 	} catch (error) {
 		logger.error('createCell', error);
@@ -23,7 +24,7 @@ exports.createCell = async (req, res) => {
 
 exports.updateCell = async (req, res) => {
 	try {
-		await updateCell(req.params?.itemPN, req.body);
+		await withTimeout( updateCell(req.params?.itemPN, req.body), AWAIT_TIMEOUT);
 		res.end();
 	} catch (error) {
 		logger.error('updateCell', error);
@@ -33,7 +34,7 @@ exports.updateCell = async (req, res) => {
 
 exports.deleteCell = async (req, res) => {
 	try {
-		await deleteCell(req.params?.itemPN);
+		await withTimeout( deleteCell(req.params?.itemPN), AWAIT_TIMEOUT);
 		res.status(204).end();
 	} catch (error) {
 		logger.error('deleteCell', error);

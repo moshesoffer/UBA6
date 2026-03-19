@@ -14,25 +14,10 @@ import { getText, } from 'src/services/string-definitions';
 import { setModal, } from 'src/actions/Auth';
 import { setCurrentUba, setState, setSelectedDevices} from 'src/actions/UbaDevices';
 import { statusCodes, pageStateList, isStatusInPending, } from 'src/constants/unsystematic';
-import {pauseRunningTest, stopRunningTest, resumeRunningTest, getGraphData, confirmRunningTest} from 'src/action-creators/TestRoutines';
+import {pauseRunningTest, stopRunningTest, forceStopRunningTest, resumeRunningTest, getGraphData, confirmRunningTest} from 'src/action-creators/TestRoutines';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 export const getActions = (row, authDispatch, ubaDevicesDispatch, testRoutinesDispatch) => {
-    if (isStatusInPending(row?.status)) {
-        return (
-            <Box sx={{ textAlign: 'center' }}>
-                <CircularProgress
-                    sx={{
-                        color: "green",
-                        animationDuration: "5s", 
-                        marginTop: 0.5,
-                    }}
-                    size={25}
-                />
-            </Box>
-        );
-    }
-
     if (row?.status === statusCodes.RUNNING) {
         return (
             <ButtonGroup>
@@ -51,7 +36,7 @@ export const getActions = (row, authDispatch, ubaDevicesDispatch, testRoutinesDi
         );
     }
 
-    if (row?.status === statusCodes.PAUSED) {
+    else if (row?.status === statusCodes.PAUSED) {
         return (
             <ButtonGroup>
                 <IconButton title={getText('common.STOP')} aria-label="stop" onClick={() => handleStopTest(row, authDispatch, ubaDevicesDispatch)} >
@@ -69,7 +54,7 @@ export const getActions = (row, authDispatch, ubaDevicesDispatch, testRoutinesDi
         );
     }
 
-    if (
+    else if (
         row?.status === statusCodes.STOPPED ||
         row?.status === statusCodes.ABORTED ||
         row?.status === statusCodes.FINISHED
@@ -79,6 +64,7 @@ export const getActions = (row, authDispatch, ubaDevicesDispatch, testRoutinesDi
                 <IconButton title={getText('common.CONFIRM')} aria-label="confirm" onClick={() => handleConfirmTest(row, authDispatch, ubaDevicesDispatch)} >
                     <CheckCircleIcon color="success" />
                 </IconButton>
+                
                 <IconButton title={getText('common.VIEW_GRAPH')} aria-label="graph details" onClick={() => handleGraphOpening(row, authDispatch, ubaDevicesDispatch, testRoutinesDispatch)} >
                     <TimelineIcon color="primary" />
                 </IconButton>
@@ -86,13 +72,107 @@ export const getActions = (row, authDispatch, ubaDevicesDispatch, testRoutinesDi
         );
     }
 
-    if (
+    else if (
         row?.status === statusCodes.STANDBY
     ) {
         return (
             <ButtonGroup>
-                <Button size="small" sx={{ width: 70, p: 0.2, height: 27 }} onClick={() => showWizardsZero(row, ubaDevicesDispatch)}>
-                    <Typography fontSize={10}>{getText('mainPage.START_TEST')}</Typography>
+                <Button size="small" sx={{ width: 72, p: 0.2, height: 36 }} onClick={() => showWizardsZero(row, ubaDevicesDispatch)}>
+                    <Typography fontSize={13}>Start Test</Typography>
+                </Button>
+            </ButtonGroup>
+        );
+    } 
+
+    else if (
+        row?.status === statusCodes.PENDING
+    ) {
+        return (
+            <ButtonGroup>
+                <Button size="small" sx={{ width: 72, p: 0.2, height: 36 }} onClick={() => showWizardsZero(row, ubaDevicesDispatch)}>
+                    <Typography fontSize={13}>Pending</Typography>
+                </Button>
+            </ButtonGroup>
+        );
+    }
+
+    else if (
+        row?.status === statusCodes.PENDING_STANDBY
+    ) {
+        return (
+            <ButtonGroup>
+                <Button size="small" sx={{ width: 72, p: 0.2, height: 36 }} onClick={() => showWizardsZero(row, ubaDevicesDispatch)}>
+                    <Typography fontSize={13}>Pending Standby</Typography>
+                </Button>
+
+                <IconButton title={getText('common.STOP')} aria-label="stop" onClick={() => handleForceStopTest(row, authDispatch, ubaDevicesDispatch)} >
+                    <StopCircleOutlinedIcon color="error" />
+                </IconButton>
+            </ButtonGroup>
+        );
+    }
+
+    else if (
+        row?.status === statusCodes.PENDING_STOP
+    ) {
+        return (
+            <ButtonGroup>
+                <Button size="small" sx={{ width: 72, p: 0.2, height: 36 }} onClick={() => showWizardsZero(row, ubaDevicesDispatch)}>
+                    <Typography fontSize={13}>Pending Stop</Typography>
+                </Button>
+
+                <IconButton title={getText('common.STOP')} aria-label="stop" onClick={() => handleForceStopTest(row, authDispatch, ubaDevicesDispatch)} >
+                    <StopCircleOutlinedIcon color="error" />
+                </IconButton>
+            </ButtonGroup>
+        );
+    }
+
+    else if (
+        row?.status === statusCodes.PENDING_RUNNING
+    ) {
+        return (
+            <ButtonGroup>
+                <Button size="small" sx={{ width: 72, p: 0.2, height: 36 }} onClick={() => showWizardsZero(row, ubaDevicesDispatch)}>
+                    <Typography fontSize={13}>Pending Running</Typography>
+                </Button>
+                
+                <IconButton title={getText('common.STOP')} aria-label="stop" onClick={() => handleForceStopTest(row, authDispatch, ubaDevicesDispatch)} >
+                    <StopCircleOutlinedIcon color="error" />
+                </IconButton>
+            </ButtonGroup>
+        );
+    }
+
+    else if (
+        row?.status === statusCodes.PENDING_SAVE
+    ) {
+        return (
+            <ButtonGroup>
+                <Button size="small" sx={{ width: 72, p: 0.2, height: 36 }} onClick={() => showWizardsZero(row, ubaDevicesDispatch)}>
+                    <Typography fontSize={13}>Pending Save</Typography>
+                </Button>
+            </ButtonGroup>
+        );
+    }
+
+    else if (
+        row?.status === statusCodes.PENDING_PAUSE
+    ) {
+        return (
+            <ButtonGroup>
+                <Button size="small" sx={{ width: 72, p: 0.2, height: 36 }} onClick={() => showWizardsZero(row, ubaDevicesDispatch)}>
+                    <Typography fontSize={13}>Pending Pause</Typography>
+                </Button>
+            </ButtonGroup>
+        );
+    }
+
+    else  {
+        return (
+            <ButtonGroup>
+                <Button size="small" sx={{ width: 72, p: 0.2, height: 36 }}>
+                    <Typography fontSize={13}>Unknown</Typography>
                 </Button>
             </ButtonGroup>
         );
@@ -108,7 +188,17 @@ const showWizardsZero = (selectedRow, ubaDevicesDispatch) => {
 const handleStopTest = (selectedRow, authDispatch, ubaDevicesDispatch) => {
     let choice = confirm('Do you want to stop this running test?');
     if(choice === true) {
+    console.log('==> handleStopTest');
         stopRunningTest(authDispatch, ubaDevicesDispatch, selectedRow?.runningTestID, selectedRow?.ubaSN, selectedRow?.testRoutineChannels);
+        return true;
+    }
+    return false;
+};
+
+const handleForceStopTest = (selectedRow, authDispatch, ubaDevicesDispatch) => {
+    let choice = confirm('Do you want to stop this running test?');
+    if(choice === true) {
+        forceStopRunningTest(authDispatch, ubaDevicesDispatch, selectedRow?.runningTestID, selectedRow?.ubaSN, selectedRow?.testRoutineChannels);
         return true;
     }
     return false;

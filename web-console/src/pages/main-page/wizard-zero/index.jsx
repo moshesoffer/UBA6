@@ -78,18 +78,26 @@ export default function WizardZero(props) {
 	});
 
 	useEffect(() => {
+		//Moshe
+		console.log('==> useEffect.getTestRoutines,getCells');
 		getTestRoutines(authDispatch, testRoutinesDispatch);
 		getCells(authDispatch, settingsDispatch);
 	}, []);
 
 	const handleButtonClick = () => {
+		//Moshe
+		console.log('==> handleButtonClick.fillTestRoutine');
 		fillTestRoutine(selectedTest, false, currentUba?.channel, testRoutinesDispatch);
 
 		if (validateObject(currentUba, true)) {
+		//Moshe
+		console.log('==> ubaDevicesDispatch WIZARD_ONE');
 			ubaDevicesDispatch(setState(pageStateList.WIZARD_ONE));
 			return;
 		}
 
+		//Moshe
+		console.log('==> ubaDevicesDispatch RUN_BATCH_TEST');
 		ubaDevicesDispatch(setState(pageStateList.RUN_BATCH_TEST));
 	}
 

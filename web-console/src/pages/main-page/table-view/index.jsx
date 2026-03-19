@@ -81,11 +81,11 @@ export default function TableView() {
 		//amountOfRowsWithErrors > -1 to avoid showing notification on first load
 		//rowsWithErrors?.length > 0 to avoid showing notification when there are no errors
 		//rowsWithErrors.length > amountOfRowsWithErrors to avoid showing notification on every refresh
-		if(!secondaryNotification.message && amountOfRowsWithErrors !== -1 && rowsWithErrors?.length > 0 && rowsWithErrors.length > amountOfRowsWithErrors){
-			authDispatch(setSecondaryNotification({message: 'Some devices have errors',}));
-		} else if(secondaryNotification.message && rowsWithErrors?.length === 0){
-			authDispatch(setSecondaryNotification({message: '',}));
-		}
+		//if(/*Moshe: !secondaryNotification.message && amountOfRowsWithErrors !== -1 && */rowsWithErrors?.length > 0 && rowsWithErrors.length > amountOfRowsWithErrors){
+		//	authDispatch(setSecondaryNotification({message: 'Some devices have errors',}));
+		//} else if(secondaryNotification.message && rowsWithErrors?.length === 0){
+		//	authDispatch(setSecondaryNotification({message: '',}));
+		//}
 
 		setAmountOfRowsWithErrors(rowsWithErrors.length);
 

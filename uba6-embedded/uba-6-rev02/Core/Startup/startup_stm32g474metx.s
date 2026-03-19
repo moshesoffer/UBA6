@@ -51,6 +51,8 @@ defined in linker script */
  *          starts execution following a reset event. Only the absolutely
  *          necessary set is performed, after which the application
  *          supplied main() routine is called.
+			//HAL_Delay(500);
++_)
  * @param  None
  * @retval : None
 */
@@ -59,6 +61,8 @@ defined in linker script */
 	.weak	Reset_Handler
 	.type	Reset_Handler, %function
 Reset_Handler:
+
+
   ldr   r0, =_estack
   mov   sp, r0          /* set stack pointer */
 
@@ -82,7 +86,7 @@ LoopCopyDataInit:
   cmp r4, r1
   bcc CopyDataInit
   
-/* Zero fill the bss segment. */
+/* Zero fill the bss segment. *+-*/
   ldr r2, =_sbss
   ldr r4, =_ebss
   movs r3, #0

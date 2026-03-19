@@ -7,17 +7,25 @@ const { selectQuery, createModel, updateModel, deleteModel } = require('../db/ge
 const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 
 const getTestRoutines = async() => {
+	//Moshe
+	logger.info(`getTestRoutines .`);
 	return await selectQuery(testRoutineModel.tableName, testRoutineModel.selectAllQuery);;
 };
 
 const createTestRoutine = async data => {
+	//Moshe
+	logger.info(`createTestRoutine .`);
 	let dataPlan = validatePlan(data?.plan, true);
+	logger.info(`createTestRoutine.validatePlan ${dataPlan}`);
 	data.plan = JSON.stringify(dataPlan);
 	await withTimeout(createModel(testRoutineModel, data), AWAIT_TIMEOUT);;
 }
 
 const updateTestRoutine = async (id, data) => {
+	//Moshe
+	logger.info(`updateTestRoutine .`);
 	let dataPlan = validatePlan(data?.plan, false);
+	logger.info(`updateTestRoutine.validatePlan ${dataPlan}`);
 	if(dataPlan) data.plan = JSON.stringify(dataPlan);
 	await withTimeout(updateModel(testRoutineModel, id, data), AWAIT_TIMEOUT);;
 }

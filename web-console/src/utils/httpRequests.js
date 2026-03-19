@@ -1,6 +1,27 @@
 import {validateString, validateObject, validateFunction,} from 'src/utils/validators';
 import {setAjaxLoader} from 'src/actions/Auth';
 
+/* async with timeout */
+const AWAIT_TIMEOUT = 5000;
+function withTimeout(promise, ms) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`Timeout after ${ms}ms`));
+    }, ms);
+
+    promise
+      .then(result => {
+        clearTimeout(timer);
+        resolve(result);
+      })
+      .catch(err => {
+		console.log(`timeout, err: ${err}`);
+        clearTimeout(timer);
+        reject(err);
+      });
+  });
+}
+
 const createRequestOptions = (method, data) => {
 	const options = {
 		method,
@@ -18,7 +39,7 @@ const createRequestOptions = (method, data) => {
 
 const prepareResponse = async response => {
 	if (response.ok) {
-		const dataString = await response.text();
+		const dataString = await withTimeout(response.text(), AWAIT_TIMEOUT);
 		if (validateString(dataString)) {
 			try {
 				return JSON.parse(dataString);
@@ -36,7 +57,7 @@ const prepareResponse = async response => {
 
 	let text = '';
 	try {
-		text = await response.text();
+		text = await withTimeout( response.text(), AWAIT_TIMEOUT);
 	} catch (error) {
 		// eslint-disable-next-line no-console
 		console.info(error);
@@ -61,8 +82,8 @@ export const postData = async (authDispatch, pathname, method, data) => {
 		authDispatch(setAjaxLoader(true));
 	}
 	try {
-		const response = await fetch(url, options);
-		return await prepareResponse(response);
+		const response = await withTimeout( fetch(url, options), AWAIT_TIMEOUT);
+		return await withTimeout( prepareResponse(response), AWAIT_TIMEOUT);
 	} finally {
 		if (validateFunction(authDispatch)) {
 			authDispatch(setAjaxLoader(false));
@@ -79,15 +100,15 @@ export const postData2 = async (authDispatch, pathname, method, data) => {
 		authDispatch(setAjaxLoader(true));
 	}
 	try {
-		response = await fetch(url, options);
+		response = await withTimeout( fetch(url, options), AWAIT_TIMEOUT);
 		if (response.status === 204) {
 			responseBody = { success: true };
 		} else {
-			responseBody = await response.json();
+			responseBody = await withTimeout( response.json(), AWAIT_TIMEOUT);
 		}
 		return responseBody;
 	} catch (error) {
-		if(response && !responseBody) responseBody = await response.text();
+		if(response && !responseBody) responseBody = await withTimeout( response.text(), AWAIT_TIMEOUT);
 	} finally {
 		if (validateFunction(authDispatch)) {
 			authDispatch(setAjaxLoader(false));

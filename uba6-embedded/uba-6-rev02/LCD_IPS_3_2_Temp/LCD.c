@@ -215,14 +215,14 @@ static void LCD_init_screens(UBA_LCD *LCD) {
 	LCD->screen_ch_A.bpt->shadow.test_name[0] = ' '; //non-zero length
 	LCD->screen_ch_A.bpt->shadow.current_state = UBA_BPT_STATE_INVALID;
 	LCD->screen_ch_A.bpt->shadow.error = UBA_PROTO_UBA6_ERROR_LINE_NOT_AVAILABLE;
-	LCD->screen_ch_A.bpt->shadow.bnt_back_stop.text[0] = '\0';
-	LCD->screen_ch_A.bpt->shadow.bnt_back_stop.color_text = GRAYBLUE;//not in use
-	LCD->screen_ch_A.bpt->shadow.bnt_back_stop.color_bg =  GRAYBLUE;//not in use
-	LCD->screen_ch_A.bpt->shadow.bnt_back_stop.effect = UBA_GFX_EFFECT_MAX;
-	LCD->screen_ch_A.bpt->shadow.bnt_back_stop.text[0] = '\0';
-	LCD->screen_ch_A.bpt->shadow.bnt_back_stop.color_text = GRAYBLUE;//not in use
-	LCD->screen_ch_A.bpt->shadow.bnt_back_stop.color_bg =  GRAYBLUE;//not in use
-	LCD->screen_ch_A.bpt->shadow.bnt_back_stop.effect = UBA_GFX_EFFECT_MAX;
+	LCD->screen_ch_A.bpt->shadow.btn_back_stop.text[0] = '\0';
+	LCD->screen_ch_A.bpt->shadow.btn_back_stop.color_text = GRAYBLUE;//not in use
+	LCD->screen_ch_A.bpt->shadow.btn_back_stop.color_bg =  GRAYBLUE;//not in use
+	LCD->screen_ch_A.bpt->shadow.btn_back_stop.effect = UBA_GFX_EFFECT_MAX;
+	LCD->screen_ch_A.bpt->shadow.btn_back_stop.text[0] = '\0';
+	LCD->screen_ch_A.bpt->shadow.btn_back_stop.color_text = GRAYBLUE;//not in use
+	LCD->screen_ch_A.bpt->shadow.btn_back_stop.color_bg =  GRAYBLUE;//not in use
+	LCD->screen_ch_A.bpt->shadow.btn_back_stop.effect = UBA_GFX_EFFECT_MAX;
 
 	LCD->screen_ch_B.LCD_handler = (void *) LCD;
 	LCD->screen_ch_B.bpt = &UBA_6_device_g.BPT_B;
@@ -231,14 +231,14 @@ static void LCD_init_screens(UBA_LCD *LCD) {
 	LCD->screen_ch_B.bpt->shadow.test_name[0] = ' '; //non-zero length
 	LCD->screen_ch_B.bpt->shadow.current_state = UBA_BPT_STATE_INVALID;
 	LCD->screen_ch_B.bpt->shadow.error = UBA_PROTO_UBA6_ERROR_LINE_NOT_AVAILABLE;
-	LCD->screen_ch_B.bpt->shadow.bnt_back_stop.text[0] = '\0';
-	LCD->screen_ch_B.bpt->shadow.bnt_back_stop.color_text = GRAYBLUE;//not in use
-	LCD->screen_ch_B.bpt->shadow.bnt_back_stop.color_bg =  GRAYBLUE;//not in use
-	LCD->screen_ch_B.bpt->shadow.bnt_back_stop.effect = UBA_GFX_EFFECT_MAX;
-	LCD->screen_ch_B.bpt->shadow.bnt_back_stop.text[0] = '\0';
-	LCD->screen_ch_B.bpt->shadow.bnt_back_stop.color_text = GRAYBLUE;//not in use
-	LCD->screen_ch_B.bpt->shadow.bnt_back_stop.color_bg =  GRAYBLUE;//not in use
-	LCD->screen_ch_B.bpt->shadow.bnt_back_stop.effect = UBA_GFX_EFFECT_MAX;
+	LCD->screen_ch_B.bpt->shadow.btn_back_stop.text[0] = '\0';
+	LCD->screen_ch_B.bpt->shadow.btn_back_stop.color_text = GRAYBLUE;//not in use
+	LCD->screen_ch_B.bpt->shadow.btn_back_stop.color_bg =  GRAYBLUE;//not in use
+	LCD->screen_ch_B.bpt->shadow.btn_back_stop.effect = UBA_GFX_EFFECT_MAX;
+	LCD->screen_ch_B.bpt->shadow.btn_back_stop.text[0] = '\0';
+	LCD->screen_ch_B.bpt->shadow.btn_back_stop.color_text = GRAYBLUE;//not in use
+	LCD->screen_ch_B.bpt->shadow.btn_back_stop.color_bg =  GRAYBLUE;//not in use
+	LCD->screen_ch_B.bpt->shadow.btn_back_stop.effect = UBA_GFX_EFFECT_MAX;
 
 	LCD->screen_ch_AB.LCD_handler = (void *) LCD;
 	LCD->screen_ch_AB.bpt = &UBA_6_device_g.BPT_AB;
@@ -247,14 +247,14 @@ static void LCD_init_screens(UBA_LCD *LCD) {
 	LCD->screen_ch_AB.bpt->shadow.test_name[0] = ' '; //non-zero length
 	LCD->screen_ch_AB.bpt->shadow.current_state = UBA_BPT_STATE_INVALID;
 	LCD->screen_ch_AB.bpt->shadow.error = UBA_PROTO_UBA6_ERROR_LINE_NOT_AVAILABLE;
-	LCD->screen_ch_AB.bpt->shadow.bnt_back_stop.text[0] = '\0';
-	LCD->screen_ch_AB.bpt->shadow.bnt_back_stop.color_text = GRAYBLUE;//not in use
-	LCD->screen_ch_AB.bpt->shadow.bnt_back_stop.color_bg =  GRAYBLUE;//not in use
-	LCD->screen_ch_AB.bpt->shadow.bnt_back_stop.effect = UBA_GFX_EFFECT_MAX;
-	LCD->screen_ch_AB.bpt->shadow.bnt_back_stop.text[0] = '\0';
-	LCD->screen_ch_AB.bpt->shadow.bnt_back_stop.color_text = GRAYBLUE;//not in use
-	LCD->screen_ch_AB.bpt->shadow.bnt_back_stop.color_bg =  GRAYBLUE;//not in use
-	LCD->screen_ch_AB.bpt->shadow.bnt_back_stop.effect = UBA_GFX_EFFECT_MAX;
+	LCD->screen_ch_AB.bpt->shadow.btn_back_stop.text[0] = '\0';
+	LCD->screen_ch_AB.bpt->shadow.btn_back_stop.color_text = GRAYBLUE;//not in use
+	LCD->screen_ch_AB.bpt->shadow.btn_back_stop.color_bg =  GRAYBLUE;//not in use
+	LCD->screen_ch_AB.bpt->shadow.btn_back_stop.effect = UBA_GFX_EFFECT_MAX;
+	LCD->screen_ch_AB.bpt->shadow.btn_back_stop.text[0] = '\0';
+	LCD->screen_ch_AB.bpt->shadow.btn_back_stop.color_text = GRAYBLUE;//not in use
+	LCD->screen_ch_AB.bpt->shadow.btn_back_stop.color_bg =  GRAYBLUE;//not in use
+	LCD->screen_ch_AB.bpt->shadow.btn_back_stop.effect = UBA_GFX_EFFECT_MAX;
 
 }
 
@@ -294,21 +294,21 @@ static void LCD_side_by_side(UBA_LCD *LCD) {
 }
 
 static void LCD_side_by_side_exit(UBA_LCD *LCD) {
-	LCD->screen_ch_A.state.next = UBA_LCD_SCREEN_DISPLAY_OFF;
-	LCD->screen_ch_B.state.next = UBA_LCD_SCREEN_DISPLAY_OFF;
+//Moshe
+//	LCD->screen_ch_A.state.next = UBA_LCD_SCREEN_DISPLAY_OFF;
+//	LCD->screen_ch_B.state.next = UBA_LCD_SCREEN_DISPLAY_OFF;
 }
 
 static void LCD_full_screen_enter(UBA_LCD *LCD) {
 	LCD_update_state(LCD);
-//Moshe
-//	LCD->screen_ch_AB.state.next = UBA_LCD_SCREEN_DISPLAY_INIT;
 }
 static void LCD_full_screen(UBA_LCD *LCD) {
 	UBA_LCD_screen_run(&LCD->screen_ch_AB);
 }
 
 static void LCD_full_screen_exit(UBA_LCD *LCD) {
-	LCD->screen_ch_AB.state.next = UBA_LCD_SCREEN_DISPLAY_OFF;
+//Moshe
+//	LCD->screen_ch_AB.state.next = UBA_LCD_SCREEN_DISPLAY_OFF;
 }
 
 static void LCD_off_enter(UBA_LCD *LCD) {

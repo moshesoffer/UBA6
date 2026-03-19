@@ -54,7 +54,7 @@ typedef struct UBA_LCD_channel_shadow
 	float temp_value;
 
 	bool volt_vlaue_changed;
-	bool current_vlaue_changed;
+	bool current_value_changed;
 	bool capacity_vlaue_changed;
 	bool temp_value_changed;
 } UBA_LCD_channel_shadow;
@@ -76,7 +76,7 @@ typedef struct UBA_LCD_page_channel {
 	UBA_GFX frame;
 	UBA_LCD_channel channel;
 	UBA_GFX EWI_msg;
-	UBA_GFX bnt_select;
+	UBA_GFX btn_select;
 } UBA_LCD_page_channel;
 
 // @formatter:off
@@ -102,8 +102,9 @@ typedef struct UBA_LCD_page_BPT {
 	UBA_GFX time;
 	UBA_LCD_channel channel;
 	UBA_GFX EWI_msg;
-	UBA_GFX bnt_back_stop;
-	UBA_GFX bnt_pause_start;
+	UBA_GFX btn_back_stop;
+	UBA_GFX btn_pause_start;
+	UBA_GFX btn_next;
 } UBA_LCD_page_BPT;
 
 // @formatter:off
@@ -139,10 +140,10 @@ typedef struct UBA_LCD_page_test_list_select {
 	UBA_GFX frame;
 	UBA_GFX title;
 	UBA_GFX test_name_list[TEST_SELECT_LIST_SIZE];
-	UBA_GFX bnt_cancel;
-	int8_t select_index;
+	UBA_GFX btn_back;
+	int8_t start_display_index;
 	int8_t list_select_index;
-
+	int8_t list_end_index;
 } UBA_LCD_page_test_list_select;
 
 // @formatter:off
@@ -169,8 +170,9 @@ typedef struct UBA_LCD_page_test_info {
 	UBA_GFX title;
 	UBA_GFX test_info[12];
 	UBA_GFX EWI_msg;
-	UBA_GFX bnt_back;
-	UBA_GFX bnt_select;
+	UBA_GFX btn_back;
+	UBA_GFX btn_step;
+	UBA_GFX btn_select;
 } UBA_LCD_page_test_info;
 // @formatter:off
 
@@ -193,6 +195,7 @@ typedef struct UBA_LCD_page_test_info {
 // @formatter:on
 
 typedef struct UBA_LCD_screen_shadow {
+#if 0
 	char test_name[UBA_BPT_NAME_MAX_SIZE];
 	UBA_BPT_STATE current_state;
 	UBA_PROTO_UBA6_ERROR error;
@@ -201,13 +204,15 @@ typedef struct UBA_LCD_screen_shadow {
 		uint16_t color_text;
 		uint16_t color_bg;
 		char text[11];
-	} bnt_back_stop;
+	} btn_back_stop;
 	struct {
 		UBA_GFX_EFFECT effect;
 		uint16_t color_text;
 		uint16_t color_bg;
 		char text[11];
-	} bnt_pause_start;
+	} btn_pause_start;
+#endif
+	UBA_CHANNLE_ID ch_control;
 } UBA_LCD_screen_shadow;
 
 typedef struct UBA_LCD_screen {
@@ -225,20 +230,22 @@ typedef struct UBA_LCD_screen {
 		UBA_LCD_page_test_info test_info;
 	} pages;
 	struct {
-		UBA_button *bnt_up_p;
-		UBA_button *bnt_down_p;
-		UBA_button *bnt_select_p;
+		UBA_button *btn_up_p;
+		UBA_button *btn_down_p;
+		UBA_button *btn_select_p;
 	} main_buttons;
 	struct {
-		UBA_button *bnt_up_p;
-		UBA_button *bnt_down_p;
-		UBA_button *bnt_select_p;
+		UBA_button *btn_up_p;
+		UBA_button *btn_down_p;
+		UBA_button *btn_select_p;
 	} secondery_buttons;
 	TR_Test_Routine *tr;
 	UBA_BPT *bpt;
 	UBA_CHANNLE_ID ch_control; // the control id of the screen
 	uint8_t tr_list_select_index;
 	uint8_t tr_step_display_index;
+
+	UBA_LCD_screen_shadow shadow;
 } UBA_LCD_screen;
 
 // @formatter:off
@@ -307,7 +314,7 @@ typedef struct UBA_LCD_STATIC_PAGE {
 		uint16_t button_color_bg;
 		uint16_t button_color_text;
 		char button_text[10];
-	} bnt_select;
+	} btn_select;
 	struct {
 		UBA_GFX_EFFECT effect;
 		uint8_t text_size;
@@ -317,6 +324,7 @@ typedef struct UBA_LCD_STATIC_PAGE {
 // @formatter:on
 void UBA_LCD_screen_run(UBA_LCD_screen *screen);
 void UBA_LCD_screen_event(UBA_LCD_screen *screen, UBA_LCD_SCREEN_DISPLAY_STATE next_state);
+void UBA_LCD_screen_update(UBA_LCD_screen *screen);
 
 #endif /* UBA_LCD_SCREEN_H_ */
 

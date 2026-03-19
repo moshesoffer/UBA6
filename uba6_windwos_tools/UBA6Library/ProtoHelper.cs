@@ -38,7 +38,7 @@ namespace UBA6Library {
                 CutOffCurrent = cutOffCurrent,
                 LimitCapacity = limitCapacity,
             };
-            Console.WriteLine($"Create Charge Stop Condition: {t.MaxTemperature} {t.MaxTime} {t.CutOffCurrent} {t.LimitCapacity}");
+////            Console.WriteLine($"Create Charge Stop Condition: {t.MaxTemperature} {t.MaxTime} {t.CutOffCurrent} {t.LimitCapacity}");
             return t;
         }
 
@@ -86,7 +86,7 @@ namespace UBA6Library {
                 throw new ValidationException("Min Temp must be greater than -273.0f");
             }
             UBA_PROTO_BPT.charge cs = new UBA_PROTO_BPT.charge() { Source = source, Current = current, Voltage = voltage, MinTemperature = minTemp, Sc = sc };
-            Console.WriteLine($"Create Charge Step: {cs.Source} {cs.Current} mA {cs.Voltage} mV {cs.MinTemperature} C");
+////            Console.WriteLine($"Create Charge Step: {cs.Source} {cs.Current} mA {cs.Voltage} mV {cs.MinTemperature} C");
             return cs;
         }
 
@@ -101,7 +101,7 @@ namespace UBA6Library {
                 CutOffVoltag = cutOfVoltage,
                 LimitCapacity = limitCapacity,
             };
-            Console.WriteLine($"Create Discharge Stop Condition: Max Temp:{t.MaxTemperature} MaxTime:{t.MaxTime} CutOffVoltag: {t.CutOffVoltag} LimitCapacity:{t.LimitCapacity}");
+////            Console.WriteLine($"Create Discharge Stop Condition: Max Temp:{t.MaxTemperature} MaxTime:{t.MaxTime} CutOffVoltag: {t.CutOffVoltag} LimitCapacity:{t.LimitCapacity}");
             return t;
         }
 
@@ -110,7 +110,7 @@ namespace UBA6Library {
                 throw new ValidationException("Discharge current must be greater than or equal to 0");
             }
             UBA_PROTO_BPT.discharge_current dc = new UBA_PROTO_BPT.discharge_current() { Value = value, Type = type };
-            Console.WriteLine($"Create Discharge Current: {dc.Value} {dc.Type}");
+////            Console.WriteLine($"Create Discharge Current: {dc.Value} {dc.Type}");
             return dc;
         }
 
@@ -127,7 +127,7 @@ namespace UBA6Library {
                 MinTemperature = minTemp,
                 Sc = sc
             };
-            Console.WriteLine($"Create Discharge Step: {cs.Source} {cs.Current.Value} [{cs.Current.Type}] {cs.MinTemperature} C");
+////            Console.WriteLine($"Create Discharge Step: {cs.Source} {cs.Current.Value} [{cs.Current.Type}] {cs.MinTemperature} C");
             return cs;
         }
 

@@ -64,8 +64,8 @@ namespace UBA6Library {
             sp = new SerialPort(portName, baudRate);
             sp.ReadBufferSize = 4096;
             sp.Parity = Parity.None;
-            sp.ReadTimeout = 5000;
-            sp.WriteTimeout = 5000;
+            sp.ReadTimeout = 1000;
+            sp.WriteTimeout = 1000;
             sp.DataReceived += SerialPort_DataReceived;
             _logger.LogDebug($"Initializing UBA_Interface with COM port: {portName}");
             try {
@@ -96,8 +96,8 @@ namespace UBA6Library {
             }
             sp = new SerialPort(newComPort, 115200);
             sp.Parity = Parity.None;
-            sp.ReadTimeout = 5000;
-            sp.WriteTimeout = 5000;
+            sp.ReadTimeout = 1000;
+            sp.WriteTimeout = 1000;
             sp.DataReceived += SerialPort_DataReceived;
             try {
                 sp.Open();
@@ -285,7 +285,7 @@ namespace UBA6Library {
         }
 
         private bool checkQueryMessage(Message queryMessage, Message responseMessage) {
-            _logger.LogDebug($"Checking Response message {responseMessage} for sent message {queryMessage}");
+            ////_logger.LogDebug($"Checking Response message {responseMessage} for sent message {queryMessage}");
             bool ret = false;
 
             if (queryMessage == null) {
@@ -355,7 +355,7 @@ namespace UBA6Library {
             return BitConverter.ToUInt32(buffer, 0);
         }
 
-        public async Task<Message?> GetMessage(Message? send, int timeout = 1000) {
+        public async Task<Message?> GetMessage(Message? send, int timeout = 2000) {
            /* if (sp == null || !sp.IsOpen) {
                 _logger.LogError("Serial port is not open.");
                 failes++;
@@ -363,25 +363,29 @@ namespace UBA6Library {
             }*/
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             if (send?.PyloadCase == Message.PyloadOneofCase.Query) {
-                Message? res = await WithTimeout(EnqueueMessageAndWaitForResponseAsync(new Message(send), MessagePriority.DEVICE_QUERY, timeout), timeout);
+////                Message? res = await WithTimeout(EnqueueMessageAndWaitForResponseAsync(new Message(send), MessagePriority.DEVICE_QUERY, timeout), timeout);
+                Message? res = await EnqueueMessageAndWaitForResponseAsync(new Message(send), MessagePriority.DEVICE_QUERY, timeout);
                 if (res != null) {
                     _logger.LogDebug($"Received Query Response : {res.QueryResponse.Recipient} in {stopwatch.ElapsedMilliseconds} ms");
                     return new Message(res);
                 }
             } else if (send.PyloadCase == Message.PyloadOneofCase.Cmd && send.Cmd?.CommandCase == UBA_PROTO_CMD.command_message.CommandOneofCase.File && send.Cmd.File.Id == UBA_PROTO_FM.CMD_ID.ChunkRequest) {
-                Message? res = await WithTimeout(EnqueueMessageAndWaitFileChunkAsync(send), AWAIT_TIMEOUT);
+////                Message? res = await WithTimeout(EnqueueMessageAndWaitFileChunkAsync(send), AWAIT_TIMEOUT);
+                Message? res = await EnqueueMessageAndWaitFileChunkAsync(send);
                 if (res != null) {
                     _logger.LogDebug($"Received File Chunk : {res.File.ChunkIndex} in {stopwatch.ElapsedMilliseconds} ms");
                     return new Message(res);
                 }
             } else if (send.PyloadCase == Message.PyloadOneofCase.Cmd && send.Cmd?.CommandCase == UBA_PROTO_CMD.command_message.CommandOneofCase.File && send.Cmd.File.Id == UBA_PROTO_FM.CMD_ID.FileListRequest) {
-                Message? res = await WithTimeout(EnqueueMessageAndWaitFileList(send), AWAIT_TIMEOUT);
+////                Message? res = await WithTimeout(EnqueueMessageAndWaitFileList(send), AWAIT_TIMEOUT);
+                Message? res = await EnqueueMessageAndWaitFileList(send);
                 if (res != null) {
                     _logger.LogDebug($"Received File List : {res.FmList.Filenames.Count} / {res.FmList.TotalFiles} in {stopwatch.ElapsedMilliseconds} ms");
                     return new Message(res); ;
                 }
             } else if (send.PyloadCase == Message.PyloadOneofCase.Cmd && send.Cmd?.CommandCase == UBA_PROTO_CMD.command_message.CommandOneofCase.File && send.Cmd.File.Id == UBA_PROTO_FM.CMD_ID.BptFile) {
-                Message? res = await WithTimeout(EnqueueMessageAndWaitFileList(send), AWAIT_TIMEOUT);
+////                Message? res = await WithTimeout(EnqueueMessageAndWaitFileList(send), AWAIT_TIMEOUT);
+                Message? res = await EnqueueMessageAndWaitFileList(send);
                 if (res != null) {
                     _logger.LogDebug($"Received File List : {res.FmList.Filenames.Count} / {res.FmList.TotalFiles} in {stopwatch.ElapsedMilliseconds} ms");
                     return new Message(res); ;
@@ -391,7 +395,7 @@ namespace UBA6Library {
         }
 
 
-        public async Task<Message?> GetMessage(UBA_PROTO_QUERY.RECIPIENT recipient, UInt32 targateAddress = 0xffffffff, int timeout = 1000) {
+        public async Task<Message?> GetMessage(UBA_PROTO_QUERY.RECIPIENT recipient, UInt32 targateAddress = 0xffffffff, int timeout = 3000) {
           /*  if (sp == null || !sp.IsOpen) {
                 _logger.LogError("Serial port is not open.");
                 failes++;
@@ -403,11 +407,12 @@ namespace UBA6Library {
             }*/
             Message queryMessage = UBA_Message_Factory.CreateQeuryMessage(targateAddress, recipient);
             Message? responseMessage = await WithTimeout(EnqueueMessageAndWaitForResponseAsync(queryMessage, MessagePriority.QUERY_MESSAGE, timeout), timeout);
+////            Message? responseMessage = await EnqueueMessageAndWaitForResponseAsync(queryMessage, MessagePriority.QUERY_MESSAGE, timeout);
 
             return responseMessage;
         }
 
-        public async Task<Message?> EnqueueMessageAndWaitForResponseAsync(Message? message, MessagePriority priority = MessagePriority.DEFUALT, int timeout = 50) {
+        public async Task<Message?> EnqueueMessageAndWaitForResponseAsync(Message? message, MessagePriority priority = MessagePriority.DEFUALT, int timeout = 0) {
             if (message == null) throw new ArgumentNullException(nameof(message));       
             var tcs = new TaskCompletionSource<Message?>();
             EventHandler<ProtoMessageEventArg>? handler = null;
@@ -420,27 +425,35 @@ namespace UBA6Library {
                 }
             };
             MessageReceived += handler;
-            
+
             try { 
                 EnqueueMessage(message, priority);
                 using (timeoutCts) {
                     var delayTask = Task.Delay(timeout);
+////_logger.LogInformation($"==> await    Task.WhenAny 1 taskID: {tcs.Task.Id} pri {priority}");
                     var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
+////_logger.LogInformation($"==> response Task.WhenAny 1 taskID: {completedTask.Id}");
                     stopwatch.Stop();
-                    if (completedTask == tcs.Task) {
-                        _logger.LogDebug($"Received response for Message ID: {originalId} in {stopwatch.ElapsedMilliseconds} ms");
-                        return tcs.Task.Result;
-                    } else {
-                        _logger.LogError($"1-Timeout waiting for response with Message ID: {originalId} after {stopwatch.ElapsedMilliseconds} ms");
-                        return null;
+                    if ((priority == MessagePriority.DEVICE_QUERY) || (priority == MessagePriority.BPT_QUERY) ||(priority == MessagePriority.QUERY_MESSAGE) ||
+                        (priority == MessagePriority.FILE_NAME_REQUEST) || (priority == MessagePriority.FILE_DATA_REQUEST))
+                    {
+                        if (completedTask == tcs.Task) {
+                            _logger.LogDebug($"Received response for Message ID: {originalId} taskID: {completedTask.Id}-{tcs.Task.Id}");// in {stopwatch.ElapsedMilliseconds} ms");
+                            return tcs.Task.Result;
+                        } else if (completedTask == delayTask) {
+                            _logger.LogError($"1-Timeout waiting for response with Message ID: {originalId} taskID: {completedTask.Id}-{tcs.Task.Id}");/// after {stopwatch.ElapsedMilliseconds} ms");
+                            return null;
+                        } else {
+                        }
                     }
                 }
             } finally {
-                MessageReceived -= handler;
+              MessageReceived -= handler;
             }
-        }
+            return null;
+         }
 
-        public async Task<Message?> EnqueueMessageAndWaitFileChunkAsync(Message message, MessagePriority priority = MessagePriority.FILE_DATA_REQUEST, int timeout = 250) {
+        public async Task<Message?> EnqueueMessageAndWaitFileChunkAsync(Message message, MessagePriority priority = MessagePriority.FILE_DATA_REQUEST, int timeout = 1000) {
             if (message == null) throw new ArgumentNullException(nameof(message));          
             var tcs = new TaskCompletionSource<Message?>();
             EventHandler<ProtoMessageEventArg>? handler = null;
@@ -454,7 +467,9 @@ namespace UBA6Library {
             try {
                 EnqueueMessage(message, priority);
                 using (timeoutCts) {
+////_logger.LogInformation($"==> await Task.WhenAny 2 task ID: {tcs.Task} pri {priority}");
                     var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
+////_logger.LogInformation($"==> response Task.WhenAny 2 taskID: {completedTask.Id}");
                     if (completedTask == tcs.Task) {
                         _logger.LogDebug($"Received response for Message ID: {message.Head.Id}");
                         return tcs.Task.Result;
@@ -467,7 +482,7 @@ namespace UBA6Library {
                 MessageReceived -= handler;
             }
         }
-        public async Task<Message?> EnqueueMessageAndWaitFileList(Message message, MessagePriority priority = MessagePriority.FILE_NAME_REQUEST, int timeout = 250) {
+        public async Task<Message?> EnqueueMessageAndWaitFileList(Message message, MessagePriority priority = MessagePriority.FILE_NAME_REQUEST, int timeout = 1000) {
             if (message == null) throw new ArgumentNullException(nameof(message));
           
             var tcs = new TaskCompletionSource<Message?>();
@@ -482,7 +497,9 @@ namespace UBA6Library {
             try {
                 EnqueueMessage(message, priority);
                 using (timeoutCts) {
+////_logger.LogInformation($"==> await Task.WhenAny 3 task ID: {tcs.Task} pri {priority}");
                     var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
+////_logger.LogInformation($"==> response Task.WhenAny 3 taskID: {completedTask.Id}");
                     if (completedTask == tcs.Task) {
                         _logger.LogDebug($"Received response for Message ID: {message.Head.Id}");
                         return tcs.Task.Result;

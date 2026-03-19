@@ -194,5 +194,8 @@ UBA_GFX_ERROR UBA_GFX_draw_button(UBA_GFX *uba_gfx);
 UBA_GFX_ERROR UBA_GFX_draw_status(UBA_GFX *uba_gfx);
 UBA_GFX_ERROR UBA_GFX_draw_text(UBA_GFX *uba_gfx);
 UBA_GFX_ERROR UBA_GFX_draw_text_center(UBA_GFX *uba_gfx);
+
+UBA_GFX_ERROR UBA_GFX_erase_button(UBA_GFX *uba_gfx);
+UBA_GFX_ERROR UBA_GFX_erase_text(UBA_GFX *uba_gfx);
 #endif /* UBA_GFX_H_ */
 

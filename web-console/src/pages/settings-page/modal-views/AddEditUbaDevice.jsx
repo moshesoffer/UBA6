@@ -25,6 +25,27 @@ import { getInputValue, handleInputChange, } from 'src/utils/helper';
 import { validateString, } from 'src/utils/validators';
 import Tooltip from '@mui/material/Tooltip';
 
+/* async with timeout */
+const AWAIT_TIMEOUT = 5000;
+function withTimeout(promise, ms) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`Timeout after ${ms}ms`));
+    }, ms);
+
+    promise
+      .then(result => {
+        clearTimeout(timer);
+        resolve(result);
+      })
+      .catch(err => {
+		console.log(`timeout, err: ${err}`);
+        clearTimeout(timer);
+        reject(err);
+      });
+  });
+}
+
 function AddEditUbaDevice() {
 
 	const [serialError, setSerialError] = useState('');
@@ -99,7 +120,7 @@ function AddEditUbaDevice() {
 			queryObj.ubaSN = currentUba.ubaSN;
 			queryObj.ubaChannel = currentUba.ubaChannel;
 		}
-		const res = await queryUbaDevice(false, queryObj);
+		const res = await withTimeout( queryUbaDevice(false, queryObj), AWAIT_TIMEOUT);
 		if(res?.error) {
 			//authDispatch(setNotification({message: res.error,}));
 			setQueryError(res.error);

@@ -17,6 +17,7 @@ const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 const createReportAndTestResult = async (body) => {
     let connection;
     try {
+logger.info(`await connection 1`);
         connection = await withTimeout(pool.getConnection(), AWAIT_TIMEOUT);
         await withTimeout(connection.beginTransaction(), AWAIT_TIMEOUT);
         logger.info(`createReportAndTestResult`);
@@ -40,6 +41,7 @@ const createReportAndTestResult = async (body) => {
 const updateReportAndTestResult = async (id, body) => {
     let connection;
     try {
+logger.info(`await connection 2`);
         connection = await withTimeout(pool.getConnection(), AWAIT_TIMEOUT);
         await withTimeout(connection.beginTransaction(), AWAIT_TIMEOUT);
         logger.info(`updateReportAndTestResult`);
@@ -63,28 +65,41 @@ const updateReportAndTestResult = async (id, body) => {
 const runTest = async (body) => {
     let connection;
     try {
+logger.info(`await connection 3`);
         connection = await withTimeout(pool.getConnection(), AWAIT_TIMEOUT);
+        try {
+logger.info(`connection.beginTransaction start`);
         await withTimeout(connection.beginTransaction(), AWAIT_TIMEOUT);
+        } catch {
+            logger.error(`connection beginTransaction failed`);
+        }
+        //Moshe
         logger.info(`runTest`, {body});
         await withTimeout(deleteRunningTest(connection, body?.ubaSNs), AWAIT_TIMEOUT);
+        //Moshe
         logger.info(`runTest finished deleteRunningTest`, {ubaSNs: body?.ubaSNs});
         const ids = await withTimeout(createRunningTest(connection, body?.ubaSNs, body, status.PENDING_RUNNING), AWAIT_TIMEOUT);
+        //Moshe
         logger.info(`runTest finished createRunningTest`, {ids: ids});
         
         for (const value of ids) {
             const runningTest = await withTimeout(getRunningTestByIdWithJoins(value, connection), AWAIT_TIMEOUT);
             const { id, ...withoutId } = runningTest;
             const reportId = await withTimeout(createReport({ ...withoutId }, connection), AWAIT_TIMEOUT);
+            //Moshe
             logger.info(`runTest finished createReport`, {reportId: reportId});
             await withTimeout(createTestResultsFile(reportId, { testResults: [] }, false), AWAIT_TIMEOUT);//will create an empty file in file system
+            //Moshe
             logger.info(`runTest finished createTestResultsFile`, {reportId: reportId});
         }
         
         await withTimeout(connection.commit(), AWAIT_TIMEOUT);// Commit if all functions succeed
+        //Moshe
+        logger.info(`runTest connection commit`);
         return {ids};
     } catch (error) {
-        if (connection) await withTimeout(connection.rollback(), AWAIT_TIMEOUT); // Rollback on error
         logger.error('runTest Transaction error:', error);
+        if (connection) await withTimeout(connection.rollback(), AWAIT_TIMEOUT); // Rollback on error
         throw error;
     } finally {
         if (connection) connection.release(); // Release connection back to the pool
@@ -95,6 +110,7 @@ const runTest = async (body) => {
 const createUbaAndTest = async (body) => {
     let connection;
     try {
+logger.info(`await connection 4`);
         connection = await withTimeout(pool.getConnection(), AWAIT_TIMEOUT);
         await withTimeout(connection.beginTransaction(), AWAIT_TIMEOUT);
         
@@ -136,6 +152,7 @@ const createUbaAndTest = async (body) => {
 const deleteUbaDeviceAndTest = async (serial) => {
     let connection;
     try {
+logger.info(`await connection 5`);
         connection = await withTimeout(pool.getConnection(), AWAIT_TIMEOUT);
         await withTimeout(connection.beginTransaction(), AWAIT_TIMEOUT);
         const ubaDevice = await withTimeout(getUbaDeviceByUbaSN(serial, connection), AWAIT_TIMEOUT);
@@ -179,9 +196,10 @@ const changeRunningTestStatus = async (runningTestID, testRoutineChannels, ubaSN
         logger.error(`mandatory fields runningTestID ${runningTestID}, ubaSN ${ubaSN}`);
         throw new Error(`mandatory fields runningTestID ${runningTestID}, ubaSN ${ubaSN}`);
     }
-    logger.info(`changeRunningTestStatus`, {runningTestID, testRoutineChannels, ubaSN, statusToSet});
+    //logger.info(`changeRunningTestStatus`, {runningTestID, testRoutineChannels, ubaSN, statusToSet});
     
     try {
+logger.info(`await connection 6`);
         connection = await withTimeout(pool.getConnection(), AWAIT_TIMEOUT);
         const runningTestIDs = [runningTestID];
         if(testRoutineChannels && testRoutineChannels === TEST_ROUTINE_CHANNELS.A_AND_B){
@@ -189,10 +207,11 @@ const changeRunningTestStatus = async (runningTestID, testRoutineChannels, ubaSN
             const runningsTests = await withTimeout(getRunningTestsByUbaSN(ubaSN, connection), AWAIT_TIMEOUT);
             //logger.info(`****1`, {runningsTests});
             const runningTestOnDifferentChannel = runningsTests.find(runningTest => runningTest.id !== runningTestID);
-            logger.info(`runningTestOnDifferentChannel`, {runningTestOnDifferentChannel});
+            //logger.info(`runningTestOnDifferentChannel`, {runningTestOnDifferentChannel});
             if(runningTestOnDifferentChannel) runningTestIDs.push(runningTestOnDifferentChannel.id);
         }
-        logger.info('runningTestIDs', { runningTestIDs });
+        //Moshe
+        //logger.info('runningTestIDs', { runningTestIDs });
         let promises = [];
         for (let index = 0; index < runningTestIDs.length; index++) {
             promises.push(changeTestStatus(runningTestIDs[index], statusToSet, connection));

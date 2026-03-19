@@ -36,8 +36,9 @@ const getPendingTasks = async (machineMac) => {
             }
         }
 
+        //Moshe
         //logger.info(`getPendingTasks for machineMac: ${machineMac}`);
-        logger.info(`getPendingTasks for machineMac: ${machineMac}, pendingTasks: ${JSON.stringify(pendingTasks.pendingRunningTests)}`);
+        //logger.info(`getPendingTasks for machineMac: ${machineMac}, pendingTasks: ${JSON.stringify(pendingTasks.pendingRunningTests)}`);
         return pendingTasks;
     } catch (error) {
         logger.error('getPendingTasks', error);

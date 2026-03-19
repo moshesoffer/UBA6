@@ -13,6 +13,7 @@
 #include "UBA_PROTO_CMD.pb.h"
 #include "UBA_battery_performance_test.h"
 #include "UBA_file_manager.h"
+#include "LCD.h"
 
 #define UBA_COMP "CMD"
 
@@ -67,9 +68,10 @@ UBA_STATUS_CODE UBA_COMMAND_execute(UBA_PROTO_CMD_command_message *cmd) {
 			break;
 		case UBA_PROTO_CMD_command_message_bpt_tag:
 			UART_LOG_INFO(UBA_COMP, "BPT Command Message");
+			//HAL_Delay(500);
 			bpt = UBA_CMD_select_bpt((UBA_CHANNLE_ID) cmd->command.bpt.channel);
 			if(bpt != NULL){
-				UBA_BPT_command_execute(bpt,&cmd->command.bpt);
+				UBA_BPT_command_execute(bpt, &cmd->command.bpt);
 			}
 			break;
 		case UBA_PROTO_CMD_command_message_file_tag:

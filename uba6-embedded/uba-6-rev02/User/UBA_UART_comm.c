@@ -222,9 +222,15 @@ int process_message(MSG_Message *message) {
 			UBA_COMMAND_execute(&message->pyload.cmd);
 			break;
 		case MSG_Message_tr_tag:
+#if 0//save TR history in TR_file list */
 			UART_LOG_COMM_DEBUG("TR message: %s Store at Index: %u", message->pyload.tr.tr.name, message->pyload.tr.index);
 			memcpy(&TR_file.list[message->pyload.tr.index], &message->pyload.tr.tr, sizeof(message->pyload.tr.tr));
 			UBA_TR_print(&TR_file.list[message->pyload.tr.index]);
+#else
+			UART_LOG_COMM_DEBUG("TR message: %s Store at Index: %u", message->pyload.tr.tr.name, message->pyload.tr.index);
+			memcpy(&TR_file.list[message->pyload.tr.index], &message->pyload.tr.tr, sizeof(message->pyload.tr.tr));
+			UBA_TR_print(&TR_file.list[message->pyload.tr.index]);
+#endif//save TR history in TR_file list */
 			UBA_PROTO_save_to_file(UBA_FM_FOLDER_TEST_ROUTINE, UBA_FM_FILE_NAME_TEST_ROUTINE, TR_Test_Routine_File_fields, &TR_file);
 			break;
 		case MSG_Message_calibration_tag:

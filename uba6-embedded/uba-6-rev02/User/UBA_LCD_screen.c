@@ -21,6 +21,7 @@
 #include "UBA_util.h"
 #include "UBA_test_routine.h"
 #include "LCD.h"
+extern void UBA_6_init(UBA_6 *uba);
 
 #define UBA_COMP "SCREEN"
 
@@ -44,11 +45,9 @@
 
 #define LINE_CHANEL_NAME 			(0)
 #define LINE_CHANEL_NAME_FONT_SIZE 	(3)
-#define LINE_TEST_NAME 				(LINE_CHANEL_NAME+LINE_CHANEL_NAME_FONT_SIZE+1)
+#define LINE_TEST_NAME 				(LINE_CHANEL_NAME+LINE_CHANEL_NAME_FONT_SIZE)
 #define LINE_TEST_NAME_FONT_SIZE 	(2)
-#define LINE_STEP 					(LINE_TEST_NAME+LINE_TEST_NAME_FONT_SIZE)
-#define LINE_STEP_FONT_SIZE 		(1)
-#define LINE_TIME 					(LINE_STEP+LINE_STEP_FONT_SIZE)
+#define LINE_TIME 					(LINE_TEST_NAME+LINE_TEST_NAME_FONT_SIZE+1)
 #define LINE_TIME_FONT_SIZE			(2)
 #define LINE_V 						(LINE_TIME+LINE_TIME_FONT_SIZE)
 #define LINE_V_FONT_SIZE			(2)
@@ -59,7 +58,9 @@
 #define LINE_TEMP 					(LINE_CAP+LINE_CAP_FONT_SIZE)
 #define LINE_TEMP_FONT_SIZE			(2)
 #define LINE_EWI 					(LINE_TEMP+LINE_TEMP_FONT_SIZE)
-#define LINE_EWI_FONT_SIZE			(2)
+#define LINE_EWI_FONT_SIZE			(1)
+#define LINE_STEP 					(LINE_EWI+LINE_EWI_FONT_SIZE)
+#define LINE_STEP_FONT_SIZE 		(1)
 
 #define LINE(x) ((LINE_H*x) + LINE0_Y)
 #define UBA_LCD_MAX_DISPLAY_TEST_SELECT (7)
@@ -68,8 +69,10 @@
 #define UBA_LCD_SCREEN_SINGEL_CH_CHAR (179)
 #define UBA_LCD_SCREEN_DUAL_CH_CHAR (186)
 
+#define BTN_LOWER_YPOS   (LINE(22) + 8)
+#define BTN_UPPER_YPOS   (LINE(21) - 4)
 
-
+bool LCD_screen_force_draw = false;
 
 void UBA_LCD_screen_draw_bpt(UBA_LCD_screen* screen, UBA_LCD_REFRESH_TYPE rt);
 
@@ -147,13 +150,28 @@ void UBA_LCD_screen_update_state(UBA_LCD_screen *screen) {
 	screen->state.next = UBA_LCD_SCREEN_STATE_INVALID;
 }
 
-void UBA_LCD_screen_bnt_press_up_or_down(UBA_LCD_screen *screen, UBA_LCD_page_BPT *lcd_ch) {
-	if (lcd_ch->bnt_pause_start.effect == UBA_GFX_EFFECT_SELECTED) {
-		lcd_ch->bnt_pause_start.effect = UBA_GFX_EFFECT_VISIBLE;
-		lcd_ch->bnt_back_stop.effect = UBA_GFX_EFFECT_SELECTED;
-	} else if (lcd_ch->bnt_back_stop.effect == UBA_GFX_EFFECT_SELECTED) {
-		lcd_ch->bnt_back_stop.effect = UBA_GFX_EFFECT_VISIBLE;
-		lcd_ch->bnt_pause_start.effect = UBA_GFX_EFFECT_SELECTED;
+void UBA_LCD_screen_btn_press_up_or_down(UBA_LCD_screen *screen, UBA_LCD_page_BPT *lcd_ch) {
+
+	if (lcd_ch->btn_pause_start.effect == UBA_GFX_EFFECT_SELECTED) {
+		lcd_ch->btn_pause_start.effect = UBA_GFX_EFFECT_VISIBLE;
+		//lcd_ch->btn_next.effect = UBA_GFX_EFFECT_VISIBLE; 
+		lcd_ch->btn_back_stop.effect = UBA_GFX_EFFECT_SELECTED;
+
+	} else if (lcd_ch->btn_back_stop.effect == UBA_GFX_EFFECT_SELECTED) {
+		lcd_ch->btn_back_stop.effect = UBA_GFX_EFFECT_VISIBLE;
+
+		if (screen->pages.screen_bpt.btn_next.effect == UBA_GFX_EFFECT_VISIBLE) {
+			lcd_ch->btn_pause_start.effect = UBA_GFX_EFFECT_VISIBLE;
+			lcd_ch->btn_next.effect = UBA_GFX_EFFECT_SELECTED;
+		} else {
+			lcd_ch->btn_pause_start.effect = UBA_GFX_EFFECT_SELECTED;
+			lcd_ch->btn_next.effect = UBA_GFX_EFFECT_INVISIBLE;
+		}
+
+	} else if (lcd_ch->btn_next.effect == UBA_GFX_EFFECT_SELECTED) {
+		lcd_ch->btn_next.effect = UBA_GFX_EFFECT_VISIBLE;
+		lcd_ch->btn_back_stop.effect = UBA_GFX_EFFECT_VISIBLE;
+		lcd_ch->btn_pause_start.effect = UBA_GFX_EFFECT_SELECTED;
 	}
 	UBA_LCD_screen_draw_bpt(screen, UBA_LCD_REFRESH_TYPE_UI);
 }
@@ -162,22 +180,22 @@ void UBA_LCD_screen_bnt_press_up_or_down(UBA_LCD_screen *screen, UBA_LCD_page_BP
  * */
 int UBA_LCD_screen_isPanding(UBA_LCD_screen *screen) {
 	int ret = 0;
-	if (UBA_button_is_pending(screen->main_buttons.bnt_up_p)) {
+	if (UBA_button_is_pending(screen->main_buttons.btn_up_p)) {
 		ret++;
 	}
-	if (UBA_button_is_pending(screen->main_buttons.bnt_down_p)) {
+	if (UBA_button_is_pending(screen->main_buttons.btn_down_p)) {
 		ret++;
 	}
-	if (UBA_button_is_pending(screen->main_buttons.bnt_select_p)) {
+	if (UBA_button_is_pending(screen->main_buttons.btn_select_p)) {
 		ret++;
 	}
-	if (UBA_button_is_pending(screen->secondery_buttons.bnt_up_p)) {
+	if (UBA_button_is_pending(screen->secondery_buttons.btn_up_p)) {
 		ret++;
 	}
-	if (UBA_button_is_pending(screen->secondery_buttons.bnt_down_p)) {
+	if (UBA_button_is_pending(screen->secondery_buttons.btn_down_p)) {
 		ret++;
 	}
-	if (UBA_button_is_pending(screen->secondery_buttons.bnt_select_p)) {
+	if (UBA_button_is_pending(screen->secondery_buttons.btn_select_p)) {
 		ret++;
 	}
 	return ret;
@@ -187,9 +205,11 @@ int UBA_LCD_screen_isPanding(UBA_LCD_screen *screen) {
 uint32_t TimeToSeconds(RTC_TimeTypeDef *time) {
 	return time->Hours * 3600 + time->Minutes * 60 + time->Seconds;
 }
+
 void UBA_LCD_screen_load_channel(UBA_LCD_channel *lcd_ch, UBA_channel *ch) {
 	float data_vlaue = 0;
 	float temp_value;
+	float step_value;
 	char buffer[25] = { 0 };
 
 	if (strcmp(lcd_ch->ch_name.elemnt.text.text, ch->name) != 0) {
@@ -270,7 +290,7 @@ void UBA_LCD_screen_load_channel(UBA_LCD_channel *lcd_ch, UBA_channel *ch) {
 		lcd_ch->shadow.volt_vlaue_changed = true;
 	}
 
-	lcd_ch->shadow.current_vlaue_changed = false;
+	lcd_ch->shadow.current_value_changed = false;
 	data_vlaue = UBA_channel_get_current(ch);
 	if (data_vlaue != lcd_ch->shadow.current_vlaue) {
 		if (abs(data_vlaue) >= 2000.0f) {
@@ -284,7 +304,7 @@ void UBA_LCD_screen_load_channel(UBA_LCD_channel *lcd_ch, UBA_channel *ch) {
 
 		//update shadow
 		lcd_ch->shadow.current_vlaue = data_vlaue;
-		lcd_ch->shadow.current_vlaue_changed = true;
+		lcd_ch->shadow.current_value_changed = true;
 	}
 
 	lcd_ch->shadow.capacity_vlaue_changed = false;
@@ -307,7 +327,7 @@ void UBA_LCD_screen_load_channel(UBA_LCD_channel *lcd_ch, UBA_channel *ch) {
 	lcd_ch->shadow.temp_value_changed = false;
 	temp_value = UBA_channel_get_temperature(ch);
 	if (temp_value != lcd_ch->shadow.temp_value) {
-		sprintf(buffer, "%+3.2f\xf8 %2s", temp_value, "C");
+		sprintf(buffer, "%+3.2f\xf8 %s", temp_value, "C");
 		lcd_ch->temp.effect = UBA_GFX_EFFECT_SOLID;
 		sprintf(lcd_ch->temp.elemnt.text.text, CHANNEL_DISPALY_DATA_PAD, strlen(buffer), buffer);
 
@@ -378,24 +398,77 @@ void UBA_LCD_screen_draw_channel(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt
 		//}
 	}
 
+	int i;
+	UBA_GFX measure[4];
+	for (i=0; i< 4; i++)
+	{
+		measure[i].id = UBA_GFX_ELEMNET_TEXT;
+		measure[i].effect = UBA_GFX_EFFECT_SOLID;
+		measure[i].elemnt.text.size = 1;
+		measure[i].elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
+		measure[i].elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
+	}			
+
 	if ((rt & UBA_LCD_REFRESH_TYPE_DATA) == UBA_LCD_REFRESH_TYPE_DATA) {
 		if (lcd_channel_shadow->volt_vlaue_changed == true) {
+			i = 0;
+			measure[i].pos.x = screen->pages.channel.channel.volt.pos.x;
+			measure[i].pos.y = screen->pages.channel.channel.volt.pos.y-2;
+			//clean measure title
+			sprintf(measure[i].elemnt.text.text, "                       ");
+			UBA_GFX_draw_text(&measure[i]);
+			//draw measure title
+			sprintf(measure[i].elemnt.text.text, "  voltage:");
+			UBA_GFX_draw_text(&measure[i]);
+
+			screen->pages.channel.channel.volt.pos.y += 8;
 			UBA_GFX_draw_text(&screen->pages.channel.channel.volt);
+			screen->pages.channel.channel.volt.pos.y -= 8;
 			//update shadow
 			lcd_channel_shadow->volt_vlaue_changed = false;
 		}
-		if (lcd_channel_shadow->current_vlaue_changed == true) {
+		if (lcd_channel_shadow->current_value_changed == true) {
+			i = 1;
+			measure[i].pos.x = screen->pages.channel.channel.current.pos.x;
+			measure[i].pos.y = screen->pages.channel.channel.current.pos.y+6;
+			//draw measure title
+			sprintf(measure[i].elemnt.text.text, "  current:");
+			UBA_GFX_draw_text(&measure[i]);
+
+			screen->pages.channel.channel.current.pos.y += 16;
 			UBA_GFX_draw_text(&screen->pages.channel.channel.current);
+			screen->pages.channel.channel.current.pos.y -= 16;
 			//update shadow
-			lcd_channel_shadow->current_vlaue_changed = false;
+			lcd_channel_shadow->current_value_changed = false;
 		}
 		if (lcd_channel_shadow->capacity_vlaue_changed == true) {
+			i = 2;
+			measure[i].pos.x = screen->pages.channel.channel.capacity.pos.x;
+			measure[i].pos.y = screen->pages.channel.channel.capacity.pos.y+14;
+			//draw measure title
+			sprintf(measure[i].elemnt.text.text, "  capacity:");
+			UBA_GFX_draw_text(&measure[i]);
+
+			screen->pages.channel.channel.capacity.pos.y += 24;
 			UBA_GFX_draw_text(&screen->pages.channel.channel.capacity);
+			screen->pages.channel.channel.capacity.pos.y -= 24;
 			//update shadow
 			lcd_channel_shadow->capacity_vlaue_changed = false;
 		}
 		if (lcd_channel_shadow->temp_value_changed == true) {
+			i = 3;
+			measure[i].pos.x = screen->pages.channel.channel.temp.pos.x;
+			measure[i].pos.y = screen->pages.channel.channel.temp.pos.y+22;
+			//clean measure title
+			sprintf(measure[i].elemnt.text.text, "                       ");
+			UBA_GFX_draw_text(&measure[i]);
+			//draw measure title
+			sprintf(measure[i].elemnt.text.text, "  temperature:");
+			UBA_GFX_draw_text(&measure[i]);
+
+			screen->pages.channel.channel.temp.pos.y += 32;
 			UBA_GFX_draw_text(&screen->pages.channel.channel.temp);
+			screen->pages.channel.channel.temp.pos.y -= 32;
 			//update shadow
 			lcd_channel_shadow->temp_value_changed = false;
 		}
@@ -404,7 +477,9 @@ void UBA_LCD_screen_draw_channel(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt
 	if ((rt & UBA_LCD_REFRESH_TYPE_EWI) == UBA_LCD_REFRESH_TYPE_EWI) {
 		if (lcd_bpt_shadow->current_state != ch->state.current) {
 			if (lcd_bpt_shadow->error != screen->bpt->error) {
+				screen->pages.channel.EWI_msg.pos.y += 32;
 				UBA_GFX_draw_text_center(&screen->pages.channel.EWI_msg);
+				screen->pages.channel.EWI_msg.pos.y -= 32;
 				//update shadow
 				lcd_bpt_shadow->error = screen->bpt->error;
 			}
@@ -412,16 +487,16 @@ void UBA_LCD_screen_draw_channel(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt
 	}
 
 	if ((rt & UBA_LCD_REFRESH_TYPE_UI) == UBA_LCD_REFRESH_TYPE_UI) {
-		if ((strcmp(lcd_bpt_shadow->bnt_select.text, screen->pages.channel.bnt_select.elemnt.button.text) != 0) ||
-		    (lcd_bpt_shadow->bnt_select.color_bg != screen->pages.channel.bnt_select.elemnt.button.color_bg) ||
-		    (lcd_bpt_shadow->bnt_select.color_text != screen->pages.channel.bnt_select.elemnt.button.color_text) ||
-		    (lcd_bpt_shadow->bnt_select.effect != screen->pages.channel.bnt_select.effect)) {
-			UBA_GFX_draw_button(&screen->pages.channel.bnt_select);
+		if ((strcmp(lcd_bpt_shadow->btn_select.text, screen->pages.channel.btn_select.elemnt.button.text) != 0) ||
+		    (lcd_bpt_shadow->btn_select.color_bg != screen->pages.channel.btn_select.elemnt.button.color_bg) ||
+		    (lcd_bpt_shadow->btn_select.color_text != screen->pages.channel.btn_select.elemnt.button.color_text) ||
+		    (lcd_bpt_shadow->btn_select.effect != screen->pages.channel.btn_select.effect)) {
+			UBA_GFX_draw_button(&screen->pages.channel.btn_select);
 			//update shadow
-			strcpy(lcd_bpt_shadow->bnt_select.text, screen->pages.channel.bnt_select.elemnt.button.text);
-		    lcd_bpt_shadow->bnt_select.color_bg = screen->pages.channel.bnt_select.elemnt.button.color_bg;
-		    lcd_bpt_shadow->bnt_select.color_text = screen->pages.channel.bnt_select.elemnt.button.color_text;
-		    lcd_bpt_shadow->bnt_select.effect = screen->pages.channel.bnt_select.effect;
+			strcpy(lcd_bpt_shadow->btn_select.text, screen->pages.channel.btn_select.elemnt.button.text);
+		    lcd_bpt_shadow->btn_select.color_bg = screen->pages.channel.btn_select.elemnt.button.color_bg;
+		    lcd_bpt_shadow->btn_select.color_text = screen->pages.channel.btn_select.elemnt.button.color_text;
+		    lcd_bpt_shadow->btn_select.effect = screen->pages.channel.btn_select.effect;
 		}
 	}
 }
@@ -458,11 +533,8 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 
 		if (strlen(channel_test->name)) {
 			if (strcmp(lcd_bpt->test_name.elemnt.text.text, channel_test->name/*lcd_bpt_shadow->test_name*/) != 0) {
-				//sprintf(lcd_bpt->test_name.elemnt.text.text, "%.*s",
-				//		UBA_LCD_MIN((int)strlen(channel_test->name),
-				//					(lcd_bpt->frame.elemnt.frame.width - (BORDER_PADDING * 2)) / (CHAR_WIDTH * lcd_bpt->test_name.elemnt.text.size)),
-				//		channel_test->name);
 				sprintf(lcd_bpt->test_name.elemnt.text.text, "%s", channel_test->name);
+				lcd_bpt->test_name.elemnt.text.text[10] = '\0'; //limit test name to 10 chars
 				lcd_bpt->test_name.effect = UBA_GFX_EFFECT_SOLID;
 				//update shadow
 				test_name_changed = true;
@@ -470,20 +542,6 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 			}
 		} else {
 			lcd_bpt->test_name.effect = UBA_GFX_EFFECT_INVISIBLE;
-		}
-
-		if (lcd_bpt_shadow->current_state != channel_test->state.current)
-		{
-			if (UBA_BPT_isRunning(channel_test)) {
-				lcd_bpt->test_step.effect = UBA_GFX_EFFECT_SOLID;
-				sprintf(lcd_bpt->test_step.elemnt.text.text, "%02u/%02u", channel_test->current_step->step_index, channel_test->last_step_index);
-			} else {
-				lcd_bpt->test_step.effect = UBA_GFX_EFFECT_INVISIBLE;
-			}
-			lcd_bpt->test_step.effect = UBA_GFX_EFFECT_SOLID;
-			sprintf(lcd_bpt->test_step.elemnt.text.text, "%02u/%02u", channel_test->current_step->step_index, channel_test->last_step_index);
-			//update shadow - will be done later
-			//channel_test->state.current = lcd_bpt_shadow->current_state;
 		}
 	}
 	else
@@ -498,41 +556,59 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 		return;
 	}
 
-	HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-	HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+	if (channel_test->state.current == UBA_BPT_STATE_RUN_STEP) {
+		HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+		HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
-	lcd_bpt->time.effect = UBA_GFX_EFFECT_SOLID;
-	time1_seconds = TimeToSeconds(&screen->bpt->start_date_time.time);
-	time2_seconds = TimeToSeconds(&sTime);
-	if (time2_seconds >= time1_seconds) {
-		diff_seconds = time2_seconds - time1_seconds;
-	} else {
-		// Assuming the difference is within 24 hours, account for crossing midnight
-		diff_seconds = (24 * 3600) - (time1_seconds - time2_seconds);
-	}
-	hours = diff_seconds / 3600;
-	minutes = (diff_seconds % 3600) / 60;
-	seconds = diff_seconds % 60;
-
-	if (lcd_bpt_shadow->current_state != channel_test->state.current)
-	{
-		if (UBA_BPT_isRunning(channel_test)) {
-			snprintf(lcd_bpt->time.elemnt.text.text, 9, "%02u:%02u:%02u", hours, minutes, seconds);
+		lcd_bpt->time.effect = UBA_GFX_EFFECT_SOLID;
+		time1_seconds = TimeToSeconds(&screen->bpt->start_date_time.time);
+		time2_seconds = TimeToSeconds(&sTime);
+		if (time2_seconds >= time1_seconds) {
+			diff_seconds = time2_seconds - time1_seconds;
 		} else {
-			snprintf(lcd_bpt->time.elemnt.text.text, 9, "%02u:%02u:%02u", 0, 0, 0);
+			// Assuming the difference is within 24 hours, account for crossing midnight
+			diff_seconds = (24 * 3600) - (time1_seconds - time2_seconds);
+		}
+	
+		diff_seconds += screen->bpt->start_date_time.add_pause_seconds;
+
+		hours   =  diff_seconds / 3600;
+		minutes = (diff_seconds % 3600) / 60;
+		seconds =  diff_seconds % 60;
+
+	} else if (channel_test->state.current == UBA_BPT_STATE_PAUSE) {
+		if (screen->bpt->start_date_time.update_pause_seconds == true) {
+			HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+			HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+
+			lcd_bpt->time.effect = UBA_GFX_EFFECT_SOLID;
+			time1_seconds = TimeToSeconds(&screen->bpt->start_date_time.time);
+			time2_seconds = TimeToSeconds(&sTime);
+			if (time2_seconds >= time1_seconds) {
+				diff_seconds = time2_seconds - time1_seconds;
+			} else {
+				// Assuming the difference is within 24 hours, account for crossing midnight
+				diff_seconds = (24 * 3600) - (time1_seconds - time2_seconds);
+			}
+		
+			screen->bpt->start_date_time.add_pause_seconds += diff_seconds;
+			screen->bpt->start_date_time.update_pause_seconds = false;
 		}
 
-		if (channel_test->state.current == UBA_BPT_STATE_PAUSE) {
+		hours   =  screen->bpt->start_date_time.add_pause_seconds / 3600;
+		minutes = (screen->bpt->start_date_time.add_pause_seconds % 3600) / 60;
+		seconds =  screen->bpt->start_date_time.add_pause_seconds % 60;
 
-		} else if (channel_test->state.current == UBA_BPT_STATE_TEST_FAILED) {
-
-		}
-		//update shadow- will be done later
-		//lcd_bpt_shadow->current_state = channel_test->state.current;
+	} else {
+		hours   = 0;
+		minutes = 0;
+		seconds = 0;
 	}
 
-// EWI line
+	snprintf(lcd_bpt->time.elemnt.text.text, 9, "%02u:%02u:%02u", hours, minutes, seconds);
 
+
+	// EWI line
 	if (lcd_bpt_shadow->error != screen->bpt->error)
 	{
 		if (screen->bpt->error & UBA_BPT_CRITICAL) {
@@ -561,7 +637,7 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 
 	if (lcd_bpt_shadow->current_state != channel_test->state.current)
 	{
-		if (screen->bpt->state.current == UBA_BPT_STATE_TEST_COMPLEATE) {
+		if (screen->bpt->state.current == UBA_BPT_STATE_TEST_COMPLETE) {
 			lcd_bpt->EWI_msg.elemnt.text.color_bg = UBA_GFX_COLOR_GREEN;
 			lcd_bpt->EWI_msg.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
 			lcd_bpt->EWI_msg.effect = UBA_GFX_EFFECT_SOLID;
@@ -583,6 +659,7 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 		//lcd_bpt_shadow->current_state = channel_test->state.current;
 	}
 
+	//Status
 	if (lcd_bpt_shadow->current_state != channel_test->state.current)
 	{
 		switch (screen->bpt->state.current) {
@@ -594,8 +671,8 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 			case UBA_BPT_STATE_TEST_FAILED:
 				lcd_bpt->channel.status.effect = UBA_GFX_EFFECT_SOLID;
 				if ((screen->bpt->error & UBA_PROTO_UBA6_ERROR_USER_ABORT) == UBA_PROTO_UBA6_ERROR_USER_ABORT) {
-
 					sprintf(lcd_bpt->channel.status.elemnt.status.text, "ABORT");
+
 				} else {
 					sprintf(lcd_bpt->channel.status.elemnt.status.text, "FAIL");
 				}
@@ -609,18 +686,40 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 		//lcd_bpt_shadow->current_state = channel_test->state.current;
 	}
 
-	if (UBA_BPT_isPause(screen->bpt)) {
-		sprintf(lcd_bpt->bnt_pause_start.elemnt.button.text, "RESUM");
-		sprintf(lcd_bpt->bnt_back_stop.elemnt.button.text, "STOP");
-	} else if (UBA_BPT_isRunning(screen->bpt)) {
-		sprintf(lcd_bpt->bnt_pause_start.elemnt.button.text, "PAUSE");
-		sprintf(lcd_bpt->bnt_back_stop.elemnt.button.text, "STOP");
+	//Step	
+	if (UBA_BPT_isRunning(channel_test)) {
+		lcd_bpt->test_step.effect = UBA_GFX_EFFECT_SOLID;
+		sprintf(lcd_bpt->test_step.elemnt.text.text, "STEP-%d", channel_test->current_step->step_index+1);
+		////sprintf(lcd_bpt->test_step.elemnt.text.text, "%02u/%02u", channel_test->current_step->step_index, channel_test->last_step_index);
 	} else {
-		sprintf(lcd_bpt->bnt_pause_start.elemnt.button.text, "START");
-		sprintf(lcd_bpt->bnt_back_stop.elemnt.button.text, "BACK");
+		lcd_bpt->test_step.effect = UBA_GFX_EFFECT_INVISIBLE;
 	}
-	lcd_bpt->bnt_back_stop.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;
-	lcd_bpt->bnt_pause_start.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;
+
+	//Buttons
+	if (UBA_BPT_isPause(screen->bpt)) {
+		sprintf(lcd_bpt->btn_pause_start.elemnt.button.text, "RESUM");      
+		sprintf(lcd_bpt->btn_back_stop.elemnt.button.text, "STOP");
+		sprintf(lcd_bpt->btn_next.elemnt.button.text, "NEXT ");
+		if (lcd_bpt->btn_next.effect == UBA_GFX_EFFECT_INVISIBLE) {
+			lcd_bpt->btn_next.effect = UBA_GFX_EFFECT_VISIBLE;
+		}
+	} else if (UBA_BPT_isRunning(screen->bpt)) {
+		sprintf(lcd_bpt->btn_pause_start.elemnt.button.text, "PAUSE");
+		sprintf(lcd_bpt->btn_back_stop.elemnt.button.text, "STOP");
+		sprintf(lcd_bpt->btn_next.elemnt.button.text, "NEXT ");
+		if (lcd_bpt->btn_next.effect == UBA_GFX_EFFECT_INVISIBLE) {
+			lcd_bpt->btn_next.effect = UBA_GFX_EFFECT_VISIBLE;
+		}
+	} else {
+		sprintf(lcd_bpt->btn_pause_start.elemnt.button.text, "START");
+		sprintf(lcd_bpt->btn_back_stop.elemnt.button.text, "BACK");
+		if (lcd_bpt->btn_next.effect = UBA_GFX_EFFECT_INVISIBLE) {
+			sprintf(lcd_bpt->btn_next.elemnt.button.text, "     ");
+		}
+	}
+	lcd_bpt->btn_back_stop.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;
+	lcd_bpt->btn_pause_start.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;
+	lcd_bpt->btn_next.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;
 
 	if ((rt & UBA_LCD_REFRESH_TYPE_FRAME) == UBA_LCD_REFRESH_TYPE_FRAME) {
 		UBA_GFX_draw_frame(&lcd_bpt->frame);
@@ -629,59 +728,112 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 		test_name_changed = true; 
 		ch->shadow.ch_name_changed = true;
 		lcd_channel_shadow->volt_vlaue_changed = true;
-		lcd_channel_shadow->current_vlaue_changed = true;
+		lcd_channel_shadow->current_value_changed = true;
 		lcd_channel_shadow->capacity_vlaue_changed = true;
 		lcd_channel_shadow->temp_value_changed;
 	}
 
 	if ((rt & UBA_LCD_REFRESH_TYPE_INFO) == UBA_LCD_REFRESH_TYPE_INFO) {
-		if (ch->shadow.ch_name_changed == true) {
+		if ((ch->shadow.ch_name_changed == true) || (LCD_screen_force_draw == true)) {
 			UBA_GFX_draw_text(&lcd_bpt->channel.ch_name);
 			//update shadow
 			ch->shadow.ch_name_changed = false;
 		}
-		if (test_name_changed == true) {
+		if ((test_name_changed == true)  || (LCD_screen_force_draw == true)) {
 			UBA_GFX_draw_text_center(&lcd_bpt->test_name);
 		}
 	}
 
 	if ((rt & UBA_LCD_REFRESH_TYPE_STATUS) == UBA_LCD_REFRESH_TYPE_STATUS) {
-		if (lcd_bpt_shadow->current_state != channel_test->state.current) {
+		if ((lcd_bpt_shadow->current_state != channel_test->state.current) || (LCD_screen_force_draw == true)) {
 			UBA_GFX_draw_status(&lcd_bpt->channel.status);
-			UBA_GFX_draw_text_center(&lcd_bpt->test_step);
+			if (lcd_bpt->test_step.effect != UBA_GFX_EFFECT_INVISIBLE) {
+				UBA_GFX_draw_text(&lcd_bpt->test_step);
+			} else {
+				UBA_GFX_erase_text(&lcd_bpt->test_step);
+			}
 			//update shadow - will be done later
 			//lcd_bpt_shadow->current_state = channel_test->state.current;
 		}
 	}
 
+	int i;
+	UBA_GFX measure[4];
+	for (i=0; i< 4; i++)
+	{
+		measure[i].id = UBA_GFX_ELEMNET_TEXT;
+		measure[i].effect = UBA_GFX_EFFECT_SOLID;
+		measure[i].elemnt.text.size = 1;
+		measure[i].elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
+		measure[i].elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
+	}			
+
 	if ((rt & UBA_LCD_REFRESH_TYPE_DATA) == UBA_LCD_REFRESH_TYPE_DATA) {
 		UBA_GFX_draw_text_center(&lcd_bpt->time);
-		if (lcd_channel_shadow->volt_vlaue_changed == true) {
+		if ((lcd_channel_shadow->volt_vlaue_changed == true) || (LCD_screen_force_draw == true)) {
+			i = 0;
+			measure[i].pos.x = lcd_bpt->channel.volt.pos.x;
+			measure[i].pos.y = lcd_bpt->channel.volt.pos.y-2;
+			//draw measure title
+			sprintf(measure[i].elemnt.text.text, "  voltage:");
+			UBA_GFX_draw_text(&measure[i]);
+
+			lcd_bpt->channel.volt.pos.y += 8;
 			UBA_GFX_draw_text(&lcd_bpt->channel.volt);
+			lcd_bpt->channel.volt.pos.y -= 8;
+
 			//update shadow
 			lcd_channel_shadow->volt_vlaue_changed = false;
 		}
-		if (lcd_channel_shadow->current_vlaue_changed == true) {
+		if ((lcd_channel_shadow->current_value_changed == true) || (LCD_screen_force_draw == true)) {
+			i = 1;
+			measure[i].pos.x = lcd_bpt->channel.current.pos.x;
+			measure[i].pos.y = lcd_bpt->channel.current.pos.y+6;
+			//draw measure title
+			sprintf(measure[i].elemnt.text.text, "  current:");
+			UBA_GFX_draw_text(&measure[i]);
+
+			lcd_bpt->channel.current.pos.y += 16;
 			UBA_GFX_draw_text(&lcd_bpt->channel.current);
+			lcd_bpt->channel.current.pos.y -= 16;
 			//update shadow
-			lcd_channel_shadow->current_vlaue_changed = false;
+			lcd_channel_shadow->current_value_changed = false;
 		}
-		if (lcd_channel_shadow->capacity_vlaue_changed == true) {
+		if ((lcd_channel_shadow->capacity_vlaue_changed == true) || (LCD_screen_force_draw == true)) {
+			i = 2;
+			measure[i].pos.x = lcd_bpt->channel.capacity.pos.x;
+			measure[i].pos.y = lcd_bpt->channel.capacity.pos.y+14;
+			//draw measure title
+			sprintf(measure[i].elemnt.text.text, "  capacity:");
+			UBA_GFX_draw_text(&measure[i]);
+
+			lcd_bpt->channel.capacity.pos.y += 24;
 			UBA_GFX_draw_text(&lcd_bpt->channel.capacity);
+			lcd_bpt->channel.capacity.pos.y -= 24;
 			//update shadow
 			lcd_channel_shadow->capacity_vlaue_changed = false;
 		}
-		if (lcd_channel_shadow->temp_value_changed == true) {
+		if ((lcd_channel_shadow->temp_value_changed == true) || (LCD_screen_force_draw == true)) {
+			i = 3;
+			measure[i].pos.x = lcd_bpt->channel.temp.pos.x;
+			measure[i].pos.y = lcd_bpt->channel.temp.pos.y+22;
+			//draw measure title
+			sprintf(measure[i].elemnt.text.text, "  temperature:");
+			UBA_GFX_draw_text(&measure[i]);
+
+			lcd_bpt->channel.temp.pos.y += 32;
 			UBA_GFX_draw_text(&lcd_bpt->channel.temp);
+			lcd_bpt->channel.temp.pos.y -= 32;
 			//update shadow
 			lcd_channel_shadow->temp_value_changed = false;
 		}
 	}
 
 	if ((rt & UBA_LCD_REFRESH_TYPE_EWI) == UBA_LCD_REFRESH_TYPE_EWI) {
-		if (lcd_bpt_shadow->current_state != channel_test->state.current) {
+		if ((lcd_bpt_shadow->current_state != channel_test->state.current) || (LCD_screen_force_draw == true)) {
 			if (lcd_bpt_shadow->error != screen->bpt->error) {
-				UBA_GFX_draw_text_center(&lcd_bpt->EWI_msg);
+				sprintf(lcd_bpt->EWI_msg.elemnt.text.text, "EWI message");
+				UBA_GFX_draw_text(&lcd_bpt->EWI_msg);
 			}
 			//update shadow - will be done later
 			//lcd_bpt_shadow->current_state = channel_test->state.current;
@@ -689,27 +841,46 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 	}
 
 	if ((rt & UBA_LCD_REFRESH_TYPE_UI) == UBA_LCD_REFRESH_TYPE_UI) {
-		if ((strcmp(lcd_bpt_shadow->bnt_back_stop.text, lcd_bpt->bnt_back_stop.elemnt.button.text) != 0) ||
-		    (lcd_bpt_shadow->bnt_back_stop.color_bg != lcd_bpt->bnt_back_stop.elemnt.button.color_bg) ||
-		    (lcd_bpt_shadow->bnt_back_stop.color_text != lcd_bpt->bnt_back_stop.elemnt.button.color_text) ||
-		    (lcd_bpt_shadow->bnt_back_stop.effect != lcd_bpt->bnt_back_stop.effect)) {
-			UBA_GFX_draw_button(&lcd_bpt->bnt_back_stop);
+		if ((strcmp(lcd_bpt_shadow->btn_back_stop.text, lcd_bpt->btn_back_stop.elemnt.button.text) != 0) ||
+		    (lcd_bpt_shadow->btn_back_stop.color_bg != lcd_bpt->btn_back_stop.elemnt.button.color_bg) ||
+		    (lcd_bpt_shadow->btn_back_stop.color_text != lcd_bpt->btn_back_stop.elemnt.button.color_text) ||
+		    (lcd_bpt_shadow->btn_back_stop.effect != lcd_bpt->btn_back_stop.effect) ||
+			(LCD_screen_force_draw == true)) {
+			UBA_GFX_draw_button(&lcd_bpt->btn_back_stop);
 			//update shadow
-			strcpy(lcd_bpt_shadow->bnt_back_stop.text, lcd_bpt->bnt_back_stop.elemnt.button.text);
-		    lcd_bpt_shadow->bnt_back_stop.color_bg = lcd_bpt->bnt_back_stop.elemnt.button.color_bg;
-		    lcd_bpt_shadow->bnt_back_stop.color_text = lcd_bpt->bnt_back_stop.elemnt.button.color_text;
-		    lcd_bpt_shadow->bnt_back_stop.effect = lcd_bpt->bnt_back_stop.effect;
+			strcpy(lcd_bpt_shadow->btn_back_stop.text, lcd_bpt->btn_back_stop.elemnt.button.text);
+		    lcd_bpt_shadow->btn_back_stop.color_bg = lcd_bpt->btn_back_stop.elemnt.button.color_bg;
+		    lcd_bpt_shadow->btn_back_stop.color_text = lcd_bpt->btn_back_stop.elemnt.button.color_text;
+		    lcd_bpt_shadow->btn_back_stop.effect = lcd_bpt->btn_back_stop.effect;
 		}
-		if ((strcmp(lcd_bpt_shadow->bnt_pause_start.text, lcd_bpt->bnt_pause_start.elemnt.button.text) != 0) ||
-		    (lcd_bpt_shadow->bnt_pause_start.color_bg != lcd_bpt->bnt_pause_start.elemnt.button.color_bg) ||
-		    (lcd_bpt_shadow->bnt_pause_start.color_text != lcd_bpt->bnt_pause_start.elemnt.button.color_text) ||
-		    (lcd_bpt_shadow->bnt_pause_start.effect != lcd_bpt->bnt_pause_start.effect)) {
-			UBA_GFX_draw_button(&lcd_bpt->bnt_pause_start);
+		if ((strcmp(lcd_bpt_shadow->btn_pause_start.text, lcd_bpt->btn_pause_start.elemnt.button.text) != 0) ||
+		    (lcd_bpt_shadow->btn_pause_start.color_bg != lcd_bpt->btn_pause_start.elemnt.button.color_bg) ||
+		    (lcd_bpt_shadow->btn_pause_start.color_text != lcd_bpt->btn_pause_start.elemnt.button.color_text) ||
+		    (lcd_bpt_shadow->btn_pause_start.effect != lcd_bpt->btn_pause_start.effect) ||
+			(LCD_screen_force_draw == true)) {
+			UBA_GFX_draw_button(&lcd_bpt->btn_pause_start);
 			//update shadow
-			strcpy(lcd_bpt_shadow->bnt_pause_start.text, lcd_bpt->bnt_pause_start.elemnt.button.text);
-		    lcd_bpt_shadow->bnt_pause_start.color_bg = lcd_bpt->bnt_pause_start.elemnt.button.color_bg;
-		    lcd_bpt_shadow->bnt_pause_start.color_text = lcd_bpt->bnt_pause_start.elemnt.button.color_text;
-		    lcd_bpt_shadow->bnt_pause_start.effect = lcd_bpt->bnt_pause_start.effect;
+			strcpy(lcd_bpt_shadow->btn_pause_start.text, lcd_bpt->btn_pause_start.elemnt.button.text);
+		    lcd_bpt_shadow->btn_pause_start.color_bg = lcd_bpt->btn_pause_start.elemnt.button.color_bg;
+		    lcd_bpt_shadow->btn_pause_start.color_text = lcd_bpt->btn_pause_start.elemnt.button.color_text;
+		    lcd_bpt_shadow->btn_pause_start.effect = lcd_bpt->btn_pause_start.effect;
+		}
+		if ((strcmp(lcd_bpt_shadow->btn_next.text, lcd_bpt->btn_next.elemnt.button.text) != 0) ||
+		    (lcd_bpt_shadow->btn_next.color_bg != lcd_bpt->btn_next.elemnt.button.color_bg) ||
+		    (lcd_bpt_shadow->btn_next.color_text != lcd_bpt->btn_next.elemnt.button.color_text) ||
+		    (lcd_bpt_shadow->btn_next.effect != lcd_bpt->btn_next.effect) ||
+			(LCD_screen_force_draw == true)) {
+			if (lcd_bpt->btn_next.effect != UBA_GFX_EFFECT_INVISIBLE) {
+				UBA_GFX_draw_button(&lcd_bpt->btn_next);
+			}
+			else{
+				UBA_GFX_erase_button(&lcd_bpt->btn_next);
+			}
+			//update shadow
+			strcpy(lcd_bpt_shadow->btn_next.text, lcd_bpt->btn_next.elemnt.button.text);
+		    lcd_bpt_shadow->btn_next.color_bg = lcd_bpt->btn_next.elemnt.button.color_bg;
+		    lcd_bpt_shadow->btn_next.color_text = lcd_bpt->btn_next.elemnt.button.color_text;
+		    lcd_bpt_shadow->btn_next.effect = lcd_bpt->btn_next.effect;
 		}
 	}
 
@@ -721,26 +892,40 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 /**
  * return true is back is presses
  */
-bool UBA_LCD_screen_bnt_press_select(UBA_LCD_screen *screen) {
+bool UBA_LCD_screen_btn_press_select(UBA_LCD_screen *screen) {
 
-	if (screen->pages.screen_bpt.bnt_pause_start.state == UBA_GFX_STATE_SELECTED) {
+	if (screen->pages.screen_bpt.btn_pause_start.state == UBA_GFX_STATE_SELECTED) {
 		if (UBA_BPT_isPause(screen->bpt)) {
 			UBA_BPT_start(screen->bpt);
+
 		} else if (UBA_BPT_isRunning(screen->bpt)) {
 			UBA_BPT_pause_test(screen->bpt);
+
 		} else {
+			screen->bpt->start_date_time.add_pause_seconds = 0;
 			UBA_BPT_start(screen->bpt);
 		}
-	} else if (screen->pages.screen_bpt.bnt_back_stop.state == UBA_GFX_STATE_SELECTED) {
+
+	} else if (screen->pages.screen_bpt.btn_back_stop.state == UBA_GFX_STATE_SELECTED) {
 		if (UBA_BPT_isRunning(screen->bpt)) {
 			UBA_BPT_stop(screen->bpt);
+
+		} else {
+			return true; // go back
+		}
+
+	} else if (screen->pages.screen_bpt.btn_next.state == UBA_GFX_STATE_SELECTED) {
+		if (UBA_BPT_isRunning(screen->bpt)) {
+			UBA_BPT_next(screen->bpt);
+			
 		} else {
 			return true; // go back
 		}
 	}
-	UBA_LCD_screen_draw_bpt(screen, UBA_LCD_REFRESH_TYPE_UI);
+	UBA_LCD_screen_draw_bpt(screen, UBA_LCD_REFRESH_TYPE_UI | UBA_LCD_REFRESH_TYPE_STATUS);
 	return false;
 }
+
 int UBA_LCD_screen_line_max_str_length(UBA_LCD_screen *screen, uint8_t size) {
 	UBA_LCD *LCD_handler = (UBA_LCD *) screen->LCD_handler;
 	UBA_LCD_POSITION_INFO *position = LCD_handler->screen_position;
@@ -757,21 +942,46 @@ void UBA_LCD_screen_display_test_select_refresh(UBA_LCD_page_test_list_select *l
 	if ((rt & UBA_LCD_REFRESH_TYPE_FRAME) == UBA_LCD_REFRESH_TYPE_FRAME) {
 		UBA_GFX_draw_frame(&lcd_test_select->frame);
 	}
+
 	if ((rt & UBA_LCD_REFRESH_TYPE_INFO) == UBA_LCD_REFRESH_TYPE_INFO) {
 		UBA_GFX_draw_text_center(&lcd_test_select->title);
 	}
 
+#if 1//end of list (eol)
+	UBA_GFX eol;
+	eol.id = UBA_GFX_ELEMNET_TEXT;
+	eol.effect = UBA_GFX_EFFECT_SOLID;
+	eol.elemnt.text.size = 1;
+	eol.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
+	eol.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
+#endif//eol
+
 	if ((rt & UBA_LCD_REFRESH_TYPE_UI) == UBA_LCD_REFRESH_TYPE_UI) {
+		uint16_t y_add = 0;
 		for (i = 0; i < UBA_LCD_MAX_DISPLAY_TEST_SELECT; i++) {
-			if (i == (lcd_test_select->select_index)) {
-				lcd_test_select->test_name_list[i].effect = UBA_GFX_EFFECT_SELECTED;
-			} else {
-				lcd_test_select->test_name_list[i].effect = UBA_GFX_EFFECT_SOLID;
-			}
+#if 1//end of list (eol)
+			//clean eol
+			eol.pos.x = lcd_test_select->test_name_list[i].pos.x;
+			eol.pos.y = lcd_test_select->test_name_list[i].pos.y + 17;
+			sprintf(eol.elemnt.text.text, "                       ");
+			UBA_GFX_draw_text(&eol);
+#endif//eol
+			lcd_test_select->test_name_list[i].pos.y += y_add;
 			UBA_GFX_draw_text(&lcd_test_select->test_name_list[i]);
+			lcd_test_select->test_name_list[i].pos.y -= y_add;
+
+			if ((i < UBA_LCD_MAX_DISPLAY_TEST_SELECT-1) &&
+			    (lcd_test_select->list_end_index == i)) {
+#if 1//end of list (eol)
+				//draw eol
+				sprintf(eol.elemnt.text.text, "  --end-of-list---------");
+				UBA_GFX_draw_text(&eol);
+#endif//eol
+				y_add = 12;
+			}
 		}
 
-		UBA_GFX_draw_button(&lcd_test_select->bnt_cancel);
+		UBA_GFX_draw_button(&lcd_test_select->btn_back);
 	}
 }
 
@@ -783,27 +993,35 @@ void UBA_LCD_screen_display_init_enter(UBA_LCD_screen *screen) {
 
 	switch (screen->ch_control) {
 		case UBA_CHANNLE_ID_A:
-			screen->main_buttons.bnt_up_p = &UBA_BTN_CH_1_UP;
-			screen->main_buttons.bnt_down_p = &UBA_BTN_CH_1_DOWN;
-			screen->main_buttons.bnt_select_p = &UBA_BTN_CH_1_SELECT;
+			screen->main_buttons.btn_up_p = &UBA_BTN_CH_1_UP;
+			screen->main_buttons.btn_down_p = &UBA_BTN_CH_1_DOWN;
+			screen->main_buttons.btn_select_p = &UBA_BTN_CH_1_SELECT;
 			break;
 		case UBA_CHANNLE_ID_B:
-			screen->main_buttons.bnt_up_p = &UBA_BTN_CH_2_UP;
-			screen->main_buttons.bnt_down_p = &UBA_BTN_CH_2_DOWN;
-			screen->main_buttons.bnt_select_p = &UBA_BTN_CH_2_SELECT;
+			screen->main_buttons.btn_up_p = &UBA_BTN_CH_2_UP;
+			screen->main_buttons.btn_down_p = &UBA_BTN_CH_2_DOWN;
+			screen->main_buttons.btn_select_p = &UBA_BTN_CH_2_SELECT;
 			break;
 		case UBA_CHANNLE_ID_AB:
-			screen->main_buttons.bnt_up_p = &UBA_BTN_CH_1_UP;
-			screen->main_buttons.bnt_down_p = &UBA_BTN_CH_1_DOWN;
-			screen->main_buttons.bnt_select_p = &UBA_BTN_CH_1_SELECT;
-			screen->secondery_buttons.bnt_up_p = &UBA_BTN_CH_2_UP;
-			screen->secondery_buttons.bnt_down_p = &UBA_BTN_CH_2_DOWN;
-			screen->secondery_buttons.bnt_select_p = &UBA_BTN_CH_2_SELECT;
+			screen->main_buttons.btn_up_p = &UBA_BTN_CH_1_UP;
+			screen->main_buttons.btn_down_p = &UBA_BTN_CH_1_DOWN;
+			screen->main_buttons.btn_select_p = &UBA_BTN_CH_1_SELECT;
+			screen->secondery_buttons.btn_up_p = &UBA_BTN_CH_2_UP;
+			screen->secondery_buttons.btn_down_p = &UBA_BTN_CH_2_DOWN;
+			screen->secondery_buttons.btn_select_p = &UBA_BTN_CH_2_SELECT;
 			break;
 		default:
 			UART_LOG_ERROR(UBA_COMP, "channel control id %u in unknoun ", screen->ch_control);
-	}
+		}
 
+	screen->pages.test_list.start_display_index = 0;
+	screen->pages.test_list.list_select_index = 0;
+	screen->pages.test_list.list_end_index = UBA_TR_LIST_SIZE;
+	screen->pages.test_list.btn_back.effect = UBA_GFX_EFFECT_SOLID;
+
+	//Moshe
+	//shadow
+	screen->shadow.ch_control = screen->ch_control;
 }
 
 void UBA_LCD_screen_display_init(UBA_LCD_screen *screen) {
@@ -815,7 +1033,6 @@ void UBA_LCD_screen_display_init(UBA_LCD_screen *screen) {
 }
 
 void UBA_LCD_screen_display_init_exit(UBA_LCD_screen *screen) {
-
 }
 
 void UBA_LCD_init_page_channel(UBA_LCD_STATIC_PAGE *channel)
@@ -850,11 +1067,11 @@ void UBA_LCD_init_page_channel(UBA_LCD_STATIC_PAGE *channel)
 	channel->temp.text_color_text = UBA_GFX_COLOR_BLACK;
 	channel->temp.text_color_bg = UBA_GFX_COLOR_WHITE;
 
-	channel->bnt_select.effect = UBA_GFX_EFFECT_SELECTED;
-	channel->bnt_select.button_size = 2;
-	channel->bnt_select.button_color_bg = UBA_GFX_COLOR_WHITE;
-	channel->bnt_select.button_color_text = UBA_GFX_COLOR_BLACK;
-	sprintf(channel->bnt_select.button_text, "%s", "SELECT");
+	channel->btn_select.effect = UBA_GFX_EFFECT_SELECTED;
+	channel->btn_select.button_size = 2;
+	channel->btn_select.button_color_bg = UBA_GFX_COLOR_WHITE;
+	channel->btn_select.button_color_text = UBA_GFX_COLOR_BLACK;
+	sprintf(channel->btn_select.button_text, "%s", "SELECT");
 
 	channel->EWI_msg.effect = UBA_GFX_EFFECT_SOLID;
 	channel->EWI_msg.text_size = LINE_EWI_FONT_SIZE;
@@ -866,16 +1083,45 @@ void UBA_LCD_screen_display_channel_enter(UBA_LCD_screen *screen) {
 	UBA_LCD_POSITION_INFO *position = LCD_handler->screen_position;
 
 	UBA_LCD_screen_update_state(screen);
+
+	int y_offset = 7;
 	
+	UBA_LCD_screen_update_state(screen);
+
 	screen->pages.channel.frame.id = UBA_GFX_ELEMNET_FRAME;
 	screen->pages.channel.frame.pos.x = position[screen->ch_control-1].start_x;
 	screen->pages.channel.frame.pos.y = position[screen->ch_control-1].start_y;
-	screen->pages.channel.frame.effect = channel->frame.effect;
+	screen->pages.channel.frame.effect = UBA_GFX_EFFECT_SOLID;
 	screen->pages.channel.frame.elemnt.frame.width = position[screen->ch_control-1].width;
 	screen->pages.channel.frame.elemnt.frame.heigth = position[screen->ch_control-1].height;
-	screen->pages.channel.frame.elemnt.frame.color_fill = channel->frame.color_fill;
+	screen->pages.channel.frame.elemnt.frame.color_fill = UBA_GFX_COLOR_WHITE;
 	screen->pages.channel.frame.elemnt.frame.color_border = UBA_GFX_COLOR_BLACK;
+#if 0
+	screen->pages.channel.test_name.id = UBA_GFX_ELEMNET_TEXT;
+	screen->pages.channel.test_name.pos.x = position[screen->ch_control-1].start_x + ((position[screen->ch_control-1].width - (2 * BORDER_PADDING)) / 2); /*center*/
+	screen->pages.channel.test_name.pos.y = LINE(LINE_TEST_NAME) - 2;
+	screen->pages.channel.test_name.effect = UBA_GFX_EFFECT_SOLID;
+	screen->pages.channel.test_name.elemnt.text.text [0] = '\0';
+	screen->pages.channel.test_name.elemnt.text.size = LINE_TEST_NAME_FONT_SIZE;
+	screen->pages.channel.test_name.elemnt.text.color_bg = WHITE;
+	screen->pages.channel.test_name.elemnt.text.color_text = BLACK;
 
+	screen->pages.channel.time.id = UBA_GFX_ELEMNET_TEXT;
+	screen->pages.channel.time.pos.x = position[screen->ch_control-1].start_x + ((position[screen->ch_control-1].width - (2 * BORDER_PADDING)) / 2); /*center*/
+	screen->pages.channel.time.pos.y = LINE(LINE_TIME) - y_offset;
+	screen->pages.channel.time.effect = UBA_GFX_EFFECT_SOLID;
+	screen->pages.channel.time.elemnt.text.size = LINE_TIME_FONT_SIZE;
+	screen->pages.channel.time.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
+	screen->pages.channel.time.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
+
+	screen->pages.channel.test_step.id = UBA_GFX_ELEMNET_TEXT;
+	screen->pages.channel.test_step.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING + ((position[screen->ch_control-1].width - (2 * BORDER_PADDING)) / 4) + 8;
+	screen->pages.channel.test_step.pos.y = LINE(LINE_STEP) + 23;
+	screen->pages.channel.test_step.effect = UBA_GFX_EFFECT_SOLID;
+	screen->pages.channel.test_step.elemnt.text.size = LINE_STEP_FONT_SIZE;
+	screen->pages.channel.test_step.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
+	screen->pages.channel.test_step.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
+#endif
 	screen->pages.channel.channel.ch_name.id = UBA_GFX_ELEMNET_TEXT;
 	screen->pages.channel.channel.ch_name.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING;
 	screen->pages.channel.channel.ch_name.pos.y = LINE(LINE_CHANEL_NAME);
@@ -892,50 +1138,53 @@ void UBA_LCD_screen_display_channel_enter(UBA_LCD_screen *screen) {
 
 	screen->pages.channel.channel.volt.id = UBA_GFX_ELEMNET_TEXT;
 	screen->pages.channel.channel.volt.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING;
-	screen->pages.channel.channel.volt.pos.y = LINE(LINE_V);
+	screen->pages.channel.channel.volt.pos.y = LINE(LINE_V) - y_offset;
 	screen->pages.channel.channel.volt.effect = UBA_GFX_EFFECT_SOLID;
 	screen->pages.channel.channel.volt.elemnt.text.size = LINE_V_FONT_SIZE;
 	screen->pages.channel.channel.volt.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
 	screen->pages.channel.channel.volt.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
+
 	screen->pages.channel.channel.current.id = UBA_GFX_ELEMNET_TEXT;
 	screen->pages.channel.channel.current.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING;
-	screen->pages.channel.channel.current.pos.y = LINE(LINE_C);
+	screen->pages.channel.channel.current.pos.y = LINE(LINE_C) - y_offset;
 	screen->pages.channel.channel.current.effect = UBA_GFX_EFFECT_SOLID;
 	screen->pages.channel.channel.current.elemnt.text.size = LINE_C_FONT_SIZE;
 	screen->pages.channel.channel.current.elemnt.text.size = LCD_DATA_FONT_SIZE;
 	screen->pages.channel.channel.current.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
 	screen->pages.channel.channel.current.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
+
 	screen->pages.channel.channel.capacity.id = UBA_GFX_ELEMNET_TEXT;
 	screen->pages.channel.channel.capacity.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING;
-	screen->pages.channel.channel.capacity.pos.y = LINE(LINE_CAP);
+	screen->pages.channel.channel.capacity.pos.y = LINE(LINE_CAP) - y_offset;
 	screen->pages.channel.channel.capacity.effect = UBA_GFX_EFFECT_SOLID;
 	screen->pages.channel.channel.capacity.elemnt.text.size = LINE_CAP_FONT_SIZE;
 	screen->pages.channel.channel.capacity.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
 	screen->pages.channel.channel.capacity.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
+
 	screen->pages.channel.channel.temp.id = UBA_GFX_ELEMNET_TEXT;
 	screen->pages.channel.channel.temp.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING;
-	screen->pages.channel.channel.temp.pos.y = LINE(LINE_TEMP);
+	screen->pages.channel.channel.temp.pos.y = LINE(LINE_TEMP) - y_offset;
 	screen->pages.channel.channel.temp.effect = UBA_GFX_EFFECT_SOLID;
 	screen->pages.channel.channel.temp.elemnt.text.size = LINE_TEMP_FONT_SIZE;
 	screen->pages.channel.channel.temp.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
 	screen->pages.channel.channel.temp.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
 
-	screen->pages.channel.bnt_select.id = UBA_GFX_ELEMNET_BUTTON;
-	screen->pages.channel.bnt_select.pos.x = position[screen->ch_control-1].start_x + position[screen->ch_control-1].width - 40;
-	screen->pages.channel.bnt_select.pos.y = LINE(22);
-	screen->pages.channel.bnt_select.effect = channel->bnt_select.effect;
-	screen->pages.channel.bnt_select.elemnt.button.size = channel->bnt_select.button_size;
-	screen->pages.channel.bnt_select.elemnt.button.color_bg = channel->bnt_select.button_color_bg;
-	screen->pages.channel.bnt_select.elemnt.button.color_text = channel->bnt_select.button_color_text;
-	sprintf(screen->pages.channel.bnt_select.elemnt.button.text, channel->bnt_select.button_text);
+	screen->pages.channel.btn_select.id = UBA_GFX_ELEMNET_BUTTON;
+	screen->pages.channel.btn_select.pos.x = position[screen->ch_control-1].start_x + position[screen->ch_control-1].width - 40;
+	screen->pages.channel.btn_select.pos.y = BTN_LOWER_YPOS;
+	screen->pages.channel.btn_select.effect = channel->btn_select.effect;
+	screen->pages.channel.btn_select.elemnt.button.size = channel->btn_select.button_size;
+	screen->pages.channel.btn_select.elemnt.button.color_bg = channel->btn_select.button_color_bg;
+	screen->pages.channel.btn_select.elemnt.button.color_text = channel->btn_select.button_color_text;
+	sprintf(screen->pages.channel.btn_select.elemnt.button.text, channel->btn_select.button_text);
 
 	screen->pages.channel.EWI_msg.id = UBA_GFX_ELEMNET_TEXT;
-	screen->pages.channel.EWI_msg.pos.x = position[screen->ch_control-1].start_x + ((position[screen->ch_control-1].width - (2 * BORDER_PADDING)) / 2); /*center*/
-	screen->pages.channel.EWI_msg.pos.y = LINE(LINE_EWI);
-	screen->pages.channel.EWI_msg.effect = channel->EWI_msg.effect;
-	screen->pages.channel.EWI_msg.elemnt.text.size = channel->EWI_msg.text_size;
+	screen->pages.channel.EWI_msg.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING + 8;
+	//screen->pages.channel.EWI_msg.pos.y = LINE(LINE_EWI) + 22;
+	screen->pages.channel.EWI_msg.pos.y = LINE(LINE_STEP) + 12;
+	screen->pages.channel.EWI_msg.effect = UBA_GFX_EFFECT_SOLID;
+	screen->pages.channel.EWI_msg.elemnt.text.size = LINE_EWI_FONT_SIZE;
 
-#if 1//Moshe
 	// update shadow
 	screen->pages.channel.channel.shadow.volt_vlaue = -1;
 	screen->pages.channel.channel.shadow.current_vlaue = -1;
@@ -945,15 +1194,14 @@ void UBA_LCD_screen_display_channel_enter(UBA_LCD_screen *screen) {
 	screen->bpt->shadow.test_name[0] = '\0';
 	screen->bpt->shadow.current_state = UBA_BPT_STATE_INVALID;
 	screen->bpt->shadow.error = UBA_PROTO_UBA6_ERROR_LINE_NOT_AVAILABLE;
-	screen->bpt->shadow.bnt_select.text[0] = '\0';
-	screen->bpt->shadow.bnt_select.color_text = GRAYBLUE;//not in use
-	screen->bpt->shadow.bnt_select.color_bg =  GRAYBLUE;//not in use
-	screen->bpt->shadow.bnt_select.effect = UBA_GFX_EFFECT_MAX;
-	screen->bpt->shadow.bnt_pause_start.text[0] = '\0';
-	screen->bpt->shadow.bnt_pause_start.color_text = GRAYBLUE;//not in use
-	screen->bpt->shadow.bnt_pause_start.color_bg =  GRAYBLUE;//not in use
-	screen->bpt->shadow.bnt_pause_start.effect = UBA_GFX_EFFECT_MAX;
-#endif
+	screen->bpt->shadow.btn_select.text[0] = '\0';
+	screen->bpt->shadow.btn_select.color_text = GRAYBLUE;//not in use
+	screen->bpt->shadow.btn_select.color_bg =  GRAYBLUE;//not in use
+	screen->bpt->shadow.btn_select.effect = UBA_GFX_EFFECT_MAX;
+	screen->bpt->shadow.btn_pause_start.text[0] = '\0';
+	screen->bpt->shadow.btn_pause_start.color_text = GRAYBLUE;//not in use
+	screen->bpt->shadow.btn_pause_start.color_bg =  GRAYBLUE;//not in use
+	screen->bpt->shadow.btn_pause_start.effect = UBA_GFX_EFFECT_MAX;
 
 	UBA_LCD_screen_draw_channel(screen, UBA_LCD_REFRESH_TYPE_ALL);
 
@@ -964,8 +1212,10 @@ void UBA_LCD_screen_display_channel(UBA_LCD_screen *screen) {
 	uint32_t refreshTime = ((screen->pages.channel.channel.status.effect == UBA_GFX_EFFECT_BLINK_FAST) ?
 							UBA_LCD_FAST_REFRESH_TIME : UBA_LCD_SLOW_REFRESH_TIME);
 
-	if (UBA_button_is_pending(screen->main_buttons.bnt_select_p) || UBA_button_is_pending(screen->secondery_buttons.bnt_select_p)) {
+	if (UBA_button_is_pending(screen->main_buttons.btn_select_p) || UBA_button_is_pending(screen->secondery_buttons.btn_select_p)) {
 		screen->state.next = UBA_LCD_SCREEN_DISPLAY_TEST_SELECT;
+		screen->pages.screen_bpt.btn_next.effect = UBA_GFX_EFFECT_INVISIBLE;
+
 	}
 	if ((HAL_GetTick() - screen->start_tick) >= refreshTime) {
 		screen->start_tick = HAL_GetTick();
@@ -975,17 +1225,18 @@ void UBA_LCD_screen_display_channel(UBA_LCD_screen *screen) {
 }
 
 void UBA_LCD_screen_display_channel_exit(UBA_LCD_screen *screen) {
-	UBA_button_clear_pending(screen->main_buttons.bnt_up_p);
-	UBA_button_clear_pending(screen->main_buttons.bnt_down_p);
-	UBA_button_clear_pending(screen->main_buttons.bnt_select_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_up_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_down_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_select_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_up_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_down_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_select_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_up_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_down_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_select_p);
 }
 
 void UBA_LCD_screen_display_bpt_enter(UBA_LCD_screen *screen) {
 	UBA_LCD *LCD_handler = (UBA_LCD *) screen->LCD_handler;
 	UBA_LCD_POSITION_INFO *position = LCD_handler->screen_position;
+	int y_offset = 7;
 
 	UBA_LCD_screen_update_state(screen);
 
@@ -1000,7 +1251,7 @@ void UBA_LCD_screen_display_bpt_enter(UBA_LCD_screen *screen) {
 
 	screen->pages.screen_bpt.test_name.id = UBA_GFX_ELEMNET_TEXT;
 	screen->pages.screen_bpt.test_name.pos.x = position[screen->ch_control-1].start_x + ((position[screen->ch_control-1].width - (2 * BORDER_PADDING)) / 2); /*center*/
-	screen->pages.screen_bpt.test_name.pos.y = LINE(LINE_TEST_NAME);
+	screen->pages.screen_bpt.test_name.pos.y = LINE(LINE_TEST_NAME) - 2;
 	screen->pages.screen_bpt.test_name.effect = UBA_GFX_EFFECT_SOLID;
 	screen->pages.screen_bpt.test_name.elemnt.text.text [0] = '\0';
 	screen->pages.screen_bpt.test_name.elemnt.text.size = LINE_TEST_NAME_FONT_SIZE;
@@ -1009,15 +1260,15 @@ void UBA_LCD_screen_display_bpt_enter(UBA_LCD_screen *screen) {
 
 	screen->pages.screen_bpt.time.id = UBA_GFX_ELEMNET_TEXT;
 	screen->pages.screen_bpt.time.pos.x = position[screen->ch_control-1].start_x + ((position[screen->ch_control-1].width - (2 * BORDER_PADDING)) / 2); /*center*/
-	screen->pages.screen_bpt.time.pos.y = LINE(LINE_TIME);
+	screen->pages.screen_bpt.time.pos.y = LINE(LINE_TIME) - y_offset;
 	screen->pages.screen_bpt.time.effect = UBA_GFX_EFFECT_SOLID;
 	screen->pages.screen_bpt.time.elemnt.text.size = LINE_TIME_FONT_SIZE;
 	screen->pages.screen_bpt.time.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
 	screen->pages.screen_bpt.time.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
 
 	screen->pages.screen_bpt.test_step.id = UBA_GFX_ELEMNET_TEXT;
-	screen->pages.screen_bpt.test_step.pos.x = position[screen->ch_control-1].start_x + ((position[screen->ch_control-1].width - (2 * BORDER_PADDING)) / 2); /*center*/
-	screen->pages.screen_bpt.test_step.pos.y = LINE(LINE_STEP);
+	screen->pages.screen_bpt.test_step.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING + ((position[screen->ch_control-1].width - (2 * BORDER_PADDING)) / 4) + 8;
+	screen->pages.screen_bpt.test_step.pos.y = LINE(LINE_STEP) + 23;
 	screen->pages.screen_bpt.test_step.effect = UBA_GFX_EFFECT_SOLID;
 	screen->pages.screen_bpt.test_step.elemnt.text.size = LINE_STEP_FONT_SIZE;
 	screen->pages.screen_bpt.test_step.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
@@ -1039,62 +1290,71 @@ void UBA_LCD_screen_display_bpt_enter(UBA_LCD_screen *screen) {
 
 	screen->pages.screen_bpt.channel.volt.id = UBA_GFX_ELEMNET_TEXT;
 	screen->pages.screen_bpt.channel.volt.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING;
-	screen->pages.screen_bpt.channel.volt.pos.y = LINE(LINE_V);
+	screen->pages.screen_bpt.channel.volt.pos.y = LINE(LINE_V) - y_offset;
 	screen->pages.screen_bpt.channel.volt.effect = UBA_GFX_EFFECT_SOLID;
 	screen->pages.screen_bpt.channel.volt.elemnt.text.size = LINE_V_FONT_SIZE;
 	screen->pages.screen_bpt.channel.volt.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
 	screen->pages.screen_bpt.channel.volt.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
+
 	screen->pages.screen_bpt.channel.current.id = UBA_GFX_ELEMNET_TEXT;
 	screen->pages.screen_bpt.channel.current.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING;
-	screen->pages.screen_bpt.channel.current.pos.y = LINE(LINE_C);
+	screen->pages.screen_bpt.channel.current.pos.y = LINE(LINE_C) - y_offset;
 	screen->pages.screen_bpt.channel.current.effect = UBA_GFX_EFFECT_SOLID;
 	screen->pages.screen_bpt.channel.current.elemnt.text.size = LINE_C_FONT_SIZE;
 	screen->pages.screen_bpt.channel.current.elemnt.text.size = LCD_DATA_FONT_SIZE;
 	screen->pages.screen_bpt.channel.current.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
 	screen->pages.screen_bpt.channel.current.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
+
 	screen->pages.screen_bpt.channel.capacity.id = UBA_GFX_ELEMNET_TEXT;
 	screen->pages.screen_bpt.channel.capacity.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING;
-	screen->pages.screen_bpt.channel.capacity.pos.y = LINE(LINE_CAP);
+	screen->pages.screen_bpt.channel.capacity.pos.y = LINE(LINE_CAP) - y_offset;
 	screen->pages.screen_bpt.channel.capacity.effect = UBA_GFX_EFFECT_SOLID;
 	screen->pages.screen_bpt.channel.capacity.elemnt.text.size = LINE_CAP_FONT_SIZE;
 	screen->pages.screen_bpt.channel.capacity.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
 	screen->pages.screen_bpt.channel.capacity.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
+
 	screen->pages.screen_bpt.channel.temp.id = UBA_GFX_ELEMNET_TEXT;
 	screen->pages.screen_bpt.channel.temp.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING;
-	screen->pages.screen_bpt.channel.temp.pos.y = LINE(LINE_TEMP);
+	screen->pages.screen_bpt.channel.temp.pos.y = LINE(LINE_TEMP) - y_offset;
 	screen->pages.screen_bpt.channel.temp.effect = UBA_GFX_EFFECT_SOLID;
 	screen->pages.screen_bpt.channel.temp.elemnt.text.size = LINE_TEMP_FONT_SIZE;
 	screen->pages.screen_bpt.channel.temp.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
 	screen->pages.screen_bpt.channel.temp.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
 
-	screen->pages.screen_bpt.bnt_back_stop.id = UBA_GFX_ELEMNET_BUTTON;
-	screen->pages.screen_bpt.bnt_back_stop.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING + 30;
-	screen->pages.screen_bpt.bnt_back_stop.pos.y = LINE(22);
-	screen->pages.screen_bpt.bnt_back_stop.effect = UBA_GFX_EFFECT_SOLID;
-	screen->pages.screen_bpt.bnt_back_stop.elemnt.button.size = 2;
+	screen->pages.screen_bpt.btn_back_stop.id = UBA_GFX_ELEMNET_BUTTON;
+	screen->pages.screen_bpt.btn_back_stop.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING + 30;
+	screen->pages.screen_bpt.btn_back_stop.pos.y = BTN_LOWER_YPOS;
+	screen->pages.screen_bpt.btn_back_stop.effect = UBA_GFX_EFFECT_SOLID;
+	screen->pages.screen_bpt.btn_back_stop.elemnt.button.size = 2;
 
-	screen->pages.screen_bpt.bnt_pause_start.id = UBA_GFX_ELEMNET_BUTTON;
-	screen->pages.screen_bpt.bnt_pause_start.pos.x = position[screen->ch_control-1].start_x + position[screen->ch_control-1].width - 40;
-	screen->pages.screen_bpt.bnt_pause_start.pos.y = LINE(22);
-	screen->pages.screen_bpt.bnt_pause_start.effect = UBA_GFX_EFFECT_SELECTED;
-	screen->pages.screen_bpt.bnt_pause_start.elemnt.button.size = 2;
+	screen->pages.screen_bpt.btn_pause_start.id = UBA_GFX_ELEMNET_BUTTON;
+	screen->pages.screen_bpt.btn_pause_start.pos.x = position[screen->ch_control-1].start_x + position[screen->ch_control-1].width - 40;
+	screen->pages.screen_bpt.btn_pause_start.pos.y = BTN_LOWER_YPOS;
+	screen->pages.screen_bpt.btn_pause_start.effect = UBA_GFX_EFFECT_SELECTED;
+	screen->pages.screen_bpt.btn_pause_start.elemnt.button.size = 2;
+
+	screen->pages.screen_bpt.btn_next.id = UBA_GFX_ELEMNET_BUTTON;
+	screen->pages.screen_bpt.btn_next.pos.x = position[screen->ch_control-1].start_x + position[screen->ch_control-1].width - 40;
+	screen->pages.screen_bpt.btn_next.pos.y = BTN_UPPER_YPOS;
+	screen->pages.screen_bpt.btn_next.effect = UBA_GFX_EFFECT_VISIBLE;
+	screen->pages.screen_bpt.btn_next.elemnt.button.size = 2;
 
 	screen->pages.screen_bpt.EWI_msg.id = UBA_GFX_ELEMNET_TEXT;
-	screen->pages.screen_bpt.EWI_msg.pos.x = position[screen->ch_control-1].start_x + ((position[screen->ch_control-1].width - (2 * BORDER_PADDING)) / 2); /*center*/
-	screen->pages.screen_bpt.EWI_msg.pos.y = LINE(LINE_EWI);
+	screen->pages.screen_bpt.EWI_msg.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING + 8;
+	//screen->pages.screen_bpt.EWI_msg.pos.y = LINE(LINE_EWI) + 22;
+	screen->pages.screen_bpt.EWI_msg.pos.y = LINE(LINE_STEP) + 12;
 	screen->pages.screen_bpt.EWI_msg.effect = UBA_GFX_EFFECT_SOLID;
 	screen->pages.screen_bpt.EWI_msg.elemnt.text.size = LINE_EWI_FONT_SIZE;
 
 	UBA_LCD_screen_draw_bpt(screen, UBA_LCD_REFRESH_TYPE_ALL);
 
-	UBA_button_clear_pending(screen->main_buttons.bnt_up_p);
-	UBA_button_clear_pending(screen->main_buttons.bnt_down_p);
-	UBA_button_clear_pending(screen->main_buttons.bnt_select_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_up_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_down_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_select_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_up_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_down_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_select_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_up_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_down_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_select_p);
 
-#if 1//Moshe
 	// update shadow
 	screen->pages.screen_bpt.channel.shadow.volt_vlaue = -1;
 	screen->pages.screen_bpt.channel.shadow.current_vlaue = -1;
@@ -1104,35 +1364,43 @@ void UBA_LCD_screen_display_bpt_enter(UBA_LCD_screen *screen) {
 	screen->bpt->shadow.test_name[0] = '\0';
 	screen->bpt->shadow.current_state = UBA_BPT_STATE_INVALID;
 	screen->bpt->shadow.error = UBA_PROTO_UBA6_ERROR_LINE_NOT_AVAILABLE;
-	screen->bpt->shadow.bnt_back_stop.text[0] = '\0';
-	screen->bpt->shadow.bnt_back_stop.color_text = GRAYBLUE;//not in use
-	screen->bpt->shadow.bnt_back_stop.color_bg =  GRAYBLUE;//not in use
-	screen->bpt->shadow.bnt_back_stop.effect = UBA_GFX_EFFECT_MAX;
-	screen->bpt->shadow.bnt_pause_start.text[0] = '\0';
-	screen->bpt->shadow.bnt_pause_start.color_text = GRAYBLUE;//not in use
-	screen->bpt->shadow.bnt_pause_start.color_bg =  GRAYBLUE;//not in use
-	screen->bpt->shadow.bnt_pause_start.effect = UBA_GFX_EFFECT_MAX;
-#endif
+	screen->bpt->shadow.btn_back_stop.text[0] = '\0';
+	screen->bpt->shadow.btn_back_stop.color_text = GRAYBLUE;//not in use
+	screen->bpt->shadow.btn_back_stop.color_bg =  GRAYBLUE;//not in use
+	screen->bpt->shadow.btn_back_stop.effect = UBA_GFX_EFFECT_MAX;
+	screen->bpt->shadow.btn_pause_start.text[0] = '\0';
+	screen->bpt->shadow.btn_pause_start.color_text = GRAYBLUE;//not in use
+	screen->bpt->shadow.btn_pause_start.color_bg =  GRAYBLUE;//not in use
+	screen->bpt->shadow.btn_pause_start.effect = UBA_GFX_EFFECT_MAX;
+	screen->bpt->shadow.btn_next.text[0] = '\0';
+	screen->bpt->shadow.btn_next.color_text = GRAYBLUE;//not in use
+	screen->bpt->shadow.btn_next.color_bg =  GRAYBLUE;//not in use
+	screen->bpt->shadow.btn_next.effect = UBA_GFX_EFFECT_MAX;
 }
 
 void UBA_LCD_screen_display_bpt(UBA_LCD_screen *screen) {
 	uint32_t refreshTime = ((screen->pages.screen_bpt.channel.status.effect == UBA_GFX_EFFECT_BLINK_FAST) ?
 							UBA_LCD_FAST_REFRESH_TIME : UBA_LCD_SLOW_REFRESH_TIME);
 
-	if ((UBA_button_is_pending(screen->main_buttons.bnt_up_p) || UBA_button_is_pending(screen->main_buttons.bnt_down_p))
-			|| (UBA_button_is_pending(screen->secondery_buttons.bnt_up_p) || UBA_button_is_pending(screen->secondery_buttons.bnt_down_p))) {
-		UBA_LCD_screen_bnt_press_up_or_down(screen, &screen->pages.screen_bpt);
-		UBA_button_clear_pending(screen->main_buttons.bnt_up_p);
-		UBA_button_clear_pending(screen->main_buttons.bnt_down_p);
-		UBA_button_clear_pending(screen->secondery_buttons.bnt_up_p);
-		UBA_button_clear_pending(screen->secondery_buttons.bnt_down_p);
+	if (   (UBA_button_is_pending(screen->main_buttons.btn_up_p) || UBA_button_is_pending(screen->main_buttons.btn_down_p))
+		|| (UBA_button_is_pending(screen->secondery_buttons.btn_up_p) || UBA_button_is_pending(screen->secondery_buttons.btn_down_p))) {
+		// Buttons: UP/DOWN
+		UBA_LCD_screen_btn_press_up_or_down(screen, &screen->pages.screen_bpt);
+		UBA_button_clear_pending(screen->main_buttons.btn_up_p);
+		UBA_button_clear_pending(screen->main_buttons.btn_down_p);
+		UBA_button_clear_pending(screen->secondery_buttons.btn_up_p);
+		UBA_button_clear_pending(screen->secondery_buttons.btn_down_p);
 	}
-	if (UBA_button_is_pending(screen->main_buttons.bnt_select_p) || UBA_button_is_pending(screen->secondery_buttons.bnt_select_p)) {
-		if (UBA_LCD_screen_bnt_press_select(screen)) {
+
+	if (UBA_button_is_pending(screen->main_buttons.btn_select_p) || UBA_button_is_pending(screen->secondery_buttons.btn_select_p)) {
+		//Button: SELECT
+		if (UBA_LCD_screen_btn_press_select(screen)) {
 			screen->state.next = UBA_LCD_SCREEN_DISPLAY_TEST_SELECT;
+			screen->pages.screen_bpt.btn_next.effect = UBA_GFX_EFFECT_INVISIBLE;
+
 		} else {
-			UBA_button_clear_pending(screen->main_buttons.bnt_select_p);
-			UBA_button_clear_pending(screen->secondery_buttons.bnt_select_p);
+			UBA_button_clear_pending(screen->main_buttons.btn_select_p);
+			UBA_button_clear_pending(screen->secondery_buttons.btn_select_p);
 			UBA_LCD_screen_draw_bpt(screen, UBA_LCD_REFRESH_TYPE_UI);
 		}
 	}
@@ -1144,18 +1412,40 @@ void UBA_LCD_screen_display_bpt(UBA_LCD_screen *screen) {
 }
 
 void UBA_LCD_screen_display_bpt_exit(UBA_LCD_screen *screen) {
-	UBA_button_clear_pending(screen->main_buttons.bnt_up_p);
-	UBA_button_clear_pending(screen->main_buttons.bnt_down_p);
-	UBA_button_clear_pending(screen->main_buttons.bnt_select_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_up_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_down_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_select_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_up_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_down_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_select_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_up_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_down_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_select_p);
+
+	screen->pages.screen_bpt.btn_next.effect = UBA_GFX_EFFECT_INVISIBLE;
+
+	//Moshe
+	screen->ch_control = screen->shadow.ch_control;
+	LCD_screen_force_draw = true;
+	if (screen->ch_control == UBA_CHANNLE_ID_A) {
+		//draw channel B
+		UBA_LCD_screen_draw_bpt(&UBA_LCD_g.screen_ch_B, UBA_LCD_REFRESH_TYPE_ALL);
+
+	} else if (screen->ch_control == UBA_CHANNLE_ID_B) {
+		//draw channel B
+		UBA_LCD_screen_draw_bpt(&UBA_LCD_g.screen_ch_A, UBA_LCD_REFRESH_TYPE_ALL);
+
+	} else if (screen->ch_control == UBA_CHANNLE_ID_AB) {
+		//draw channel A
+		UBA_LCD_screen_draw_bpt(&UBA_LCD_g.screen_ch_A, UBA_LCD_REFRESH_TYPE_ALL);
+
+		//draw channel B
+		UBA_LCD_screen_draw_bpt(&UBA_LCD_g.screen_ch_A, UBA_LCD_REFRESH_TYPE_ALL);
+	}
+	LCD_screen_force_draw = false;
 }
 
 void UBA_LCD_screen_display_test_select_enter(UBA_LCD_screen *screen) {
 	UBA_LCD *LCD_handler = (UBA_LCD *) screen->LCD_handler;
 	UBA_LCD_POSITION_INFO *position = LCD_handler->screen_position;
-	int i;
+	int i, j;
 
 	UBA_LCD_screen_update_state(screen);
 
@@ -1177,27 +1467,28 @@ void UBA_LCD_screen_display_test_select_enter(UBA_LCD_screen *screen) {
 	screen->pages.test_list.title.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
 	sprintf(screen->pages.test_list.title.elemnt.text.text, "Test Select");
 
-	screen->pages.test_list.bnt_cancel.id = UBA_GFX_ELEMNET_BUTTON;
-	screen->pages.test_list.bnt_cancel.pos.x = position[screen->ch_control-1].start_x + position[screen->ch_control-1].width - 40;
-	screen->pages.test_list.bnt_cancel.pos.y = LINE(22);
-	screen->pages.test_list.bnt_cancel.effect = UBA_GFX_EFFECT_VISIBLE;
+	screen->pages.test_list.btn_back.id = UBA_GFX_ELEMNET_BUTTON;
+	screen->pages.test_list.btn_back.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING + 30;
+	screen->pages.test_list.btn_back.pos.y = BTN_LOWER_YPOS;
 
-	screen->pages.test_list.bnt_cancel.elemnt.button.size = 2;
-	screen->pages.test_list.bnt_cancel.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;
-	screen->pages.test_list.bnt_cancel.elemnt.button.color_text = UBA_GFX_COLOR_BLACK;
-	sprintf(screen->pages.test_list.bnt_cancel.elemnt.button.text, "CANCEL");
+	screen->pages.test_list.btn_back.elemnt.button.size = 2;
+	screen->pages.test_list.btn_back.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;
+	screen->pages.test_list.btn_back.elemnt.button.color_text = UBA_GFX_COLOR_BLACK;
+	sprintf(screen->pages.test_list.btn_back.elemnt.button.text, "BACK");
 
 	for (i = 0; i < UBA_LCD_MAX_DISPLAY_TEST_SELECT; i++) {
 		screen->pages.test_list.test_name_list[i].id = UBA_GFX_ELEMNET_TEXT;
 		screen->pages.test_list.test_name_list[i].pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING;
 		screen->pages.test_list.test_name_list[i].pos.y = LINE((4 + (i * 2)));
-		screen->pages.test_list.test_name_list[i].effect = UBA_GFX_EFFECT_SOLID;
+		j = (screen->pages.test_list.start_display_index+i) % UBA_TR_LIST_SIZE;
+		sprintf(screen->pages.test_list.test_name_list[i].elemnt.text.text, "%d-%-s", j, TR_file.list[j].name);
+		screen->pages.test_list.test_name_list[i].elemnt.text.text[12] = '\0'; //limit file name to 12
+		screen->pages.test_list.test_name_list[i].effect = 
+			(screen->pages.test_list.btn_back.effect == UBA_GFX_EFFECT_SELECTED) ? UBA_GFX_EFFECT_SOLID :
+			(j == screen->pages.test_list.list_select_index) ? UBA_GFX_EFFECT_SELECTED : UBA_GFX_EFFECT_SOLID;
 		screen->pages.test_list.test_name_list[i].elemnt.text.size = 2;
 		screen->pages.test_list.test_name_list[i].elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
 		screen->pages.test_list.test_name_list[i].elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
-		sprintf(screen->pages.test_list.test_name_list[i].elemnt.text.text, "%c-%.*s",
-				TR_file.list[i].mode == UBA_PROTO_BPT_MODE_SINGLE_CHANNEL ? UBA_LCD_SCREEN_SINGEL_CH_CHAR : UBA_LCD_SCREEN_DUAL_CH_CHAR,
-				UBA_LCD_screen_line_max_str_length(screen, screen->pages.test_list.test_name_list[i].elemnt.text.size) - 2, TR_file.list[i].name);
 	}
 
 	UBA_LCD_screen_display_test_select_refresh(&screen->pages.test_list, UBA_LCD_REFRESH_TYPE_ALL);
@@ -1206,105 +1497,128 @@ void UBA_LCD_screen_display_test_select_enter(UBA_LCD_screen *screen) {
 void UBA_LCD_screen_display_test_select(UBA_LCD_screen *screen) {
 	int i, j;
 	bool need_to_refresh = false;
-	uint8_t list_select_index;
+	int8_t list_select_index;
+	int8_t start_display_index;
 
-	if (UBA_button_is_pending(screen->main_buttons.bnt_up_p) || UBA_button_is_pending(screen->secondery_buttons.bnt_up_p)) {
-		UBA_button_clear_pending(screen->main_buttons.bnt_up_p);
-		UBA_button_clear_pending(screen->secondery_buttons.bnt_up_p);
-		screen->pages.test_list.select_index = screen->pages.test_list.select_index - 1;
-				//screen->pages.test_list.select_index == 0 ? 0 : screen->pages.test_list.select_index - 1;
-		screen->pages.test_list.list_select_index = screen->pages.test_list.list_select_index - 1;
-				//screen->pages.test_list.list_select_index == 0 ? 0 : screen->pages.test_list.list_select_index - 1;
-		
-		list_select_index = screen->pages.test_list.list_select_index;
-		if (screen->pages.test_list.list_select_index < 0)
-		{
-			screen->pages.test_list.list_select_index = UBA_TR_LIST_SIZE;
-			screen->pages.test_list.select_index = UBA_LCD_MAX_DISPLAY_TEST_SELECT-1;
+	list_select_index = screen->pages.test_list.list_select_index;
+	start_display_index = screen->pages.test_list.start_display_index;
+
+	if (UBA_button_is_pending(screen->main_buttons.btn_up_p) || 
+		UBA_button_is_pending(screen->secondery_buttons.btn_up_p)) {
+		UBA_button_clear_pending(screen->main_buttons.btn_up_p);
+		UBA_button_clear_pending(screen->secondery_buttons.btn_up_p);
+
+		if ((list_select_index-1 < 0) &&
+			(screen->pages.test_list.btn_back.effect != UBA_GFX_EFFECT_SELECTED)) {
+			/*BACK button*/
+			screen->pages.test_list.btn_back.effect = UBA_GFX_EFFECT_SELECTED;
 		}
-		else
-		if (screen->pages.test_list.list_select_index >= UBA_TR_LIST_SIZE)
-		{
-			screen->pages.test_list.list_select_index = 0;
-			screen->pages.test_list.select_index = 0;
+		else {
+			/*Test info*/
+			list_select_index--;
+			if (list_select_index > start_display_index) {
+			    if ((list_select_index - start_display_index) >= UBA_LCD_MAX_DISPLAY_TEST_SELECT) {
+					start_display_index--;
+				}
+			} else if (start_display_index > list_select_index) {
+				if ((UBA_TR_LIST_SIZE - (start_display_index - list_select_index)) >= UBA_LCD_MAX_DISPLAY_TEST_SELECT) {
+					start_display_index--;
+				}
+			}
+
+			list_select_index = (list_select_index+UBA_TR_LIST_SIZE) % UBA_TR_LIST_SIZE;
+			start_display_index = (start_display_index+UBA_TR_LIST_SIZE) % UBA_TR_LIST_SIZE;
+			screen->pages.test_list.btn_back.effect = UBA_GFX_EFFECT_VISIBLE;
+			screen->tr = &TR_file.list[list_select_index];
 		}
 		need_to_refresh = true;
-	} else if (UBA_button_is_pending(screen->main_buttons.bnt_down_p) || UBA_button_is_pending(screen->secondery_buttons.bnt_down_p)) {
-		UBA_button_clear_pending(screen->main_buttons.bnt_down_p);
-		UBA_button_clear_pending(screen->secondery_buttons.bnt_down_p);
-		screen->pages.test_list.select_index =
-				(screen->pages.test_list.select_index < UBA_LCD_MAX_DISPLAY_TEST_SELECT - 1) ?
-						screen->pages.test_list.select_index + 1 :
-						UBA_LCD_MAX_DISPLAY_TEST_SELECT - 1;
-		screen->pages.test_list.list_select_index++;
 
-		list_select_index = screen->pages.test_list.list_select_index;
-		if (screen->pages.test_list.list_select_index > UBA_TR_LIST_SIZE)
-		{
-			screen->pages.test_list.list_select_index = 0;
-			screen->pages.test_list.select_index = 0;
+	} else if (UBA_button_is_pending(screen->main_buttons.btn_down_p) ||
+			   UBA_button_is_pending(screen->secondery_buttons.btn_down_p)) {
+		UBA_button_clear_pending(screen->main_buttons.btn_down_p);
+		UBA_button_clear_pending(screen->secondery_buttons.btn_down_p);
+ 
+		if ((list_select_index+1 == UBA_TR_LIST_SIZE) &&
+			(screen->pages.test_list.btn_back.effect != UBA_GFX_EFFECT_SELECTED)) {
+			/*BACK button*/
+			screen->pages.test_list.btn_back.effect = UBA_GFX_EFFECT_SELECTED;
+		}
+		else {
+			/*Test info*/
+			list_select_index++;
+			if (list_select_index > start_display_index) {
+			    if ((list_select_index - start_display_index) >= UBA_LCD_MAX_DISPLAY_TEST_SELECT) {
+					start_display_index++;
+				}
+			} else if (start_display_index > list_select_index) {
+				if ((UBA_TR_LIST_SIZE - (start_display_index - list_select_index)) >= UBA_LCD_MAX_DISPLAY_TEST_SELECT) {
+					start_display_index++;
+				}
+			}
+
+			list_select_index = (list_select_index+UBA_TR_LIST_SIZE) % UBA_TR_LIST_SIZE;
+			start_display_index = (start_display_index+UBA_TR_LIST_SIZE) % UBA_TR_LIST_SIZE;
+			screen->pages.test_list.btn_back.effect = UBA_GFX_EFFECT_VISIBLE;
+			screen->tr = &TR_file.list[list_select_index];
 		}
 		need_to_refresh = true;
-	} else if (UBA_button_is_pending(screen->main_buttons.bnt_select_p) || UBA_button_is_pending(screen->secondery_buttons.bnt_select_p)) {
-		UBA_button_clear_pending(screen->main_buttons.bnt_select_p);
-		UBA_button_clear_pending(screen->secondery_buttons.bnt_select_p);
-		if (screen->pages.test_list.list_select_index < UBA_TR_LIST_SIZE) {
-			screen->tr = &TR_file.list[screen->pages.test_list.list_select_index];
-			screen->state.next = UBA_LCD_SCREEN_DISPLAY_TEST_INFO;
-		} else {
+
+	} else if (UBA_button_is_pending(screen->main_buttons.btn_select_p) || 
+			   UBA_button_is_pending(screen->secondery_buttons.btn_select_p)) {
+		UBA_button_clear_pending(screen->main_buttons.btn_select_p);
+		UBA_button_clear_pending(screen->secondery_buttons.btn_select_p);
+
+		screen->tr_list_select_index = list_select_index;
+		if (screen->pages.test_list.btn_back.effect == UBA_GFX_EFFECT_SELECTED) {
+			/*next: BACK button*/
 			screen->tr = NULL;
 			if (UBA_BPT_isUnpacked(screen->bpt)) {
+				if (UBA_TR_unpack(&TR_file.list[list_select_index], screen->bpt) != 0) {
+					UART_LOG_CRITICAL(UBA_COMP, "TR unpack Failed");
+				}
 				screen->state.next = UBA_LCD_SCREEN_DISPLAY_BPT;
+
 			} else {
 				screen->state.next = UBA_LCD_SCREEN_DISPLAY_CHANNEL;
 			}
-		}
-		if (screen->pages.test_list.select_index < 0) {
-			screen->pages.test_list.select_index = 0;
+
+		} else {
+			/*next: Test info*/
+			screen->state.next = UBA_LCD_SCREEN_DISPLAY_TEST_INFO;
 		}
 	}
 	
-	list_select_index = screen->pages.test_list.list_select_index;
-	if (screen->pages.test_list.list_select_index >= UBA_TR_LIST_SIZE) {
-		screen->pages.test_list.list_select_index = UBA_TR_LIST_SIZE;
-		screen->pages.test_list.bnt_cancel.effect = UBA_GFX_EFFECT_SELECTED;
-		screen->pages.test_list.select_index = UBA_LCD_MAX_DISPLAY_TEST_SELECT;
-	} else {
-		screen->pages.test_list.bnt_cancel.effect = UBA_GFX_EFFECT_VISIBLE;
-	}
-	if ((screen->pages.test_list.select_index >= UBA_LCD_MAX_DISPLAY_TEST_SELECT - 1)
-			|| ((screen->pages.test_list.select_index == 0) && (screen->pages.test_list.list_select_index > 0))) {
-		for (i = 0; i < UBA_LCD_MAX_DISPLAY_TEST_SELECT; i++) {
-			if ((screen->pages.test_list.select_index == 0) && (screen->pages.test_list.list_select_index > 0)) {
-				j = ((screen->pages.test_list.list_select_index - 1) + i) % UBA_TR_LIST_SIZE;
-			} else {
-				j = ((screen->pages.test_list.list_select_index - (UBA_LCD_MAX_DISPLAY_TEST_SELECT - 1)) + i) % UBA_TR_LIST_SIZE;
-			}
-			sprintf(screen->pages.test_list.test_name_list[i].elemnt.text.text, "%c-%.*s",
-					TR_file.list[j].mode == UBA_PROTO_BPT_MODE_SINGLE_CHANNEL ? UBA_LCD_SCREEN_SINGEL_CH_CHAR : UBA_LCD_SCREEN_DUAL_CH_CHAR,
-					UBA_LCD_screen_line_max_str_length(screen, screen->pages.test_list.test_name_list[i].elemnt.text.size) - 2, TR_file.list[j].name);
-		}
-	}
-
 	if (need_to_refresh) {
-		UBA_LCD_screen_display_test_select_refresh(&screen->pages.test_list, UBA_LCD_REFRESH_TYPE_UI);
+		if (list_select_index < UBA_TR_LIST_SIZE)
+		{
+			screen->pages.test_list.list_end_index = UBA_TR_LIST_SIZE;
+			for (i = 0; i < UBA_LCD_MAX_DISPLAY_TEST_SELECT; i++) {
+				j = (start_display_index+i) % UBA_TR_LIST_SIZE;
+				sprintf(screen->pages.test_list.test_name_list[i].elemnt.text.text, "%d-%s     ", j, TR_file.list[j].name);
+				screen->pages.test_list.test_name_list[i].elemnt.text.text[12] = '\0'; //limit file name to 12
+				screen->pages.test_list.test_name_list[i].effect = 
+					(screen->pages.test_list.btn_back.effect == UBA_GFX_EFFECT_SELECTED) ? UBA_GFX_EFFECT_SOLID :
+					(j == list_select_index) ? UBA_GFX_EFFECT_SELECTED : UBA_GFX_EFFECT_SOLID;
+				
+				if (j == UBA_TR_LIST_SIZE-1) {
+					screen->pages.test_list.list_end_index = i;
+				}
+			}
+		}
+		UBA_LCD_screen_display_test_select_refresh(&screen->pages.test_list, UBA_LCD_REFRESH_TYPE_ALL);
 	}
 
-	if (list_select_index >= UBA_TR_LIST_SIZE)
-	{
-		//screen->pages.test_list.select_index = -1;
-		//screen->pages.test_list.list_select_index = -1;
-	}
+	screen->pages.test_list.list_select_index = list_select_index;
+	screen->pages.test_list.start_display_index = start_display_index;
 }
 
 void UBA_LCD_screen_display_test_select_exit(UBA_LCD_screen *screen) {
-	screen->tr_list_select_index = screen->pages.test_list.list_select_index;
-	UBA_button_clear_pending(screen->main_buttons.bnt_up_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_up_p);
-	UBA_button_clear_pending(screen->main_buttons.bnt_down_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_down_p);
-	UBA_button_clear_pending(screen->main_buttons.bnt_select_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_select_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_up_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_up_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_down_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_down_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_select_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_select_p);
 }
 
 void UBA_LCD_screen_dispaly_test_info_refresh(UBA_LCD_page_test_info *test_info, UBA_LCD_REFRESH_TYPE rt) {
@@ -1319,8 +1633,9 @@ void UBA_LCD_screen_dispaly_test_info_refresh(UBA_LCD_page_test_info *test_info,
 		}
 	}
 	if ((rt & UBA_LCD_REFRESH_TYPE_UI) == UBA_LCD_REFRESH_TYPE_UI) {
-		UBA_GFX_draw_button(&test_info->bnt_back);
-		UBA_GFX_draw_button(&test_info->bnt_select);
+		UBA_GFX_draw_button(&test_info->btn_back);
+		UBA_GFX_draw_button(&test_info->btn_step);
+		UBA_GFX_draw_button(&test_info->btn_select);
 	}
 }
 
@@ -1398,75 +1713,109 @@ void UBA_LCD_screen_display_test_info_enter(UBA_LCD_screen *screen) {
 
 	i++;
 	screen->pages.test_info.test_info[i].elemnt.text.size = 1;
-	sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  cell num: ");
+	sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  cell num:   mode:");
 	i++;
 	screen->pages.test_info.test_info[i].elemnt.text.size = 2;
-	sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  %d", (screen->tr)->battery.number_of_cells);
+	sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  %-2d   %s", 
+			(screen->tr)->battery.number_of_cells,
+			(screen->tr)->mode == UBA_PROTO_BPT_MODE_SINGLE_CHANNEL ? "Single" : "Dual");
 
 	i++;
 	screen->pages.test_info.test_info[i].elemnt.text.size = 1;
-	sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  plan step num: ");
+	sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  num of steps: ");
 	i++;
 	screen->pages.test_info.test_info[i].elemnt.text.size = 2;
 	sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  %d", (screen->tr)->length);
 
 
-	screen->pages.test_info.bnt_back.id = UBA_GFX_ELEMNET_BUTTON;
-	screen->pages.test_info.bnt_back.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING + 30;
-	screen->pages.test_info.bnt_back.pos.y = LINE(22);
-	screen->pages.test_info.bnt_back.effect = UBA_GFX_EFFECT_SOLID;
-	screen->pages.test_info.bnt_back.elemnt.button.size = 2;
-	screen->pages.test_info.bnt_back.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;
-	screen->pages.test_info.bnt_back.elemnt.button.color_text = UBA_GFX_COLOR_BLACK;
-	sprintf(screen->pages.test_info.bnt_back.elemnt.button.text, "BACK");
+	screen->pages.test_info.btn_back.id = UBA_GFX_ELEMNET_BUTTON;
+	screen->pages.test_info.btn_back.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING + 30;
+	screen->pages.test_info.btn_back.pos.y = BTN_LOWER_YPOS;
+	screen->pages.test_info.btn_back.effect = UBA_GFX_EFFECT_VISIBLE;
+	screen->pages.test_info.btn_back.elemnt.button.size = 2;
+	screen->pages.test_info.btn_back.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;
+	screen->pages.test_info.btn_back.elemnt.button.color_text = UBA_GFX_COLOR_BLACK;
+	sprintf(screen->pages.test_info.btn_back.elemnt.button.text, "BACK");
 
-	screen->pages.test_info.bnt_select.id = UBA_GFX_ELEMNET_BUTTON;
-	screen->pages.test_info.bnt_select.pos.x = position[screen->ch_control-1].start_x + position[screen->ch_control-1].width - 40;
-	screen->pages.test_info.bnt_select.pos.y = LINE(22);
-	screen->pages.test_info.bnt_select.effect = UBA_GFX_EFFECT_SELECTED;
-	screen->pages.test_info.bnt_select.elemnt.button.size = 2;
-	screen->pages.test_info.bnt_select.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;
-	screen->pages.test_info.bnt_select.elemnt.button.color_text = UBA_GFX_COLOR_BLACK;
-	sprintf(screen->pages.test_info.bnt_select.elemnt.button.text, "STEP");
+	screen->pages.test_info.btn_step.id = UBA_GFX_ELEMNET_BUTTON;
+	screen->pages.test_info.btn_step.pos.x = position[screen->ch_control-1].start_x + position[screen->ch_control-1].width - 40;
+	screen->pages.test_info.btn_step.pos.y = BTN_UPPER_YPOS;
+	screen->pages.test_info.btn_step.effect = UBA_GFX_EFFECT_SELECTED;
+	screen->pages.test_info.btn_step.elemnt.button.size = 2;
+	screen->pages.test_info.btn_step.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;
+	screen->pages.test_info.btn_step.elemnt.button.color_text = UBA_GFX_COLOR_BLACK;
+	sprintf(screen->pages.test_info.btn_step.elemnt.button.text, "STEP  ");
+
+	screen->pages.test_info.btn_select.id = UBA_GFX_ELEMNET_BUTTON;
+	screen->pages.test_info.btn_select.pos.x = position[screen->ch_control-1].start_x + position[screen->ch_control-1].width - 40;
+	screen->pages.test_info.btn_select.pos.y = BTN_LOWER_YPOS;
+	screen->pages.test_info.btn_select.effect = UBA_GFX_EFFECT_VISIBLE;
+	screen->pages.test_info.btn_select.elemnt.button.size = 2;
+	screen->pages.test_info.btn_select.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;
+	screen->pages.test_info.btn_select.elemnt.button.color_text = UBA_GFX_COLOR_BLACK;
+	sprintf(screen->pages.test_info.btn_select.elemnt.button.text, "SELECT");
 
 	UBA_LCD_screen_dispaly_test_info_refresh(&screen->pages.test_info, UBA_LCD_REFRESH_TYPE_ALL);
 }
 
 void UBA_LCD_screen_display_test_info(UBA_LCD_screen *screen) {
-	if ((UBA_button_is_pending(screen->main_buttons.bnt_up_p) || UBA_button_is_pending(screen->main_buttons.bnt_down_p))
-			|| (UBA_button_is_pending(screen->secondery_buttons.bnt_up_p) || UBA_button_is_pending(screen->secondery_buttons.bnt_down_p))) {
-		if (screen->pages.test_info.bnt_back.effect == UBA_GFX_EFFECT_SELECTED) {
-			screen->pages.test_info.bnt_back.effect = UBA_GFX_EFFECT_VISIBLE;
-			screen->pages.test_info.bnt_select.effect = UBA_GFX_EFFECT_SELECTED;
-		} else if (screen->pages.test_info.bnt_select.effect == UBA_GFX_EFFECT_SELECTED) {
-			screen->pages.test_info.bnt_back.effect = UBA_GFX_EFFECT_SELECTED;
-			screen->pages.test_info.bnt_select.effect = UBA_GFX_EFFECT_VISIBLE;
+	if ((UBA_button_is_pending(screen->main_buttons.btn_up_p) || UBA_button_is_pending(screen->main_buttons.btn_down_p))
+			|| (UBA_button_is_pending(screen->secondery_buttons.btn_up_p) || UBA_button_is_pending(screen->secondery_buttons.btn_down_p))) {
+		if (screen->pages.test_info.btn_back.effect == UBA_GFX_EFFECT_SELECTED) {
+			screen->pages.test_info.btn_back.effect = UBA_GFX_EFFECT_VISIBLE;
+			screen->pages.test_info.btn_step.effect = UBA_GFX_EFFECT_SELECTED;
+			screen->pages.test_info.btn_select.effect = UBA_GFX_EFFECT_VISIBLE;
+
+		} else if (screen->pages.test_info.btn_step.effect == UBA_GFX_EFFECT_SELECTED) {
+			screen->pages.test_info.btn_back.effect = UBA_GFX_EFFECT_VISIBLE;
+			screen->pages.test_info.btn_step.effect = UBA_GFX_EFFECT_VISIBLE;
+			screen->pages.test_info.btn_select.effect = UBA_GFX_EFFECT_SELECTED;
+
+		} else if (screen->pages.test_info.btn_select.effect == UBA_GFX_EFFECT_SELECTED) {
+			screen->pages.test_info.btn_back.effect = UBA_GFX_EFFECT_SELECTED;
+			screen->pages.test_info.btn_step.effect = UBA_GFX_EFFECT_VISIBLE;
+			screen->pages.test_info.btn_select.effect = UBA_GFX_EFFECT_VISIBLE;
 		}
+
 		UBA_LCD_screen_dispaly_test_info_refresh(&screen->pages.test_info, UBA_LCD_REFRESH_TYPE_UI);
-		UBA_button_clear_pending(screen->main_buttons.bnt_up_p);
-		UBA_button_clear_pending(screen->main_buttons.bnt_down_p);
-		UBA_button_clear_pending(screen->secondery_buttons.bnt_up_p);
-		UBA_button_clear_pending(screen->secondery_buttons.bnt_down_p);
+
+		UBA_button_clear_pending(screen->main_buttons.btn_up_p);
+		UBA_button_clear_pending(screen->main_buttons.btn_down_p);
+		UBA_button_clear_pending(screen->secondery_buttons.btn_up_p);
+		UBA_button_clear_pending(screen->secondery_buttons.btn_down_p);
 	}
-	if (UBA_button_is_pending(screen->main_buttons.bnt_select_p) || UBA_button_is_pending(screen->secondery_buttons.bnt_select_p)) {
-		if (screen->pages.test_info.bnt_back.effect == UBA_GFX_EFFECT_SELECTED) {
+
+	if (UBA_button_is_pending(screen->main_buttons.btn_select_p) || UBA_button_is_pending(screen->secondery_buttons.btn_select_p)) {
+		if (screen->pages.test_info.btn_back.effect == UBA_GFX_EFFECT_SELECTED) {
 			screen->state.next = UBA_LCD_SCREEN_DISPLAY_TEST_SELECT;
-		} else if (screen->pages.test_info.bnt_select.effect == UBA_GFX_EFFECT_SELECTED) {
+			screen->pages.screen_bpt.btn_next.effect = UBA_GFX_EFFECT_INVISIBLE;
+
+		} else if (screen->pages.test_info.btn_step.effect == UBA_GFX_EFFECT_SELECTED) {
+			screen->state.next = UBA_LCD_SCREEN_DISPLAY_TEST_STEP; 
+			screen->tr_step_display_index = 0;
+
+		} else if (screen->pages.test_info.btn_select.effect == UBA_GFX_EFFECT_SELECTED) {
+			screen->tr_list_select_index = screen->pages.test_list.list_select_index;
+
+#if 0//Moshe
 			if (TR_file.list[screen->tr_list_select_index].mode == UBA_PROTO_BPT_MODE_DUAL_CHANNEL) {
 				if (UBA_TR_unpack(&TR_file.list[screen->tr_list_select_index], &(UBA_6_device_g.BPT_AB)) != 0) {
 					UART_LOG_CRITICAL(UBA_COMP, "TR unpack Failed");
-				} 
+				}
+
 			} else {
 				if (screen->ch_control == UBA_CHANNLE_ID_AB) {
-					if (UBA_button_is_pending(screen->main_buttons.bnt_select_p)) {
+					if (UBA_button_is_pending(screen->main_buttons.btn_select_p)) {
 						if (UBA_TR_unpack(&TR_file.list[screen->tr_list_select_index], &(UBA_6_device_g.BPT_A)) != 0) {
 							UART_LOG_CRITICAL(UBA_COMP, "TR unpack Failed");
 						}
-					} else if (UBA_button_is_pending(screen->secondery_buttons.bnt_select_p)) {
+
+					} else if (UBA_button_is_pending(screen->secondery_buttons.btn_select_p)) {
 						if (UBA_TR_unpack(&TR_file.list[screen->tr_list_select_index], &(UBA_6_device_g.BPT_B)) != 0) {
 							UART_LOG_CRITICAL(UBA_COMP, "TR unpack Failed");
 						}
 					}
+
 				} else if (screen->ch_control == UBA_CHANNLE_ID_A) {
 					if (UBA_TR_unpack(&TR_file.list[screen->tr_list_select_index], &(UBA_6_device_g.BPT_A)) != 0) {
 						UART_LOG_CRITICAL(UBA_COMP, "TR unpack Failed");
@@ -1478,22 +1827,36 @@ void UBA_LCD_screen_display_test_info(UBA_LCD_screen *screen) {
 					}
 				}
 			}
-			screen->state.next = UBA_LCD_SCREEN_DISPLAY_TEST_STEP; //UBA_LCD_SCREEN_DISPLAY_TEST_STEP; //UBA_LCD_SCREEN_DISPLAY_SETTING; //Moshe UBA_LCD_SCREEN_DISPLAY_BPT;
-			screen->tr_step_display_index = 0;
+#else
+			if (UBA_TR_unpack(&TR_file.list[screen->tr_list_select_index], screen->bpt) != 0) {
+				UART_LOG_CRITICAL(UBA_COMP, "TR unpack Failed");
+			}
+#endif
+			//Moshe
+			if (TR_file.list[screen->tr_list_select_index].mode == UBA_PROTO_BPT_MODE_DUAL_CHANNEL) {
+				screen->shadow.ch_control = screen->ch_control;
+				screen->ch_control = UBA_CHANNLE_ID_AB;
+				
+			} 
+			screen->bpt->ch->id = screen->ch_control;
+
+			screen->state.next = UBA_LCD_SCREEN_DISPLAY_BPT;
 		}
-		UBA_button_clear_pending(screen->main_buttons.bnt_select_p);
-		UBA_button_clear_pending(screen->secondery_buttons.bnt_select_p);
+
+		UBA_button_clear_pending(screen->main_buttons.btn_select_p);
+		UBA_button_clear_pending(screen->secondery_buttons.btn_select_p);
+
 		UBA_LCD_screen_dispaly_test_info_refresh(&screen->pages.test_info, UBA_LCD_REFRESH_TYPE_UI);
 	}
 }
 
 void UBA_LCD_screen_display_test_info_exit(UBA_LCD_screen *screen) {
-	UBA_button_clear_pending(screen->main_buttons.bnt_up_p);
-	UBA_button_clear_pending(screen->main_buttons.bnt_down_p);
-	UBA_button_clear_pending(screen->main_buttons.bnt_select_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_up_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_down_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_select_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_up_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_down_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_select_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_up_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_down_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_select_p);
 }
 
 void UBA_LCD_screen_display_test_step_enter(UBA_LCD_screen *screen) {
@@ -1634,89 +1997,146 @@ void UBA_LCD_screen_display_test_step_enter(UBA_LCD_screen *screen) {
 			break;
 	}
 
-
-
-	screen->pages.test_info.bnt_back.id = UBA_GFX_ELEMNET_BUTTON;
-	screen->pages.test_info.bnt_back.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING + 30;
-	screen->pages.test_info.bnt_back.pos.y = LINE(22);
-	screen->pages.test_info.bnt_back.effect = UBA_GFX_EFFECT_SOLID;
-	screen->pages.test_info.bnt_back.elemnt.button.size = 2;
-	screen->pages.test_info.bnt_back.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;
-	screen->pages.test_info.bnt_back.elemnt.button.color_text = UBA_GFX_COLOR_BLACK;
-	sprintf(screen->pages.test_info.bnt_back.elemnt.button.text, "BACK");
+	screen->pages.test_info.btn_back.id = UBA_GFX_ELEMNET_BUTTON;
+	screen->pages.test_info.btn_back.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING + 30;
+	screen->pages.test_info.btn_back.pos.y = BTN_LOWER_YPOS;
+	screen->pages.test_info.btn_back.effect = UBA_GFX_EFFECT_VISIBLE;
+	screen->pages.test_info.btn_back.elemnt.button.size = 2;
+	screen->pages.test_info.btn_back.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;
+	screen->pages.test_info.btn_back.elemnt.button.color_text = UBA_GFX_COLOR_BLACK;
+	sprintf(screen->pages.test_info.btn_back.elemnt.button.text, "BACK");
 
 	if (screen->tr_step_display_index+1 < (screen->tr)->length) {
-		screen->pages.test_info.bnt_select.id = UBA_GFX_ELEMNET_BUTTON;
-		screen->pages.test_info.bnt_select.pos.x = position[screen->ch_control-1].start_x + position[screen->ch_control-1].width - 40;
-		screen->pages.test_info.bnt_select.pos.y = LINE(22);
-		screen->pages.test_info.bnt_select.effect = UBA_GFX_EFFECT_SELECTED;
-		screen->pages.test_info.bnt_select.elemnt.button.size = 2;
-		screen->pages.test_info.bnt_select.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;
-		screen->pages.test_info.bnt_select.elemnt.button.color_text = UBA_GFX_COLOR_BLACK;
-		sprintf(screen->pages.test_info.bnt_select.elemnt.button.text, "STEP");
+		screen->pages.test_info.btn_step.id = UBA_GFX_ELEMNET_BUTTON;
+		screen->pages.test_info.btn_step.pos.x = position[screen->ch_control-1].start_x + position[screen->ch_control-1].width - 40;
+		screen->pages.test_info.btn_step.pos.y = BTN_UPPER_YPOS;
+		screen->pages.test_info.btn_step.effect = UBA_GFX_EFFECT_SELECTED;
+		screen->pages.test_info.btn_step.elemnt.button.size = 2;
+		screen->pages.test_info.btn_step.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;
+		screen->pages.test_info.btn_step.elemnt.button.color_text = UBA_GFX_COLOR_BLACK;
+		sprintf(screen->pages.test_info.btn_step.elemnt.button.text, "STEP  ");
 	}
 	else {
-		screen->pages.test_info.bnt_select.effect = UBA_GFX_EFFECT_INVISIBLE;
+		screen->pages.test_info.btn_step.effect = UBA_GFX_EFFECT_INVISIBLE;
+		screen->pages.test_info.btn_back.effect = UBA_GFX_EFFECT_SELECTED;
 	}
 
-	UBA_LCD_screen_dispaly_test_info_refresh(&screen->pages.test_info, UBA_LCD_REFRESH_TYPE_FRAME | UBA_LCD_REFRESH_TYPE_INFO | UBA_LCD_REFRESH_TYPE_UI);
+	screen->pages.test_info.btn_select.id = UBA_GFX_ELEMNET_BUTTON;
+	screen->pages.test_info.btn_select.pos.x = position[screen->ch_control-1].start_x + position[screen->ch_control-1].width - 40;
+	screen->pages.test_info.btn_select.pos.y = BTN_LOWER_YPOS;
+	screen->pages.test_info.btn_select.effect = UBA_GFX_EFFECT_VISIBLE;
+	screen->pages.test_info.btn_select.elemnt.button.size = 2;
+	screen->pages.test_info.btn_select.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;
+	screen->pages.test_info.btn_select.elemnt.button.color_text = UBA_GFX_COLOR_BLACK;
+	sprintf(screen->pages.test_info.btn_select.elemnt.button.text, "SELECT");
+
+	UBA_LCD_screen_dispaly_test_info_refresh(&screen->pages.test_info, UBA_LCD_REFRESH_TYPE_ALL);
 }
 
 void UBA_LCD_screen_display_test_step(UBA_LCD_screen *screen) {
-	if (screen->tr_step_display_index+1 < (screen->tr)->length) {
-		if ((UBA_button_is_pending(screen->main_buttons.bnt_up_p) || UBA_button_is_pending(screen->main_buttons.bnt_down_p))
-			|| (UBA_button_is_pending(screen->secondery_buttons.bnt_up_p) || UBA_button_is_pending(screen->secondery_buttons.bnt_down_p))) {
-			if (screen->pages.test_info.bnt_back.effect == UBA_GFX_EFFECT_SELECTED) {
-				screen->pages.test_info.bnt_back.effect = UBA_GFX_EFFECT_VISIBLE;
-				screen->pages.test_info.bnt_select.effect = UBA_GFX_EFFECT_SELECTED;
-			} else if (screen->pages.test_info.bnt_select.effect == UBA_GFX_EFFECT_SELECTED) {
-				screen->pages.test_info.bnt_back.effect = UBA_GFX_EFFECT_SELECTED;
-				screen->pages.test_info.bnt_select.effect = UBA_GFX_EFFECT_VISIBLE;
+	if ((UBA_button_is_pending(screen->main_buttons.btn_up_p) || UBA_button_is_pending(screen->main_buttons.btn_down_p))
+		|| (UBA_button_is_pending(screen->secondery_buttons.btn_up_p) || UBA_button_is_pending(screen->secondery_buttons.btn_down_p))) {
+		//UP/DOWN
+		if (screen->tr_step_display_index+1 < (screen->tr)->length) {
+			if (screen->pages.test_info.btn_back.effect == UBA_GFX_EFFECT_SELECTED) {
+				screen->pages.test_info.btn_back.effect = UBA_GFX_EFFECT_VISIBLE;
+				screen->pages.test_info.btn_step.effect = UBA_GFX_EFFECT_SELECTED;
+				screen->pages.test_info.btn_select.effect = UBA_GFX_EFFECT_VISIBLE;
+
+			} else if (screen->pages.test_info.btn_step.effect == UBA_GFX_EFFECT_SELECTED) {
+				screen->pages.test_info.btn_back.effect = UBA_GFX_EFFECT_VISIBLE;
+				screen->pages.test_info.btn_step.effect = UBA_GFX_EFFECT_VISIBLE;
+				screen->pages.test_info.btn_select.effect = UBA_GFX_EFFECT_SELECTED;
+
+			} else if (screen->pages.test_info.btn_select.effect == UBA_GFX_EFFECT_SELECTED) {
+				screen->pages.test_info.btn_back.effect = UBA_GFX_EFFECT_SELECTED;
+				screen->pages.test_info.btn_step.effect = UBA_GFX_EFFECT_VISIBLE;
+				screen->pages.test_info.btn_select.effect = UBA_GFX_EFFECT_VISIBLE;
 			}
-			UBA_LCD_screen_dispaly_test_info_refresh(&screen->pages.test_info, UBA_LCD_REFRESH_TYPE_UI);
-			UBA_button_clear_pending(screen->main_buttons.bnt_up_p);
-			UBA_button_clear_pending(screen->main_buttons.bnt_down_p);
-			UBA_button_clear_pending(screen->secondery_buttons.bnt_up_p);
-			UBA_button_clear_pending(screen->secondery_buttons.bnt_down_p);
+
+		} else {
+			if (screen->pages.test_info.btn_back.effect == UBA_GFX_EFFECT_SELECTED) {
+				screen->pages.test_info.btn_back.effect = UBA_GFX_EFFECT_VISIBLE;
+				screen->pages.test_info.btn_select.effect = UBA_GFX_EFFECT_SELECTED;
+				screen->pages.test_info.btn_step.effect = UBA_GFX_EFFECT_INVISIBLE;
+
+			} else if (screen->pages.test_info.btn_select.effect == UBA_GFX_EFFECT_SELECTED) {
+				screen->pages.test_info.btn_back.effect = UBA_GFX_EFFECT_SELECTED;
+				screen->pages.test_info.btn_select.effect = UBA_GFX_EFFECT_VISIBLE;
+				screen->pages.test_info.btn_step.effect = UBA_GFX_EFFECT_INVISIBLE;
+			}
 		}
-	} else {
-		if (screen->pages.test_info.bnt_back.effect != UBA_GFX_EFFECT_SELECTED) {
-		 	screen->pages.test_info.bnt_back.effect = UBA_GFX_EFFECT_SELECTED;
-			screen->pages.test_info.bnt_select.effect = UBA_GFX_EFFECT_INVISIBLE;
-			UBA_LCD_screen_dispaly_test_info_refresh(&screen->pages.test_info, UBA_LCD_REFRESH_TYPE_UI);
-		}
+
+		UBA_button_clear_pending(screen->main_buttons.btn_up_p);
+		UBA_button_clear_pending(screen->main_buttons.btn_down_p);
+		UBA_button_clear_pending(screen->secondery_buttons.btn_up_p);
+		UBA_button_clear_pending(screen->secondery_buttons.btn_down_p);
+
+		UBA_LCD_screen_dispaly_test_info_refresh(&screen->pages.test_info, UBA_LCD_REFRESH_TYPE_UI);
 	}
 
-	if (UBA_button_is_pending(screen->main_buttons.bnt_select_p) || UBA_button_is_pending(screen->secondery_buttons.bnt_select_p)) {
+	if (UBA_button_is_pending(screen->main_buttons.btn_select_p) || UBA_button_is_pending(screen->secondery_buttons.btn_select_p)) {
+		//SELECT
 		if (screen->tr_step_display_index+1 < (screen->tr)->length) {
-			if (screen->pages.test_info.bnt_select.effect == UBA_GFX_EFFECT_SELECTED) {
+			if (screen->pages.test_info.btn_step.effect == UBA_GFX_EFFECT_SELECTED) {
+				//STEP button
 				screen->tr_step_display_index++;
 				screen->state.next = UBA_LCD_SCREEN_DISPLAY_TEST_STEP;
-				UBA_LCD_screen_dispaly_test_info_refresh(&screen->pages.test_info, UBA_LCD_REFRESH_TYPE_FRAME | UBA_LCD_REFRESH_TYPE_INFO | UBA_LCD_REFRESH_TYPE_UI);
-			} else if (screen->pages.test_info.bnt_back.effect == UBA_GFX_EFFECT_SELECTED) {
+
+				if (screen->tr_step_display_index+1 == (screen->tr)->length) {
+				 	screen->pages.test_info.btn_back.effect = UBA_GFX_EFFECT_SELECTED;
+					screen->pages.test_info.btn_step.effect = UBA_GFX_EFFECT_INVISIBLE;
+					screen->pages.test_info.btn_select.effect = UBA_GFX_EFFECT_VISIBLE;
+				}
+
+//				UBA_LCD_screen_dispaly_test_info_refresh(&screen->pages.test_info, UBA_LCD_REFRESH_TYPE_ALL);
+
+			} else if (screen->pages.test_info.btn_back.effect == UBA_GFX_EFFECT_SELECTED) {
+				//BACK button
 				screen->state.next = UBA_LCD_SCREEN_DISPLAY_TEST_INFO; 
+				screen->tr_step_display_index = 0;
+
+			} else if (screen->pages.test_info.btn_select.effect == UBA_GFX_EFFECT_SELECTED) {
+				//SELECT button
+				if (UBA_TR_unpack(&TR_file.list[screen->tr_list_select_index], screen->bpt) != 0) {
+					UART_LOG_CRITICAL(UBA_COMP, "TR unpack Failed");
+				}
+				screen->state.next = UBA_LCD_SCREEN_DISPLAY_BPT;
+				screen->tr = NULL;
 				screen->tr_step_display_index = 0;
 			}
 		}
 		else {
-			if (screen->pages.test_info.bnt_back.effect == UBA_GFX_EFFECT_SELECTED) {
+			if (screen->pages.test_info.btn_back.effect == UBA_GFX_EFFECT_SELECTED) {
+				//BACK button
 				screen->state.next = UBA_LCD_SCREEN_DISPLAY_TEST_INFO; 
 				screen->tr_step_display_index = 0;
-			}			
-			UBA_button_clear_pending(screen->main_buttons.bnt_select_p);
-			UBA_button_clear_pending(screen->secondery_buttons.bnt_select_p);
+			
+			} else if (screen->pages.test_info.btn_select.effect == UBA_GFX_EFFECT_SELECTED) {
+				//SELECT button
+				if (UBA_TR_unpack(&TR_file.list[screen->tr_list_select_index], screen->bpt) != 0) {
+					UART_LOG_CRITICAL(UBA_COMP, "TR unpack Failed");
+				}
+				screen->state.next = UBA_LCD_SCREEN_DISPLAY_BPT;
+				screen->tr = NULL;
+				screen->tr_step_display_index = 0;
+			}
+
+			UBA_button_clear_pending(screen->main_buttons.btn_select_p);
+			UBA_button_clear_pending(screen->secondery_buttons.btn_select_p);
+
 			UBA_LCD_screen_dispaly_test_info_refresh(&screen->pages.test_info, UBA_LCD_REFRESH_TYPE_UI);
 		}
 	}
 }
 
 void UBA_LCD_screen_display_test_step_exit(UBA_LCD_screen *screen) {
-	UBA_button_clear_pending(screen->main_buttons.bnt_up_p);
-	UBA_button_clear_pending(screen->main_buttons.bnt_down_p);
-	UBA_button_clear_pending(screen->main_buttons.bnt_select_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_up_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_down_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_select_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_up_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_down_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_select_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_up_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_down_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_select_p);
 }
 
 
@@ -1735,53 +2155,64 @@ void UBA_LCD_screen_display_setting_enter(UBA_LCD_screen *screen) {
 	screen->pages.test_info.frame.elemnt.frame.color_fill = UBA_GFX_COLOR_WHITE;
 	screen->pages.test_info.frame.elemnt.frame.color_border = UBA_GFX_COLOR_BLACK;
 
-	screen->pages.test_info.bnt_back.id = UBA_GFX_ELEMNET_BUTTON;
-	screen->pages.test_info.bnt_back.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING + 30;
-	screen->pages.test_info.bnt_back.pos.y = LINE(22);
-	screen->pages.test_info.bnt_back.effect = UBA_GFX_EFFECT_SELECTED;
-	screen->pages.test_info.bnt_back.elemnt.button.size = 2;
-	screen->pages.test_info.bnt_back.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;
-	screen->pages.test_info.bnt_back.elemnt.button.color_text = UBA_GFX_COLOR_BLACK;
+	screen->pages.test_info.btn_back.id = UBA_GFX_ELEMNET_BUTTON;
+	screen->pages.test_info.btn_back.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING + 30;
+	screen->pages.test_info.btn_back.pos.y = BTN_LOWER_YPOS;
+	screen->pages.test_info.btn_back.effect = UBA_GFX_EFFECT_SELECTED;
+	screen->pages.test_info.btn_back.elemnt.button.size = 2;
+	screen->pages.test_info.btn_back.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;
+	screen->pages.test_info.btn_back.elemnt.button.color_text = UBA_GFX_COLOR_BLACK;
 
-	screen->pages.test_info.bnt_select.id = UBA_GFX_ELEMNET_BUTTON;
-	screen->pages.test_info.bnt_select.pos.x = position[screen->ch_control-1].start_x + position[screen->ch_control-1].width - 40;
-	screen->pages.test_info.bnt_select.pos.y = LINE(22);
-	screen->pages.test_info.bnt_select.effect = UBA_GFX_EFFECT_SOLID; //UBA_GFX_EFFECT_INVISIBLE
-	screen->pages.test_info.bnt_select.elemnt.button.size = 2;
-	screen->pages.test_info.bnt_select.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;
-	screen->pages.test_info.bnt_select.elemnt.button.color_text = UBA_GFX_COLOR_BLACK;
-	sprintf(screen->pages.test_info.bnt_back.elemnt.button.text, "BACK");
+	screen->pages.test_info.btn_step.id = UBA_GFX_ELEMNET_BUTTON;
+	screen->pages.test_info.btn_step.pos.x = position[screen->ch_control-1].start_x + position[screen->ch_control-1].width - 40;
+	screen->pages.test_info.btn_step.pos.y = BTN_UPPER_YPOS;
+	screen->pages.test_info.btn_step.effect = UBA_GFX_EFFECT_SOLID; //UBA_GFX_EFFECT_INVISIBLE
+	screen->pages.test_info.btn_step.elemnt.button.size = 2;
+	screen->pages.test_info.btn_step.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;
+	screen->pages.test_info.btn_step.elemnt.button.color_text = UBA_GFX_COLOR_BLACK;
+	sprintf(screen->pages.test_info.btn_back.elemnt.button.text, "BACK");
+
+	screen->pages.test_info.btn_select.id = UBA_GFX_ELEMNET_BUTTON;
+	screen->pages.test_info.btn_select.pos.x = position[screen->ch_control-1].start_x + position[screen->ch_control-1].width - 40;
+	screen->pages.test_info.btn_select.pos.y = BTN_LOWER_YPOS;
+	screen->pages.test_info.btn_select.effect = UBA_GFX_EFFECT_SELECTED;
+	screen->pages.test_info.btn_select.elemnt.button.size = 2;
+	screen->pages.test_info.btn_select.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;
+	screen->pages.test_info.btn_select.elemnt.button.color_text = UBA_GFX_COLOR_BLACK;
+	sprintf(screen->pages.test_info.btn_select.elemnt.button.text, "SELECT");
 
 	UBA_LCD_screen_dispaly_test_info_refresh(&screen->pages.test_info, UBA_LCD_REFRESH_TYPE_UI);
 }
 
 void UBA_LCD_screen_display_setting(UBA_LCD_screen *screen) {
-	if ((UBA_button_is_pending(screen->main_buttons.bnt_up_p) || UBA_button_is_pending(screen->main_buttons.bnt_down_p))
-			|| (UBA_button_is_pending(screen->secondery_buttons.bnt_up_p) || UBA_button_is_pending(screen->secondery_buttons.bnt_down_p))) {
+	if ((UBA_button_is_pending(screen->main_buttons.btn_up_p) || UBA_button_is_pending(screen->main_buttons.btn_down_p))
+			|| (UBA_button_is_pending(screen->secondery_buttons.btn_up_p) || UBA_button_is_pending(screen->secondery_buttons.btn_down_p))) {
 		UBA_LCD_screen_dispaly_test_info_refresh(&screen->pages.test_info, UBA_LCD_REFRESH_TYPE_UI);
 	}
-	if (UBA_button_is_pending(screen->main_buttons.bnt_select_p) || UBA_button_is_pending(screen->secondery_buttons.bnt_select_p)) {
-		if (screen->pages.test_info.bnt_back.effect == UBA_GFX_EFFECT_SELECTED) {
+	if (UBA_button_is_pending(screen->main_buttons.btn_select_p) || UBA_button_is_pending(screen->secondery_buttons.btn_select_p)) {
+		if (screen->pages.test_info.btn_back.effect == UBA_GFX_EFFECT_SELECTED) {
 			screen->state.next = UBA_LCD_SCREEN_DISPLAY_TEST_INFO;
 		} 
-		UBA_button_clear_pending(screen->main_buttons.bnt_select_p);
-		UBA_button_clear_pending(screen->secondery_buttons.bnt_select_p);
+		UBA_button_clear_pending(screen->main_buttons.btn_select_p);
+		UBA_button_clear_pending(screen->secondery_buttons.btn_select_p);
 		UBA_LCD_screen_dispaly_test_info_refresh(&screen->pages.test_info, UBA_LCD_REFRESH_TYPE_UI);
 	}
 }
 
 void UBA_LCD_screen_display_setting_exit(UBA_LCD_screen *screen) {
-	UBA_button_clear_pending(screen->main_buttons.bnt_up_p);
-	UBA_button_clear_pending(screen->main_buttons.bnt_down_p);
-	UBA_button_clear_pending(screen->main_buttons.bnt_select_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_up_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_down_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_select_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_up_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_down_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_select_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_up_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_down_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_select_p);
 }
 
 void UBA_LCD_screen_display_exe_cmd_enter(UBA_LCD_screen *screen) {
 	UBA_LCD *LCD_handler = (UBA_LCD *) screen->LCD_handler;
 	UBA_LCD_POSITION_INFO *position = LCD_handler->screen_position;
+	int y_offset = 7;
+	
 	UBA_LCD_screen_update_state(screen);
 
 	screen->pages.screen_bpt.frame.id = UBA_GFX_ELEMNET_FRAME;
@@ -1795,7 +2226,7 @@ void UBA_LCD_screen_display_exe_cmd_enter(UBA_LCD_screen *screen) {
 
 	screen->pages.screen_bpt.test_name.id = UBA_GFX_ELEMNET_TEXT;
 	screen->pages.screen_bpt.test_name.pos.x = position[screen->ch_control-1].start_x + ((position[screen->ch_control-1].width - (2 * BORDER_PADDING)) / 2); /*center*/
-	screen->pages.screen_bpt.test_name.pos.y = LINE(LINE_TEST_NAME);
+	screen->pages.screen_bpt.test_name.pos.y = LINE(LINE_TEST_NAME) - 2;
 	screen->pages.screen_bpt.test_name.effect = UBA_GFX_EFFECT_SOLID;
 	screen->pages.screen_bpt.test_name.elemnt.text.text [0] = '\0';
 	screen->pages.screen_bpt.test_name.elemnt.text.size = LINE_TEST_NAME_FONT_SIZE;
@@ -1804,15 +2235,15 @@ void UBA_LCD_screen_display_exe_cmd_enter(UBA_LCD_screen *screen) {
 
 	screen->pages.screen_bpt.time.id = UBA_GFX_ELEMNET_TEXT;
 	screen->pages.screen_bpt.time.pos.x = position[screen->ch_control-1].start_x + ((position[screen->ch_control-1].width - (2 * BORDER_PADDING)) / 2); /*center*/
-	screen->pages.screen_bpt.time.pos.y = LINE(LINE_TIME);
+	screen->pages.screen_bpt.time.pos.y = LINE(LINE_TIME) - y_offset;
 	screen->pages.screen_bpt.time.effect = UBA_GFX_EFFECT_SOLID;
 	screen->pages.screen_bpt.time.elemnt.text.size = LINE_TIME_FONT_SIZE;
 	screen->pages.screen_bpt.time.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
 	screen->pages.screen_bpt.time.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
 
 	screen->pages.screen_bpt.test_step.id = UBA_GFX_ELEMNET_TEXT;
-	screen->pages.screen_bpt.test_step.pos.x = position[screen->ch_control-1].start_x + ((position[screen->ch_control-1].width - (2 * BORDER_PADDING)) / 2); /*center*/
-	screen->pages.screen_bpt.test_step.pos.y = LINE(LINE_STEP);
+	screen->pages.screen_bpt.test_step.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING + ((position[screen->ch_control-1].width - (2 * BORDER_PADDING)) / 4) + 8;
+	screen->pages.screen_bpt.test_step.pos.y = LINE(LINE_STEP) + 23;
 	screen->pages.screen_bpt.test_step.effect = UBA_GFX_EFFECT_SOLID;
 	screen->pages.screen_bpt.test_step.elemnt.text.size = LINE_STEP_FONT_SIZE;
 	screen->pages.screen_bpt.test_step.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
@@ -1834,60 +2265,69 @@ void UBA_LCD_screen_display_exe_cmd_enter(UBA_LCD_screen *screen) {
 
 	screen->pages.screen_bpt.channel.volt.id = UBA_GFX_ELEMNET_TEXT;
 	screen->pages.screen_bpt.channel.volt.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING;
-	screen->pages.screen_bpt.channel.volt.pos.y = LINE(LINE_V);
+	screen->pages.screen_bpt.channel.volt.pos.y = LINE(LINE_V) - y_offset;
 	screen->pages.screen_bpt.channel.volt.effect = UBA_GFX_EFFECT_SOLID;
 	screen->pages.screen_bpt.channel.volt.elemnt.text.size = LINE_V_FONT_SIZE;
 	screen->pages.screen_bpt.channel.volt.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
 	screen->pages.screen_bpt.channel.volt.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
+
 	screen->pages.screen_bpt.channel.current.id = UBA_GFX_ELEMNET_TEXT;
 	screen->pages.screen_bpt.channel.current.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING;
-	screen->pages.screen_bpt.channel.current.pos.y = LINE(LINE_C);
+	screen->pages.screen_bpt.channel.current.pos.y = LINE(LINE_C) - y_offset;
 	screen->pages.screen_bpt.channel.current.effect = UBA_GFX_EFFECT_SOLID;
 	screen->pages.screen_bpt.channel.current.elemnt.text.size = LINE_C_FONT_SIZE;
 	screen->pages.screen_bpt.channel.current.elemnt.text.size = LCD_DATA_FONT_SIZE;
 	screen->pages.screen_bpt.channel.current.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
 	screen->pages.screen_bpt.channel.current.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
+
 	screen->pages.screen_bpt.channel.capacity.id = UBA_GFX_ELEMNET_TEXT;
 	screen->pages.screen_bpt.channel.capacity.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING;
-	screen->pages.screen_bpt.channel.capacity.pos.y = LINE(LINE_CAP);
+	screen->pages.screen_bpt.channel.capacity.pos.y = LINE(LINE_CAP) - y_offset;
 	screen->pages.screen_bpt.channel.capacity.effect = UBA_GFX_EFFECT_SOLID;
 	screen->pages.screen_bpt.channel.capacity.elemnt.text.size = LINE_CAP_FONT_SIZE;
 	screen->pages.screen_bpt.channel.capacity.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
 	screen->pages.screen_bpt.channel.capacity.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
+
 	screen->pages.screen_bpt.channel.temp.id = UBA_GFX_ELEMNET_TEXT;
 	screen->pages.screen_bpt.channel.temp.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING;
-	screen->pages.screen_bpt.channel.temp.pos.y = LINE(LINE_TEMP);
+	screen->pages.screen_bpt.channel.temp.pos.y = LINE(LINE_TEMP) - y_offset;
 	screen->pages.screen_bpt.channel.temp.effect = UBA_GFX_EFFECT_SOLID;
 	screen->pages.screen_bpt.channel.temp.elemnt.text.size = LINE_TEMP_FONT_SIZE;
 	screen->pages.screen_bpt.channel.temp.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
 	screen->pages.screen_bpt.channel.temp.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
 
-	screen->pages.screen_bpt.bnt_back_stop.id = UBA_GFX_ELEMNET_BUTTON;
-	screen->pages.screen_bpt.bnt_back_stop.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING + 30;
-	screen->pages.screen_bpt.bnt_back_stop.pos.y = LINE(22);
-	screen->pages.screen_bpt.bnt_back_stop.effect = UBA_GFX_EFFECT_SOLID;
-	screen->pages.screen_bpt.bnt_back_stop.elemnt.button.size = 2;
+	screen->pages.screen_bpt.btn_back_stop.id = UBA_GFX_ELEMNET_BUTTON;
+	screen->pages.screen_bpt.btn_back_stop.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING + 30;
+	screen->pages.screen_bpt.btn_back_stop.pos.y = BTN_LOWER_YPOS;
+	screen->pages.screen_bpt.btn_back_stop.effect = UBA_GFX_EFFECT_SOLID;
+	screen->pages.screen_bpt.btn_back_stop.elemnt.button.size = 2;
 
-	screen->pages.screen_bpt.bnt_pause_start.id = UBA_GFX_ELEMNET_BUTTON;
-	screen->pages.screen_bpt.bnt_pause_start.pos.x = position[screen->ch_control-1].start_x + position[screen->ch_control-1].width - 40;
-	screen->pages.screen_bpt.bnt_pause_start.pos.y = LINE(22);
-	screen->pages.screen_bpt.bnt_pause_start.effect = UBA_GFX_EFFECT_SELECTED;
-	screen->pages.screen_bpt.bnt_pause_start.elemnt.button.size = 2;
+	screen->pages.screen_bpt.btn_pause_start.id = UBA_GFX_ELEMNET_BUTTON;
+	screen->pages.screen_bpt.btn_pause_start.pos.x = position[screen->ch_control-1].start_x + position[screen->ch_control-1].width - 40;
+	screen->pages.screen_bpt.btn_pause_start.pos.y = BTN_LOWER_YPOS;
+	screen->pages.screen_bpt.btn_pause_start.effect = UBA_GFX_EFFECT_SELECTED;
+	screen->pages.screen_bpt.btn_pause_start.elemnt.button.size = 2;
+
+	screen->pages.screen_bpt.btn_next.id = UBA_GFX_ELEMNET_BUTTON;
+	screen->pages.screen_bpt.btn_next.pos.x = position[screen->ch_control-1].start_x + position[screen->ch_control-1].width - 40;
+	screen->pages.screen_bpt.btn_next.pos.y = BTN_UPPER_YPOS;
+	screen->pages.screen_bpt.btn_next.effect = UBA_GFX_EFFECT_VISIBLE;
+	screen->pages.screen_bpt.btn_next.elemnt.button.size = 2;
 
 	screen->pages.screen_bpt.EWI_msg.id = UBA_GFX_ELEMNET_TEXT;
-	screen->pages.screen_bpt.EWI_msg.pos.x = position[screen->ch_control-1].start_x + ((position[screen->ch_control-1].width - (2 * BORDER_PADDING)) / 2); /*center*/
-	screen->pages.screen_bpt.EWI_msg.pos.y = LINE(LINE_EWI);
+	screen->pages.screen_bpt.EWI_msg.pos.x = position[screen->ch_control-1].start_x + BORDER_PADDING + 8;
+	//screen->pages.screen_bpt.EWI_msg.pos.y = LINE(LINE_EWI) + 22;
+	screen->pages.screen_bpt.EWI_msg.pos.y = LINE(LINE_STEP) + 12;
 	screen->pages.screen_bpt.EWI_msg.effect = UBA_GFX_EFFECT_SOLID;
 	screen->pages.screen_bpt.EWI_msg.elemnt.text.size = LINE_EWI_FONT_SIZE;
 
-	UBA_button_clear_pending(screen->main_buttons.bnt_up_p);
-	UBA_button_clear_pending(screen->main_buttons.bnt_down_p);
-	UBA_button_clear_pending(screen->main_buttons.bnt_select_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_up_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_down_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_select_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_up_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_down_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_select_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_up_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_down_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_select_p);
 
-#if 1//Moshe
 	// update shadow
 	screen->pages.screen_bpt.channel.shadow.volt_vlaue = -1;
 	screen->pages.screen_bpt.channel.shadow.current_vlaue = -1;
@@ -1897,15 +2337,18 @@ void UBA_LCD_screen_display_exe_cmd_enter(UBA_LCD_screen *screen) {
 	screen->bpt->shadow.test_name[0] = '\0';
 	screen->bpt->shadow.current_state = UBA_BPT_STATE_INVALID;
 	screen->bpt->shadow.error = UBA_PROTO_UBA6_ERROR_LINE_NOT_AVAILABLE;
-	screen->bpt->shadow.bnt_back_stop.text[0] = '\0';
-	screen->bpt->shadow.bnt_back_stop.color_text = GRAYBLUE;//not in use
-	screen->bpt->shadow.bnt_back_stop.color_bg =  GRAYBLUE;//not in use
-	screen->bpt->shadow.bnt_back_stop.effect = UBA_GFX_EFFECT_MAX;
-	screen->bpt->shadow.bnt_pause_start.text[0] = '\0';
-	screen->bpt->shadow.bnt_pause_start.color_text = GRAYBLUE;//not in use
-	screen->bpt->shadow.bnt_pause_start.color_bg =  GRAYBLUE;//not in use
-	screen->bpt->shadow.bnt_pause_start.effect = UBA_GFX_EFFECT_MAX;
-#endif
+	screen->bpt->shadow.btn_back_stop.text[0] = '\0';
+	screen->bpt->shadow.btn_back_stop.color_text = GRAYBLUE;//not in use
+	screen->bpt->shadow.btn_back_stop.color_bg =  GRAYBLUE;//not in use
+	screen->bpt->shadow.btn_back_stop.effect = UBA_GFX_EFFECT_MAX;
+	screen->bpt->shadow.btn_pause_start.text[0] = '\0';
+	screen->bpt->shadow.btn_pause_start.color_text = GRAYBLUE;//not in use
+	screen->bpt->shadow.btn_pause_start.color_bg =  GRAYBLUE;//not in use
+	screen->bpt->shadow.btn_pause_start.effect = UBA_GFX_EFFECT_MAX;
+	screen->bpt->shadow.btn_next.text[0] = '\0';
+	screen->bpt->shadow.btn_next.color_text = GRAYBLUE;//not in use
+	screen->bpt->shadow.btn_next.color_bg =  GRAYBLUE;//not in use
+	screen->bpt->shadow.btn_next.effect = UBA_GFX_EFFECT_MAX;
 
 	UBA_LCD_screen_draw_bpt(screen, UBA_LCD_REFRESH_TYPE_ALL);
 }
@@ -1914,23 +2357,27 @@ void UBA_LCD_screen_display_exe_cmd(UBA_LCD_screen *screen) {
 	uint32_t refreshTime = ((screen->pages.screen_bpt.channel.status.effect == UBA_GFX_EFFECT_BLINK_FAST) ?
 							UBA_LCD_FAST_REFRESH_TIME : UBA_LCD_SLOW_REFRESH_TIME);
 
-	if ((UBA_button_is_pending(screen->main_buttons.bnt_up_p) || UBA_button_is_pending(screen->main_buttons.bnt_down_p))
-			|| (UBA_button_is_pending(screen->secondery_buttons.bnt_up_p) || UBA_button_is_pending(screen->secondery_buttons.bnt_down_p))) {
-		UBA_LCD_screen_bnt_press_up_or_down(screen, &screen->pages.screen_bpt);
-		UBA_button_clear_pending(screen->main_buttons.bnt_up_p);
-		UBA_button_clear_pending(screen->main_buttons.bnt_down_p);
-		UBA_button_clear_pending(screen->secondery_buttons.bnt_up_p);
-		UBA_button_clear_pending(screen->secondery_buttons.bnt_down_p);
+	if ((UBA_button_is_pending(screen->main_buttons.btn_up_p) || UBA_button_is_pending(screen->main_buttons.btn_down_p))
+			|| (UBA_button_is_pending(screen->secondery_buttons.btn_up_p) || UBA_button_is_pending(screen->secondery_buttons.btn_down_p))) {
+		UBA_LCD_screen_btn_press_up_or_down(screen, &screen->pages.screen_bpt);
+		UBA_button_clear_pending(screen->main_buttons.btn_up_p);
+		UBA_button_clear_pending(screen->main_buttons.btn_down_p);
+		UBA_button_clear_pending(screen->secondery_buttons.btn_up_p);
+		UBA_button_clear_pending(screen->secondery_buttons.btn_down_p);
 	}
-	if (UBA_button_is_pending(screen->main_buttons.bnt_select_p) || UBA_button_is_pending(screen->secondery_buttons.bnt_select_p)) {
-		if (UBA_LCD_screen_bnt_press_select(screen)) {
+
+	if (UBA_button_is_pending(screen->main_buttons.btn_select_p) || UBA_button_is_pending(screen->secondery_buttons.btn_select_p)) {
+		if (UBA_LCD_screen_btn_press_select(screen)) {
 			screen->state.next = UBA_LCD_SCREEN_DISPLAY_TEST_SELECT;
+			screen->pages.screen_bpt.btn_next.effect = UBA_GFX_EFFECT_INVISIBLE;
+
 		} else {
-			UBA_button_clear_pending(screen->main_buttons.bnt_select_p);
-			UBA_button_clear_pending(screen->secondery_buttons.bnt_select_p);
+			UBA_button_clear_pending(screen->main_buttons.btn_select_p);
+			UBA_button_clear_pending(screen->secondery_buttons.btn_select_p);
 			UBA_LCD_screen_draw_bpt(screen, UBA_LCD_REFRESH_TYPE_UI);
 		}
 	}
+
 	if ((HAL_GetTick() - screen->start_tick) >= refreshTime) {
 		screen->start_tick = HAL_GetTick();
 		UBA_LCD_screen_draw_bpt(screen, UBA_LCD_REFRESH_TYPE_DATA | UBA_LCD_REFRESH_TYPE_STATUS | UBA_LCD_REFRESH_TYPE_UI | UBA_LCD_REFRESH_TYPE_EWI);
@@ -1938,12 +2385,14 @@ void UBA_LCD_screen_display_exe_cmd(UBA_LCD_screen *screen) {
 }
 
 void UBA_LCD_screen_display_exe_cmd_exit(UBA_LCD_screen *screen) {
-	UBA_button_clear_pending(screen->main_buttons.bnt_up_p);
-	UBA_button_clear_pending(screen->main_buttons.bnt_down_p);
-	UBA_button_clear_pending(screen->main_buttons.bnt_select_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_up_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_down_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_select_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_up_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_down_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_select_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_up_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_down_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_select_p);
+
+	screen->pages.screen_bpt.btn_next.effect = UBA_GFX_EFFECT_INVISIBLE;
 
 	screen->state.next = UBA_LCD_SCREEN_DISPLAY_BPT;
 }
@@ -1956,12 +2405,12 @@ void UBA_LCD_screen_display_off(UBA_LCD_screen *screen) {
 }
 
 void UBA_LCD_screen_display_off_exit(UBA_LCD_screen *screen) {
-	UBA_button_clear_pending(screen->main_buttons.bnt_up_p);
-	UBA_button_clear_pending(screen->main_buttons.bnt_down_p);
-	UBA_button_clear_pending(screen->main_buttons.bnt_select_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_up_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_down_p);
-	UBA_button_clear_pending(screen->secondery_buttons.bnt_select_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_up_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_down_p);
+	UBA_button_clear_pending(screen->main_buttons.btn_select_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_up_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_down_p);
+	UBA_button_clear_pending(screen->secondery_buttons.btn_select_p);
 }
 
 void UBA_LCD_screen_run(UBA_LCD_screen *screen) {
@@ -1986,5 +2435,17 @@ void UBA_LCD_screen_event(UBA_LCD_screen *screen, UBA_LCD_SCREEN_DISPLAY_STATE n
 	if (UBA_BPT_isUnpacked(screen->bpt)) {
 		screen->state.next = next_state;
 	} 
+}
+
+void UBA_LCD_screen_update(UBA_LCD_screen *screen)
+{
+	//if (UBA_BPT_isUnpacked(screen->bpt)) {
+		if (screen->bpt->state.next == UBA_BPT_STATE_TEST_COMPLETE) {
+			UBA_LCD_screen_btn_press_up_or_down(screen, &screen->pages.screen_bpt);
+		}
+		UBA_LCD_screen_draw_bpt(screen, UBA_LCD_REFRESH_TYPE_UI);
+	//}
 	return;
 }
+
+

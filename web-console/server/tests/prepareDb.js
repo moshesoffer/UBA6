@@ -18,7 +18,11 @@ const runSchema = async () => {
         setup({ dbmigrate: {}, Promise: global.Promise });
         await down(db);
         await up(db);
+        try {
         await connection.end();
+        } catch {
+            logger.error(`connection end-1 failed`);
+        }
         console.log('SQL file executed successfully!');
     } catch (error) {
         console.error('Error executing SQL file:', error);

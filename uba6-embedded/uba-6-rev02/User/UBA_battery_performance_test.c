@@ -52,15 +52,15 @@ void UBA_BPT_pause_exit(UBA_BPT *bpt);
 void UBA_BPT_run_step_enter(UBA_BPT *bpt);
 void UBA_BPT_run_step(UBA_BPT *bpt);
 void UBA_BPT_run_step_exit(UBA_BPT *bpt);
-void UBA_BPT_step_compleate_enter(UBA_BPT *bpt);
-void UBA_BPT_step_compleate(UBA_BPT *bpt);
-void UBA_BPT_step_compleate_exit(UBA_BPT *bpt);
+void UBA_BPT_step_complete_enter(UBA_BPT *bpt);
+void UBA_BPT_step_complete(UBA_BPT *bpt);
+void UBA_BPT_step_complete_exit(UBA_BPT *bpt);
 void UBA_BPT_failed_enter(UBA_BPT *bpt);
 void UBA_BPT_failed(UBA_BPT *bpt);
 void UBA_BPT_failed_exit(UBA_BPT *bpt);
-void UBA_BPT_compleate_enter(UBA_BPT *bpt);
-void UBA_BPT_compleate(UBA_BPT *bpt);
-void UBA_BPT_compleate_exit(UBA_BPT *bpt);
+void UBA_BPT_complete_enter(UBA_BPT *bpt);
+void UBA_BPT_complete(UBA_BPT *bpt);
+void UBA_BPT_complete_exit(UBA_BPT *bpt);
 
 bool UBA_BPT_save_data_log(UBA_BPT *bpt);
 
@@ -85,9 +85,9 @@ static const struct UBABPTSMA_rule rule_g[UBA_BPT_STATE_MAX] ={
 		UBABPTSMA(STANDBY,			UBA_BPT_standby_enter,			UBA_BPT_standby,		UBA_BPT_standby_exit),
 		UBABPTSMA(PAUSE,			UBA_BPT_pause_enter,			UBA_BPT_pause,			UBA_BPT_pause_exit),
 		UBABPTSMA(RUN_STEP,			UBA_BPT_run_step_enter,			UBA_BPT_run_step,		UBA_BPT_run_step_exit),
-		UBABPTSMA(STEP_COMPLEATE,	UBA_BPT_step_compleate_enter,	UBA_BPT_step_compleate,	UBA_BPT_step_compleate_exit),
+		UBABPTSMA(STEP_COMPLETE,	UBA_BPT_step_complete_enter,	UBA_BPT_step_complete,	UBA_BPT_step_complete_exit),
 		UBABPTSMA(TEST_FAILED,		UBA_BPT_failed_enter,			UBA_BPT_failed,			UBA_BPT_failed_exit),
-		UBABPTSMA(TEST_COMPLEATE,	UBA_BPT_compleate_enter,		UBA_BPT_compleate,		UBA_BPT_compleate_exit),
+		UBABPTSMA(TEST_COMPLETE,	UBA_BPT_complete_enter,		UBA_BPT_complete,		UBA_BPT_complete_exit),
 };
 // @formatter:on
 #define UBA_CHANNEL_CRITICAL_ERROR (UBA_PROTO_UBA6_ERROR_INTRENAL_LINE_ERROR |UBA_PROTO_UBA6_ERROR_CHANNEL_EMPTY)
@@ -198,6 +198,10 @@ bool UBA_BPT_isStop_condition_met_charge_temp(UBA_BPT *bpt) {
 bool UBA_BPT_isStep_completed(UBA_BPT *bpt) {
 	bool isCompleted = false;
 	if (bpt->current_step != NULL) {
+		if (bpt->force_step_stop == true) {
+			isCompleted = true;
+		}
+
 		switch (bpt->current_step->type_id) {
 			case UBA_BPT_STEP_TYPE_CHARGE:
 				if (UBA_channel_isCharging(bpt->ch)) {
@@ -243,6 +247,7 @@ void UBA_BPT_init_enter(UBA_BPT *bpt) {
 	memset(bpt->filename, 0, UBA_BPT_FILENAME_MAX_SIZE);
 	UBA_BPT_update_state(bpt);
 	UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_INIT);
+	bpt->start_date_time.update_pause_seconds = true;
 }
 void UBA_BPT_init(UBA_BPT *bpt) {
 	bpt->state.next = UBA_BPT_STATE_STANDBY;
@@ -262,15 +267,10 @@ void UBA_BPT_standby(UBA_BPT *bpt) {
 }
 
 void UBA_BPT_standby_exit(UBA_BPT *bpt) {
-	if (bpt->current_step == bpt->head_step) {
-		HAL_RTC_GetDate(&hrtc, &bpt->start_date_time.date, RTC_FORMAT_BIN);
-		HAL_RTC_GetTime(&hrtc, &bpt->start_date_time.time, RTC_FORMAT_BIN);
-	}
 	UBA_BPT_test_result_filename(bpt);
-
 }
 
-void UBA_BPT_pause_enter(UBA_BPT *bpt) {
+void UBA_BPT_pause_enter(UBA_BPT *bpt) {	
 	UBA_BPT_update_state(bpt);
 	UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_STANDBY);
 }
@@ -280,7 +280,7 @@ void UBA_BPT_pause(UBA_BPT *bpt) {
 }
 
 void UBA_BPT_pause_exit(UBA_BPT *bpt) {
-
+	//bpt->start_date_time.isPaused = false;
 }
 
 void UBA_BPT_run_step_enter(UBA_BPT *bpt) {
@@ -307,6 +307,13 @@ void UBA_BPT_run_step_enter(UBA_BPT *bpt) {
 			default:
 				UART_LOG_ERROR(UBA_COMP, "Step Type id is unknown:%u", bpt->current_step->type_id);
 		}
+		bpt->force_step_stop = false;
+
+		if (bpt->current_step == bpt->head_step) {
+			HAL_RTC_GetDate(&hrtc, &bpt->start_date_time.date, RTC_FORMAT_BIN);
+			HAL_RTC_GetTime(&hrtc, &bpt->start_date_time.time, RTC_FORMAT_BIN);
+		}
+
 	} else {
 		UART_LOG_CRITICAL(UBA_COMP, "enter step while the pointer in null");
 		bpt->state.next = UBA_BPT_STATE_TEST_FAILED;
@@ -319,8 +326,10 @@ void UBA_BPT_run_step(UBA_BPT *bpt) {
 	if (HAL_GetTick() - bpt->log_tick_ms > bpt->log_intreval) {
 		UBA_BPT_save_data_log(bpt);
 	}
+
 	if (UBA_BPT_isStep_completed(bpt)) {
-		bpt->state.next = UBA_BPT_STATE_STEP_COMPLEATE;
+		bpt->state.next = UBA_BPT_STATE_STEP_COMPLETE;
+
 	} else if (UBA_BPT_isChannel_error_critical(bpt)) {
 		bpt->state.next = UBA_BPT_STATE_TEST_FAILED;
 	}
@@ -328,30 +337,33 @@ void UBA_BPT_run_step(UBA_BPT *bpt) {
 }
 
 void UBA_BPT_run_step_exit(UBA_BPT *bpt) {
+	UBA_BPT_update_state(bpt);
 	UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_STANDBY);
 	UBA_channel_run(bpt->ch);
 }
 
-void UBA_BPT_step_compleate_enter(UBA_BPT *bpt) {
+void UBA_BPT_step_complete_enter(UBA_BPT *bpt) {
 	UBA_BPT_update_state(bpt);
 	UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_STANDBY);
 	UBA_channel_run(bpt->ch);
 	bpt->current_step->timing.step_completed = HAL_GetTick();
 }
-void UBA_BPT_step_compleate(UBA_BPT *bpt) {
+
+void UBA_BPT_step_complete(UBA_BPT *bpt) {
 //	UBA_channel_run(bpt->ch);
 	if (bpt->ch->state.current == UBA_CHANNEL_STATE_STANDBY) {
 		if (bpt->current_step->next == NULL) {
 			UART_LOG_BPT_INFO("next step pointer is null , test completed");
-			bpt->state.next = UBA_BPT_STATE_TEST_COMPLEATE;
+			bpt->state.next = UBA_BPT_STATE_TEST_COMPLETE;
 		} else {
 			bpt->current_step = bpt->current_step->next;
 			bpt->state.next = UBA_BPT_STATE_RUN_STEP; // reenter state
 		}
+		UBA_LCD_screen_update(bpt->ch->current_screen);
 	}
 }
 
-void UBA_BPT_step_compleate_exit(UBA_BPT *bpt) {
+void UBA_BPT_step_complete_exit(UBA_BPT *bpt) {
 }
 
 void UBA_BPT_failed_enter(UBA_BPT *bpt) {
@@ -368,16 +380,16 @@ void UBA_BPT_failed(UBA_BPT *bpt) {
 void UBA_BPT_failed_exit(UBA_BPT *bpt) {
 	bpt->current_step = bpt->head_step;
 }
-void UBA_BPT_compleate_enter(UBA_BPT *bpt) {
+void UBA_BPT_complete_enter(UBA_BPT *bpt) {
 	UBA_BPT_update_state(bpt);
 	UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_STANDBY);
-	UBA_buzzer_play_melody(&buzzer_g, UBA_BUZZER_BUZZ_COMPLEATE);
+	UBA_buzzer_play_melody(&buzzer_g, UBA_BUZZER_BUZZ_COMPLETE);
 
 }
-void UBA_BPT_compleate(UBA_BPT *bpt) {
+void UBA_BPT_complete(UBA_BPT *bpt) {
 	UBA_channel_run(bpt->ch);
 }
-void UBA_BPT_compleate_exit(UBA_BPT *bpt) {
+void UBA_BPT_complete_exit(UBA_BPT *bpt) {
 }
 //=================================================public  functions========================================================//
 
@@ -385,10 +397,11 @@ bool UBA_BPT_isRunning(UBA_BPT *bpt) {
 	if (bpt != NULL) {
 		/*
 		 * UART_LOG_BPT_DEBUG("%s :is running?: %s",bpt->name,
-		 ((bpt->state.current == UBA_BPT_STATE_PAUSE) ||(bpt->state.current == UBA_BPT_STATE_RUN_STEP) || (bpt->state.current == UBA_BPT_STATE_STEP_COMPLEATE)) ? "Yes" : "No");
+		 ((bpt->state.current == UBA_BPT_STATE_PAUSE) ||(bpt->state.current == UBA_BPT_STATE_RUN_STEP) || (bpt->state.current == UBA_BPT_STATE_STEP_COMPLETE)) ? "Yes" : "No");
 		 */
-		return ((bpt->state.current == UBA_BPT_STATE_PAUSE) || (bpt->state.current == UBA_BPT_STATE_RUN_STEP)
-				|| (bpt->state.current == UBA_BPT_STATE_STEP_COMPLEATE));
+		return ((bpt->state.current == UBA_BPT_STATE_PAUSE) || 
+				(bpt->state.current == UBA_BPT_STATE_RUN_STEP) ||
+				(bpt->state.current == UBA_BPT_STATE_STEP_COMPLETE));
 	} else {
 		return false;
 	}
@@ -405,12 +418,22 @@ bool UBA_BPT_isPause(UBA_BPT *bpt) {
 bool UBA_BPT_stop(UBA_BPT *bpt) {
 	if (bpt != NULL) {
 		if (UBA_BPT_isRunning(bpt)) {
-			bpt->state.next = UBA_BPT_STATE_TEST_FAILED;
 			bpt->error |= UBA_PROTO_UBA6_ERROR_USER_ABORT;
-		} else {
-			bpt->state.next = UBA_BPT_STATE_STANDBY;
-			bpt->current_step = bpt->head_step;
-		}
+		} 
+		bpt->state.next = UBA_BPT_STATE_STANDBY;
+		bpt->current_step = bpt->head_step;
+
+		return true;
+	} else {
+		return false;
+	}
+}
+
+bool UBA_BPT_next(UBA_BPT *bpt) {
+	if (bpt != NULL) {
+		if (UBA_BPT_isRunning(bpt)) {
+			bpt->force_step_stop = true;
+		} 
 		return true;
 	} else {
 		return false;
@@ -419,7 +442,7 @@ bool UBA_BPT_stop(UBA_BPT *bpt) {
 
 bool UBA_BPT_start(UBA_BPT *bpt) {
 	if (bpt != NULL) {
-		if (bpt->state.current == UBA_BPT_STATE_TEST_COMPLEATE) {
+		if (bpt->state.current == UBA_BPT_STATE_TEST_COMPLETE) {
 			bpt->state.next = UBA_BPT_STATE_INIT;
 		} else if (bpt->state.current == UBA_BPT_STATE_TEST_FAILED) {
 			bpt->state.next = UBA_BPT_STATE_RUN_STEP;
@@ -444,7 +467,8 @@ bool UBA_BPT_load(UBA_BPT *bpt) {
 bool UBA_BPT_pause_test(UBA_BPT *bpt) {
 	if (bpt != NULL) {
 		if (UBA_BPT_isRunning(bpt)) {
-			bpt->state.next = UBA_BPT_STATE_PAUSE;
+			bpt->state.current = UBA_BPT_STATE_PAUSE;
+			bpt->start_date_time.update_pause_seconds = true;
 			return true;
 		}
 	}
@@ -502,6 +526,7 @@ UBA_STATUS_CODE UBA_BPT_begin(UBA_BPT *bpt, uint8_t list_index) {
 	if (UBA_BPT_isRunning(bpt)) {
 		UART_LOG_ERROR(UBA_COMP, "Test is already running , channel is busy");
 		return UBA_STATUS_CODE_BUSY;
+
 	} else {
 		if (list_index < UBA_TR_LIST_SIZE) {
 			UBA_TR_unpack(&TR_file.list[list_index], bpt); // load the test roution
@@ -510,12 +535,29 @@ UBA_STATUS_CODE UBA_BPT_begin(UBA_BPT *bpt, uint8_t list_index) {
 			if (bpt->ch->current_screen != NULL) {
 				UBA_LCD_screen_event(bpt->ch->current_screen, UBA_LCD_SCREEN_DISPLAY_EXE_CMD);
 			}
+			
+			bpt->start_date_time.add_pause_seconds = 0;
 			return UBA_BPT_start(bpt); // start the test
+			
 		} else {
 			UART_LOG_ERROR(UBA_COMP, "the selected test index existed the length of the list");
 			return UBA_STATUS_CODE_PARMETER;
 		}
 
+	}
+}
+
+UBA_STATUS_CODE UBA_BPT_end(UBA_BPT *bpt) {
+	if (bpt != NULL) {
+		UBA_BPT_stop(bpt); // stop the test
+
+		if (bpt->ch->current_screen != NULL) {
+			UBA_LCD_screen_event(bpt->ch->current_screen, UBA_LCD_SCREEN_DISPLAY_EXE_CMD);
+		}
+
+		return true;
+	} else {
+		return false;
 	}
 }
 
@@ -529,7 +571,7 @@ void UBA_BPT_command_execute(UBA_BPT *bpt, UBA_PROTO_BPT_command *cmd) {
 			UBA_BPT_begin(bpt, cmd->BPT_list_entery);
 			break;
 		case UBA_PROTO_BPT_CMD_ID_STOP:
-			UBA_BPT_stop(bpt);
+			UBA_BPT_end(bpt);
 			break;
 		case UBA_PROTO_BPT_CMD_ID_PAUSED:
 			UBA_BPT_pause_test(bpt);

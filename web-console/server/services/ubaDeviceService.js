@@ -4,7 +4,7 @@ const pool = require('../db');
 const { ubaDeviceModel } = require('../models');
 const { selectQuery, createModel, updateModel, deleteModel } = require('../db/genericCRUD');
 const { sendConnectionPendingTaskToUba, UI_FLOWS, UBA_DEVICE_ACTIONS, } = require('../utils/ubaCommunicatorHelper');
-const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
+const { withTimeout, AWAIT_TIMEOUT} = require('../utils/requestSync');
 
 const getUbaDevices = async () => {
 	try {

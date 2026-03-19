@@ -24,12 +24,15 @@ const addInstantTestResults = async (instantTestResults) => {
 				instantTestResultsExistsMap.set(item.runningTestID, true);
 				insertArr.push(item);
 			} else {
-				logger.info(`addInstantTestResults item with isLogData false ${item.runningTestID}`);
+				//Moshe
+				//logger.info(`addInstantTestResults item with isLogData false ${item.runningTestID}`);
 				if(instantTestResultsExistsMap.get(item.runningTestID) !== true) {
 					const amount = await withTimeout(getInstantTestResultsAmount(item.runningTestID), AWAIT_TIMEOUT);
-					logger.info(`addInstantTestResults amount for runningTestID ${item.runningTestID} is ${amount}`);
+					//Moshe
+					//logger.info(`addInstantTestResults amount for runningTestID ${item.runningTestID} is ${amount}`);
 					if(amount === 0) {
-						logger.info(`addInstantTestResults inserting first item with isLogData false ${item.runningTestID}`);
+						//Moshe
+						//logger.info(`addInstantTestResults inserting first item with isLogData false ${item.runningTestID}`);
 						insertArr.push(item);
 					}
 					instantTestResultsExistsMap.set(item.runningTestID, true);
@@ -42,17 +45,22 @@ const addInstantTestResults = async (instantTestResults) => {
 			return;
 		}
 
+//Moshe
+logger.info(`await connection 10`);
         connection = await withTimeout(pool.getConnection(), AWAIT_TIMEOUT);
         await withTimeout(connection.beginTransaction(), AWAIT_TIMEOUT);
-		logger.info(`addInstantTestResults going to insert [${insertArr.length}] instant test results`);
+		//Moshe
+		//logger.info(`addInstantTestResults going to insert [${insertArr.length}] instant test results`);
 		for (const item of insertArr) {
-			logger.info("runningTestID being inserted:", item.runningTestID);
+			//Moshe
+			//logger.info("runningTestID being inserted:", item.runningTestID);
 
 
 
 			await withTimeout(createModel(instantTestResultsModel, item, connection), AWAIT_TIMEOUT);
 		}
-		logger.info(`addInstantTestResults finished to add`);
+		//Moshe
+		//logger.info(`addInstantTestResults finished to add`);
         
         await withTimeout(connection.commit(), AWAIT_TIMEOUT);
     } catch (error) {
@@ -217,7 +225,8 @@ const createRunningTest = async (connection, ubaSNs, data, status) => {
 		}
 		
 
-		logger.info(`createRunningTest Executing query: [${query}] [${updateValuesCompleted}]`);
+		//Moshe
+		//logger.info(`createRunningTest Executing query: [${query}] [${updateValuesCompleted}]`);
 		const [result,] = await withTimeout(connection.execute(query, updateValuesCompleted), AWAIT_TIMEOUT);
 		if (result?.affectedRows < 1) {
 			throw new Error(`Error creating RunningTests.`);
@@ -268,7 +277,8 @@ const deleteRunningTest = async (connection, ubaSNs) => {
 				(\`ubaSN\`, \`channel\`) IN (${updatePlaceholders.join(', ')});
 			`;
 
-		logger.info(`deleteRunningTest Executing query: [${query}] [${updateValues}]`);
+		//Moshe
+		//logger.info(`deleteRunningTest Executing query: [${query}] [${updateValues}]`);
 		const [result,] = await withTimeout(connection.execute(query, updateValues), AWAIT_TIMEOUT);
 		logger.info(`result?.affectedRows ${result?.affectedRows} ${resultArray.length}`)
 		if (result?.affectedRows !== resultArray.length) {

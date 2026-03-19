@@ -117,6 +117,7 @@ namespace UBA6Library {
             uint? totlaSize = uint.MaxValue;
 
             do {
+////_logger.LogInformation("==> get message 10");
                 m = await UBA_Interface.GetMessage(UBA_Message_Factory.CreateMessage(Address, ProtoHelper.CreateFileCommand(UBA_PROTO_FM.CMD_ID.ChunkRequest, filename, index)),1000);
                 if (m?.File?.Data.Length > 0) {
                     _logger.LogDebug($"Received file chunk {index} with size {m.File.Data.Length} bytes.");
@@ -149,6 +150,7 @@ namespace UBA6Library {
             List<string> files = new List<string>();
             Message? message;
             do {
+////_logger.LogInformation("==> get message 11");
                  message = await UBA_Interface.GetMessage(UBA_Message_Factory.CreateMessage(Address, ProtoHelper.CreateFileCommand(UBA_PROTO_FM.CMD_ID.FileListRequest, string.Empty, (uint)files.Count)));
                 if (message?.FmList == null) {
                     throw RaiseException(new Exception("Failed to fetch file list."));
@@ -163,6 +165,7 @@ namespace UBA6Library {
 
         public async Task<string> GetRunningTestFileName(UBA_PROTO_CHANNEL.ID testOnChannel) { 
             string filename = string.Empty;
+////_logger.LogInformation("==> get message 12");
             Message? message = await UBA_Interface.GetMessage(UBA_Message_Factory.CreateMessage(Address, ProtoHelper.CreateFileCommand(UBA_PROTO_FM.CMD_ID.BptFile, string.Empty, (uint)testOnChannel)));
             if(message?.FmList != null) {
                 if (message.FmList.Filenames.Count == 1) {
@@ -185,6 +188,7 @@ namespace UBA6Library {
             }
             RECIPIENT Recipient = (RECIPIENT)(Convert.ToUInt32(Type) & Convert.ToUInt32(MeasurementType.RECIPIENT));
             MeasurementType MType = (MeasurementType)(Convert.ToUInt32(Type) & Convert.ToUInt32(MeasurementType.Type));
+////_logger.LogInformation("==> get message 13");
             Message m = await GetMessage(Recipient);
             NotSupportedException ex = null;
             switch (MType) {

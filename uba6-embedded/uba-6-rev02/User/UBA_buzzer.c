@@ -331,22 +331,22 @@ void UBA_buzzer_play_melody(UBA_buzzer *buzzer, UBA_BUZZER_BUZZ_TYPE m_num) {
 		case UBA_BUZZER_BUZZ_BOOT:
 			buzzer->melody_p = &boot;
 			break;
-		case UBA_BUZZER_BUZZ_BNT_CH1_UP:
+		case UBA_BUZZER_BUZZ_BTN_CH1_UP:
 			buzzer->melody_p = &up2;
 			break;
-		case UBA_BUZZER_BUZZ_BNT_CH1_SELECT:
+		case UBA_BUZZER_BUZZ_BTN_CH1_SELECT:
 			buzzer->melody_p = &select2;
 			break;
-		case UBA_BUZZER_BUZZ_BNT_CH1_DOWN:
+		case UBA_BUZZER_BUZZ_BTN_CH1_DOWN:
 			buzzer->melody_p = &down2;
 			break;
-		case UBA_BUZZER_BUZZ_BNT_CH2_UP:
+		case UBA_BUZZER_BUZZ_BTN_CH2_UP:
 			buzzer->melody_p = &up2;
 			break;
-		case UBA_BUZZER_BUZZ_BNT_CH2_SELECT:
+		case UBA_BUZZER_BUZZ_BTN_CH2_SELECT:
 			buzzer->melody_p = &select2;
 			break;
-		case UBA_BUZZER_BUZZ_BNT_CH2_DOWN:
+		case UBA_BUZZER_BUZZ_BTN_CH2_DOWN:
 			buzzer->melody_p = &down2;
 			break;
 		case UBA_BUZZER_BUZZ_WARNNIG:
@@ -355,7 +355,7 @@ void UBA_buzzer_play_melody(UBA_buzzer *buzzer, UBA_BUZZER_BUZZ_TYPE m_num) {
 		case UBA_BUZZER_BUZZ_ERROR:
 			buzzer->melody_p = &error;
 			break;
-		case UBA_BUZZER_BUZZ_COMPLEATE:
+		case UBA_BUZZER_BUZZ_COMPLETE:
 			buzzer->melody_p = &test_complete;
 			break;
 		case UBA_BUZZER_BUZZ_DOOM:

@@ -12,7 +12,7 @@ function withTimeout(promise, ms) {
         resolve(result);
       })
       .catch(err => {
-		console.log(`timeout, err: ${err}`);
+		    console.log(`timeout, err: ${err}`);
         clearTimeout(timer);
         reject(err);
       });

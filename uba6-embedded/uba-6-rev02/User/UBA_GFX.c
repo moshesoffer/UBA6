@@ -91,6 +91,28 @@ UBA_GFX_ERROR UBA_GFX_draw_button(UBA_GFX *uba_gfx) {
 	return 0;
 }
 
+UBA_GFX_ERROR UBA_GFX_erase_button(UBA_GFX *uba_gfx) {
+	uint16_t x = 0;
+	uint16_t y = 0;
+	UBA_GFX frame = { 0 };
+	frame.id = UBA_GFX_ELEMNET_FRAME;
+	frame.effect = UBA_GFX_STATE_VISIBLE;
+	if (uba_gfx->id != UBA_GFX_ELEMNET_BUTTON) {
+		return UBA_GFX_ERROR_ID;
+	}
+	x = uba_gfx->pos.x - ((strlen(uba_gfx->elemnt.button.text) * (uba_gfx->elemnt.button.size * CHAR_WIDTH)) / 2);
+	y = uba_gfx->pos.y - (uba_gfx->elemnt.button.size * CHAR_HEIGHT);
+	frame.pos.x = x - (UBA_GFX_BUTTON_FRAME_OFFSET / 2);
+	frame.pos.y = y - (UBA_GFX_BUTTON_FRAME_OFFSET / 2);
+	frame.elemnt.frame.heigth = (uba_gfx->elemnt.button.size * CHAR_HEIGHT) + UBA_GFX_BUTTON_FRAME_OFFSET;
+	frame.elemnt.frame.width = (strlen(uba_gfx->elemnt.button.text) * (uba_gfx->elemnt.button.size * CHAR_WIDTH)) + UBA_GFX_BUTTON_FRAME_OFFSET;
+	frame.elemnt.frame.color_border = UBA_GFX_COLOR_WHITE;
+	frame.elemnt.frame.color_fill = UBA_GFX_COLOR_WHITE;
+	UBA_GFX_draw_frame(&frame);
+	uba_gfx->state = UBA_GFX_STATE_INVISIBLE;
+	return 0;
+}
+
 UBA_GFX_ERROR UBA_GFX_draw_status(UBA_GFX *uba_gfx) {
 	uint16_t x = uba_gfx->pos.x; // the center of the status circle
 	uint16_t y = uba_gfx->pos.y; // the center of the status circle
@@ -160,6 +182,20 @@ UBA_GFX_ERROR UBA_GFX_draw_text(UBA_GFX *uba_gfx) {
 				uba_gfx->elemnt.text.color_bg);
 		uba_gfx->state = UBA_GFX_STATE_VISIBLE;
 	}
+	return UBA_GFX_ERROR_NO_ERROR;
+}
+
+UBA_GFX_ERROR UBA_GFX_erase_text(UBA_GFX *uba_gfx) {
+	uint16_t x = uba_gfx->pos.x; // the center of the status circle
+	uint16_t y = uba_gfx->pos.y; // the center of the status circle
+//	UART_LOG_INFO(UBA_COMP,"Draw Text At (%u,%u)",x,y);
+
+	if (uba_gfx->id != UBA_GFX_ELEMNET_TEXT) {
+		return UBA_GFX_ERROR_ID;
+	}
+	ST7789_Draw_Text(x, y, uba_gfx->elemnt.text.text, uba_gfx->elemnt.text.size, UBA_GFX_COLOR_WHITE/*color_text*/,
+			UBA_GFX_COLOR_WHITE/*color_bg*/);
+	uba_gfx->state = UBA_GFX_STATE_INVISIBLE;
 	return UBA_GFX_ERROR_NO_ERROR;
 }
 

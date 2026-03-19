@@ -58,8 +58,8 @@ extern UBA_button UBA_BTN_CH_2_DOWN;
 extern UBA_button UBA_BTN_CH_1_SELECT;
 extern UBA_button UBA_BTN_CH_2_SELECT;
 
-int UBA_button_clear_pending(UBA_button *bnt);
-int UBA_button_IRQ(UBA_button *bnt, bool is_release);
-bool UBA_button_is_pending(UBA_button *bnt);
+int UBA_button_clear_pending(UBA_button *btn);
+int UBA_button_IRQ(UBA_button *btn, bool is_release);
+bool UBA_button_is_pending(UBA_button *btn);
 
 #endif /* UBA_BUTTON_H_ */

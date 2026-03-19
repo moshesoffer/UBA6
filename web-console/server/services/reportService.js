@@ -77,9 +77,11 @@ const getReports = async metadata => {
 		${whereClause};
 		`;
 
-		logger.info(`getReports Executing query: [${query}] [${updateValues}]`);
+		//Moshe
+		//logger.info(`getReports Executing query: [${query}] [${updateValues}]`);
 		const [rows,] = await withTimeout( connection.execute(query, updateValues), AWAIT_TIMEOUT);
-		logger.info(`getReports Executing queryCount: [${queryCount}] [${updateQueryCount}]`);
+		//Moshe
+		//logger.info(`getReports Executing queryCount: [${queryCount}] [${updateQueryCount}]`);
 		const [countResults,] = await withTimeout( connection.execute(queryCount, updateQueryCount), AWAIT_TIMEOUT);
 		const count = countResults[0].count;
 

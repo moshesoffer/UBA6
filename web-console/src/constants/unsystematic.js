@@ -92,7 +92,7 @@ export const statusCodes = {
 	PENDING_RUNNING: PENDING|RUNNING,
 	PENDING_SAVE: PENDING|SAVED,
 	PENDING_PAUSE: PENDING|PAUSED,
-	IS_TEST_RUNNING: PENDING|RUNNING|PAUSED,
+	IS_TEST_RUNNING: RUNNING|PAUSED,
 };
 
 export const isTestRunning =  (runningStatus) => (runningStatus & statusCodes.IS_TEST_RUNNING) !== 0;

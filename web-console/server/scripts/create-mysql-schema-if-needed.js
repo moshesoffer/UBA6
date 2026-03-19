@@ -1,6 +1,6 @@
 const mysql = require('mysql2/promise');
-const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 const { poolConfig } = require('../utils/dbConfiguration');
+const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 
 (async () => {
   const connection = await withTimeout(mysql.createConnection({

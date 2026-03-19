@@ -2,14 +2,19 @@ const logger = require('../utils/logger');
 const Joi = require('joi');
 const {validateString, validateArray,validateIsDefined, validateSchema} = require('../utils/validators');
 const pool = require('.');
+const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 
 const selectQuery = async (tableName, query, values, openedConnection) => {
     let connection;
 
 	try {
-		if (!openedConnection) connection = await pool.getConnection();
-		logger.info(`[${tableName}] Executing query`);
+logger.info(`await connection 21`);
+		if (!openedConnection) connection = await withTimeout(pool.getConnection(), AWAIT_TIMEOUT);
+		//Moshe
+		//logger.info(`[${tableName}] Executing query`);
 		const realConnection = openedConnection ? openedConnection : connection;
+		//Moshe
+		//logger.info(`realConnection.execute, query: ${query}`);
 		const [rows,] = values ? await realConnection.execute(query, values) : await realConnection.execute(query);
 		return rows;
 	} catch (error) {
@@ -62,8 +67,10 @@ const createModel = async (model, data, openedConnection) => {
         } else {
             query = `INSERT INTO \`${model.tableName}\` (${preparedFields.join(', ')}) VALUES (${updatePlaceholders.join(', ')});`;
         }
-		if (!openedConnection) connection = await pool.getConnection();
-		logger.info(`[${model.tableName}] Executing query: [${query}] [${updateValues}]`);
+logger.info(`await connection 22`);
+		if (!openedConnection) connection = await withTimeout(pool.getConnection(), AWAIT_TIMEOUT);
+		//Moshe
+		//logger.info(`[${model.tableName}] Executing query: [${query}] [${updateValues}]`);
 		const [result,] = openedConnection ? await openedConnection.execute(query, updateValues) : await connection.execute(query, updateValues);
 		if (result?.affectedRows !== 1) {
 			throw new Error(`Error creating Model ${model.tableName}.`);
@@ -125,8 +132,10 @@ const updateModel = async (model, pkValue, data, openedConnection) => {
 		updateValues.push(pkValue.trim());
 		query = `UPDATE \`${model.tableName}\` SET ${updateFields.join(', ')} WHERE \`${model.pkName}\` = ?;`;
 
-		if (!openedConnection) connection = await pool.getConnection();
-		logger.info(`updateModel [${model.tableName}] Executing query: [${query}] [${updateValues}]`);
+logger.info(`await connection 23`);
+		if (!openedConnection) connection = await withTimeout(pool.getConnection(), AWAIT_TIMEOUT);
+		//Moshe
+		//logger.info(`updateModel [${model.tableName}] Executing query: [${query}] [${updateValues}]`);
 		const [result,] = openedConnection ? await openedConnection.execute(query, updateValues) : await connection.execute(query, updateValues);
 		if (result?.affectedRows !== 1) {
 			throw new Error(`No rows affected for pkValue [${pkValue}] [${model.tableName}]`);
@@ -150,7 +159,9 @@ const deleteModel = async (model, pkValue, openedConnection) => {
 		}
 		query = `DELETE FROM \`${model.tableName}\` WHERE \`${model.pkName}\` = ?;`;
 		if (!openedConnection) connection = await pool.getConnection();
-		logger.info(`deleteModel [${model.tableName}] Executing query: [${query}] [${pkValue}]`);
+		if (!openedConnection) connection = await withTimeout(pool.getConnection(), AWAIT_TIMEOUT);
+		//Moshe
+		//logger.info(`deleteModel [${model.tableName}] Executing query: [${query}] [${pkValue}]`);
 		const [result,] = openedConnection ? await openedConnection.execute(query, [pkValue.trim(),]) : await connection.execute(query, [pkValue.trim(),]);
 		if (result?.affectedRows !== 1) {
 			throw new Error(`No rows deleted for pkValue [${pkValue}] [${model.tableName}]`);
