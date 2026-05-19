@@ -28,6 +28,9 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
         [JsonPropertyName("noCellSerial")]
         public int NoCellSerial { get; set; }
 
+        [JsonPropertyName("noCellParallel")]
+        public int NoCellParallel { get; set; }
+
         [JsonPropertyName("testName")]
         public string TestName { get; set; }
 
@@ -45,9 +48,6 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
     
         [JsonPropertyName("cellPN")]
         public string CellPN { get; set; }
-    
-        [JsonPropertyName("noCellParallel")]
-        public uint NoCellParallel { get; set; }
     
         [JsonPropertyName("ratedBatteryCapacity")]
         public double RatedBatteryCapacity { get; set; }
@@ -200,12 +200,14 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
 
 
         public static UBA_PROTO_CHANNEL.ID GetChannelFormDTO(GETPendingTestResponseDTO dto) {
-            if (dto.TestRoutineChannels.Equals("A-and-B")) {
-                return UBA_PROTO_CHANNEL.ID.Ab;
-            } else if (dto.Channel.Equals("A")) {
+            if (dto.Channel.Equals("A")) {
                 return UBA_PROTO_CHANNEL.ID.A;
-            } else {
+            } else if (dto.Channel.Equals("B")) {
                 return UBA_PROTO_CHANNEL.ID.B;
+            } else if (dto.TestRoutineChannels.Equals("A-and-B")) {
+                return UBA_PROTO_CHANNEL.ID.Ab;
+            } else {
+                return UBA_PROTO_CHANNEL.ID.None;
             }
         }
         public static uint GetIndexFormDTO(GETPendingTestResponseDTO dto) {
@@ -278,10 +280,10 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
             }
             throw new FormatException($"Invalid time format: {time}");
         }
-        public static int Convert2mV(float? input, int numberofcell) {
+        public static int Convert2mV(float? input, int nocellSerial) {
             if (!input.HasValue)
                 throw new ArgumentNullException(nameof(input), "Input float? value is null");
-            return (int)(input.Value * 1000 * numberofcell);
+            return (int)(input.Value * 1000 * nocellSerial);
         }
 
 
@@ -320,7 +322,7 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
 
             return msg;
         }
-           protected static UBA_PROTO_BPT.discharge_stop_condition plan2DischargeSC(PlanStepDTO ps, int numberOfCell) {
+           protected static UBA_PROTO_BPT.discharge_stop_condition plan2DischargeSC(PlanStepDTO ps, int noCellSerial, int noCellParallel) {
             if (ps.Type != "discharge") {
                 throw new Exception("Invalid step type for discharge stop condition conversion");
             }
@@ -335,7 +337,7 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
                 MaxTime = ps.MaxTime.Value;
             }
             if (ps.IsCutOffVoltage) {
-                CutoffVoltage = (int)(((ps.CutOffVoltage ?? 0) * numberOfCell) *1000);
+                CutoffVoltage = (int)(((ps.CutOffVoltage ?? 0) * noCellParallel) *1000);
             }
             if (ps.IsDischargeLimit && ps.DischargeLimit != null) {
                 LimitCapacity = ps.DischargeLimit.Value;
@@ -346,26 +348,26 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
             return msg;
         }
 
-        protected static UBA_PROTO_BPT.charge plan2ChargeStep(PlanStepDTO ps, int numberOfCell) {
+        protected static UBA_PROTO_BPT.charge plan2ChargeStep(PlanStepDTO ps, int noCellSerial, int noCellParallel) {
             if (ps.Type != "charge") {
                 throw new Exception("Invalid step type for charge conversion");
             }
             UBA_PROTO_BPT.charge msg = ProtoHelper.CreateChargeStep(
                 UBA_PROTO_BPT.SOURCE.Internal,
                 ps.ChargeCurrent ?? 0,
-                (int)((ps.ChargePerCell ?? 0) * numberOfCell*1000.0f),
+                (int)((ps.ChargePerCell ?? 0) * noCellParallel*1000.0f),
                 plan2ChargeSC(ps),
                 ps.MinTemp ?? - 273.15f );
             return msg;
         }
-        protected static UBA_PROTO_BPT.discharge plan2DischargeStep(PlanStepDTO ps, int numberOfCell) {
+        protected static UBA_PROTO_BPT.discharge plan2DischargeStep(PlanStepDTO ps, int noCellSerial, int noCellParallel) {
             if (ps.Type != "discharge") {
                 throw new Exception("Invalid step type for discharge conversion");
             }
             return ProtoHelper.CreateDischargeStep(UBA_PROTO_BPT.SOURCE.Internal,
                 (int)(ps.DischargeValue ?? 1 ) ,
                 ps.DischargeType?? UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.Absolute,
-                plan2DischargeSC(ps, numberOfCell),
+                plan2DischargeSC(ps, noCellSerial, noCellParallel),
                 ps.MinTemp ?? -273.15f);
         }
         protected static UBA_PROTO_BPT.delay plan2DelayStep(PlanStepDTO ps) {
@@ -391,7 +393,7 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
             loop.LoopCounter = (uint)ps.RepeatStep.Value;
             return loop;
         }
-        public static UBA_PROTO_TR.config_step planStepDTO2Message(PlanStepDTO ps,int numberOfCell) {
+        public static UBA_PROTO_TR.config_step planStepDTO2Message(PlanStepDTO ps, int noCellSerial, int noCellParallel) {
             UBA_PROTO_TR.config_step msg = new UBA_PROTO_TR.config_step();
             msg.TypeId = ps.Type switch {
                 "charge" => UBA_PROTO_TR.STEP_TYPE.Charge,
@@ -401,9 +403,9 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
                 _ => throw new ArgumentException("Invalid step type")
             };
             if (msg.TypeId == UBA_PROTO_TR.STEP_TYPE.Charge) {
-                msg.Charge = plan2ChargeStep(ps, numberOfCell);
+                msg.Charge = plan2ChargeStep(ps, noCellSerial, noCellParallel);
             } else if (msg.TypeId == UBA_PROTO_TR.STEP_TYPE.Discharge) {
-                msg.Discharge = plan2DischargeStep(ps, numberOfCell);
+                msg.Discharge = plan2DischargeStep(ps, noCellSerial, noCellParallel);
             } else if (msg.TypeId == UBA_PROTO_TR.STEP_TYPE.Delay) {
                 msg.Delay = plan2DelayStep(ps);
             } else if (msg.TypeId == UBA_PROTO_TR.STEP_TYPE.Loop) {
@@ -428,20 +430,21 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
 
             msg.Battery = new UBA_Battery.Battery();
             msg.Battery.Type = UBA_Battery.TYPE.Primary;
-            msg.Battery.NumberOfCells = pn.NoCellParallel;
+            msg.Battery.NoCellSerial = (uint)pn.NoCellSerial;
+            msg.Battery.NoCellParallel = (uint)pn.NoCellParallel;
 
           //msg.Battery.SerialNumber = pn.BatterySN.Substring(0, Math.Min(10, pn.BatterySN.Length));
-            msg.Battery.SerialNumber = pn.BatterySN?.Substring(0, Math.Min(10-1, pn.BatterySN.Length));
+            msg.Battery.SerialNumber = pn.BatterySN?.Substring(0, Math.Min(32-1, pn.BatterySN.Length));
           //msg.Battery.PartNumber = string.IsNullOrEmpty(pn.BatteryPN)
           //        ? pn.BatteryPN
           //        : pn.BatteryPN.Substring(0, Math.Min(10, pn.BatteryPN.Length));
-            msg.Battery.PartNumber = pn.BatteryPN?.Substring(0, Math.Min(10-1, pn.BatteryPN.Length));
+            msg.Battery.PartNumber = pn.BatteryPN?.Substring(0, Math.Min(32-1, pn.BatteryPN.Length));
             msg.Battery.MaxVoltage = 100;
 
             UBA_PROTO_TR.config_step step = new UBA_PROTO_TR.config_step();
             for (int i = 0; i < pn.Plan.Count; i++) {
                 PlanStepDTO ps = pn.Plan[i];
-                step = planStepDTO2Message(ps,  pn.NoCellSerial);
+                step = planStepDTO2Message(ps,  pn.NoCellSerial, pn.NoCellParallel);
                 msg.Config.Add(step);
             }
             step = new UBA_PROTO_TR.config_step();

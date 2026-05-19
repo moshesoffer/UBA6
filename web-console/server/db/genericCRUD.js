@@ -8,8 +8,8 @@ const selectQuery = async (tableName, query, values, openedConnection) => {
     let connection;
 
 	try {
-logger.info(`await connection 21`);
-		if (!openedConnection) connection = await withTimeout(pool.getConnection(), AWAIT_TIMEOUT);
+//logger.info(`await connection 21`);
+		if (!openedConnection) connection = await pool.getConnection();
 		//Moshe
 		//logger.info(`[${tableName}] Executing query`);
 		const realConnection = openedConnection ? openedConnection : connection;
@@ -67,8 +67,8 @@ const createModel = async (model, data, openedConnection) => {
         } else {
             query = `INSERT INTO \`${model.tableName}\` (${preparedFields.join(', ')}) VALUES (${updatePlaceholders.join(', ')});`;
         }
-logger.info(`await connection 22`);
-		if (!openedConnection) connection = await withTimeout(pool.getConnection(), AWAIT_TIMEOUT);
+//logger.info(`await connection 22`);
+		if (!openedConnection) connection = await pool.getConnection();
 		//Moshe
 		//logger.info(`[${model.tableName}] Executing query: [${query}] [${updateValues}]`);
 		const [result,] = openedConnection ? await openedConnection.execute(query, updateValues) : await connection.execute(query, updateValues);
@@ -132,8 +132,8 @@ const updateModel = async (model, pkValue, data, openedConnection) => {
 		updateValues.push(pkValue.trim());
 		query = `UPDATE \`${model.tableName}\` SET ${updateFields.join(', ')} WHERE \`${model.pkName}\` = ?;`;
 
-logger.info(`await connection 23`);
-		if (!openedConnection) connection = await withTimeout(pool.getConnection(), AWAIT_TIMEOUT);
+//logger.info(`await connection 23`);
+		if (!openedConnection) connection = await pool.getConnection();
 		//Moshe
 		//logger.info(`updateModel [${model.tableName}] Executing query: [${query}] [${updateValues}]`);
 		const [result,] = openedConnection ? await openedConnection.execute(query, updateValues) : await connection.execute(query, updateValues);
@@ -159,7 +159,7 @@ const deleteModel = async (model, pkValue, openedConnection) => {
 		}
 		query = `DELETE FROM \`${model.tableName}\` WHERE \`${model.pkName}\` = ?;`;
 		if (!openedConnection) connection = await pool.getConnection();
-		if (!openedConnection) connection = await withTimeout(pool.getConnection(), AWAIT_TIMEOUT);
+		if (!openedConnection) connection = await pool.getConnection();
 		//Moshe
 		//logger.info(`deleteModel [${model.tableName}] Executing query: [${query}] [${pkValue}]`);
 		const [result,] = openedConnection ? await openedConnection.execute(query, [pkValue.trim(),]) : await connection.execute(query, [pkValue.trim(),]);

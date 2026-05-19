@@ -4,6 +4,7 @@
  *  Created on: Aug 24, 2025
  *      Author: ORA
  */
+#define UART_LOG_DISABLE
 
 #include "UBA_PROTO_helper.h"
 #include "pb.h"

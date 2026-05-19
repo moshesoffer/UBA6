@@ -4,6 +4,7 @@
  *  Created on: Nov 19, 2024
  *      Author: ORA
  */
+#define UART_LOG_DISABLE
 
 #include "UBA_PWM.h"
 #include "UBA_util.h"

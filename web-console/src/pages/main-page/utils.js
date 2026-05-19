@@ -3,6 +3,36 @@ import {category, statusCodes, getKeyByValue, UBA_CHANNEL_LIST, isTestRunning} f
 import {getText,} from 'src/services/string-definitions';
 import {dateFromUtc,} from 'src/utils/dateTimeHelper';
 
+let runtimeChnlA = null;
+let rundateChnlA = 0;
+
+let pausedateChnlA = 0;
+let runtimeChnlB = null;
+let rundateChnlB = 0;
+let pausedateChnlB = 0;
+
+export const getTestResultTimestamps = (reports) => {
+	if (!reports) return [];
+
+	return reports.flatMap(report =>
+		report.testResults?.map(tr => tr.timestamp) || []
+	);
+};
+
+export const buildRuntimeMap = (instantTestResults) => {
+	if (!instantTestResults) return {};
+
+	const map = {};
+
+	instantTestResults.forEach(r => {
+		map[r.timestamp] = convertTimestampToTime(r.timestamp);
+	});
+
+	return map;
+};
+
+
+
 const formatSeconds = seconds => [
 	parseInt(seconds / 60 / 60, 10),
 	parseInt(seconds / 60 % 60, 10),
@@ -15,44 +45,96 @@ const getRuntime = timestampStart => {
 	const now = new Date();
 	let diff = now.getTime() - start.getTime();
 	diff = Math.round(diff / 1000);
-	return formatSeconds(diff);
+  console.log('==> time start:', start, ' now: ', now, ' diff: ', diff);
+
+	return diff;
 }
 
-export const enrichUbaDevicesWithRunTime = (ubaDevices) => ubaDevices.map(ubaDevice => {
-	if(ubaDevice.testRoutineChannels === UBA_CHANNEL_LIST.A_AND_B && ubaDevice.status !== statusCodes.STANDBY && !ubaDevice.parallelRun){
-		const otherObj = ubaDevices.find(ubaDeviceObj => ubaDeviceObj.testRoutineChannels === UBA_CHANNEL_LIST.A_AND_B &&
-			ubaDeviceObj.status !== statusCodes.STANDBY && ubaDeviceObj.ubaSN === ubaDevice.ubaSN &&
-				ubaDeviceObj.channel !== ubaDevice.channel);
-		ubaDevice.parallelRun = true;
-		otherObj.parallelRun = true;
-		//console.log('otherObj', otherObj, ubaDevice);
+export const getTestRuntime = ubaDevice => {
+	if (!ubaDevice) return null;
+	if (ubaDevice.channel !== 'A' && ubaDevice.channel !== 'B') return null;
+	
+	//const index = ubaDevice.channel === 'A' ? 0 : 1;
+	const now = getRuntime(ubaDevice.timestampStart) || 0;
+
+	if (ubaDevice.channel === 'A') {
+		//console.log (`==> getTestRuntime: ${ubaDevice.channel}`);
+		if ((ubaDevice.status === statusCodes.RUNNING) || (ubaDevice.status === statusCodes.NEXTSTEP)) {
+			rundateChnlA = now - pausedateChnlA;
+		} else 
+		if (ubaDevice.status === statusCodes.PAUSED) {
+			pausedateChnlA = now - rundateChnlA;
+		}
+
+		runtimeChnlA = formatSeconds(rundateChnlA);
+		return rundateChnlA;
+
+	} else if (ubaDevice.channel === 'B') {
+		//console.log (`==> getTestRuntime: ${ubaDevice.channel}`);
+		if ((ubaDevice.status === statusCodes.RUNNING) || (ubaDevice.status === statusCodes.NEXTSTEP)) {
+			rundateChnlB = now - pausedateChnlB;
+		} else 
+		if (ubaDevice.status === statusCodes.PAUSED) {
+			pausedateChnlB = now - rundateChnlB;
+		}
+
+		runtimeChnlB = formatSeconds(rundateChnlB);
+		return rundateChnlB;
 	}
-	const runtime = getRuntime(ubaDevice.timestampStart);
-	return {
-		...ubaDevice,
-		runtime,
-	};
+}
+
+export const enrichUbaDevicesWithRunTime = (ubaDevices) => ubaDevices.map(ubaDevice => {	
+	if(ubaDevice.testRoutineChannels === UBA_CHANNEL_LIST.A_AND_B && ubaDevice.status !== statusCodes.STANDBY && !ubaDevice.parallelRun){
+		//const otherObj = ubaDevices.find(ubaDeviceObj => ubaDeviceObj.testRoutineChannels === UBA_CHANNEL_LIST.A_AND_B &&
+		//								 ubaDeviceObj.status !== statusCodes.STANDBY && 
+		//								 ubaDeviceObj.ubaSN === ubaDevice.ubaSN &&
+		//								 ubaDeviceObj.channel !== ubaDevice.channel); - canonot be set
+			
+		ubaDevice.parallelRun = true;
+		//otherObj.parallelRun = true; - canoot be set
+	}
+
+	let rundate = getTestRuntime(ubaDevices);
+
+	//if (ubaDevice.channel === 'A') {
+	//	rundateChnlA = formatSeconds(rundateChnlA);
+		return {
+			...ubaDevice,
+			rundate,
+		};
+
+	//} else if (ubaDevice.channel === 'B') {
+	//	rundateChnlB = formatSeconds(rundateChnlB);
+	//	return {
+	//		...ubaDevice,
+	//		rundateChnlB,
+	//	};
+	//}
 });
+
+export const getTestRoutineName = ubaDevice => {
+	return `${(ubaDevice.testName)}`;
+}
 
 export const getVoltage = voltage => {
 	if (voltage === null) {
 		return getText('common.NOT_APPLICABLE');
 	}
 	if(voltage > 1000){
-		return `${(Number(voltage/1000)).toFixed(2)}V`;
+		return `${(Number(voltage/1000)).toFixed(2)} V`;
 	}
-	return `${(Number(voltage))}mV`;
-	
+	return `${(Number(voltage))} mV`;
 }
 
 export const getChargeCurrent = chargeCurrent => {
+	//console.log ('==> ', {chargeCurrent});
 	if (chargeCurrent === null) {
 		return getText('common.NOT_APPLICABLE');
 	}
 	if(chargeCurrent > 1000){
-		return `${Number(chargeCurrent).toFixed(2)}A`;
+		return `${Number(chargeCurrent).toFixed(2)} A`;
 	}
-	return `${Number(chargeCurrent*1000).toFixed(2)}mA`;
+	return `${Number(chargeCurrent*1000).toFixed(2)} mA`;
 }
 
 export const getTemperature = temperature => {
@@ -63,7 +145,15 @@ export const getTemperature = temperature => {
 		return getText('common.NOT_APPLICABLE');
 	}
 
-	return printCelsius(Number(temperature).toString());
+	return printCelsius(Number(temperature.toFixed(2)).toString());
+}
+
+export const getCapacity = capacity => {
+	if (capacity === null) {
+		return getText('common.NOT_APPLICABLE');
+	}
+
+	return `${Number(capacity).toFixed(3)} mAh`;
 }
 
 export const getTestStep = data => {

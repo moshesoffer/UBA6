@@ -9,7 +9,7 @@ const { withTimeout, AWAIT_TIMEOUT} = require('../utils/requestSync');
 const getUbaDevices = async () => {
 	try {
 
-		const rows = await withTimeout(selectQuery(ubaDeviceModel.tableName, ubaDeviceModel.selectAllQuery), AWAIT_TIMEOUT);
+		const rows = await selectQuery(ubaDeviceModel.tableName, ubaDeviceModel.selectAllQuery);
 		return rows.map(row => {
 			let totalStagesAmount = 0;
 			if (validateArray(row?.plan)) {
@@ -33,15 +33,15 @@ const getUbaDevices = async () => {
 };
 
 const createUbaDevice = async (data, connection) => {
-	await withTimeout(createModel(ubaDeviceModel, data, connection), AWAIT_TIMEOUT);
+	await createModel(ubaDeviceModel, data, connection);
 }
 
 const updateUbaDevice = async (ubaSN, data) => {
-	const ubaDevice = await withTimeout(getUbaDeviceByUbaSN(ubaSN), AWAIT_TIMEOUT);
+	const ubaDevice = await getUbaDeviceByUbaSN(ubaSN);
 	if (!ubaDevice) {
 		throw new Error(`UbaDevice with serial ${ubaSN} does not exist.`);
 	}
-	await withTimeout(updateModel(ubaDeviceModel, ubaSN, data), AWAIT_TIMEOUT);
+	await updateModel(ubaDeviceModel, ubaSN, data);
 
 	if ((data.machineMac && ubaDevice.machineMac !== data.machineMac) || (data.address && ubaDevice.address !== data.address) || (data.comPort && ubaDevice.comPort !== data.comPort)) {
 		//if machineMac or address or comPort changed, need to send remove pending task to uba
@@ -57,7 +57,7 @@ const updateUbaDevice = async (ubaSN, data) => {
 }
 
 const deleteUbaDevice = async (ubaSN, connection) => {
-	await withTimeout(deleteModel(ubaDeviceModel, ubaSN, connection), AWAIT_TIMEOUT);
+	await deleteModel(ubaDeviceModel, ubaSN, connection);
 };
 
 const getUbaDeviceByUbaSN = async (ubaSN, connection) => {
@@ -66,7 +66,7 @@ const getUbaDeviceByUbaSN = async (ubaSN, connection) => {
 		throw new Error(`Invalid ubaSN.`);
 	}
 	const query = `SELECT * FROM \`${ubaDeviceModel.tableName}\` WHERE \`ubaSN\` = ?;`;
-	const result = await withTimeout(selectQuery(ubaDeviceModel.tableName, query, [ubaSN.trim(),], connection), AWAIT_TIMEOUT);
+	const result = await selectQuery(ubaDeviceModel.tableName, query, [ubaSN.trim(),], connection);
 	logger.info(`getUbaDevice Executing ubaSN: ${ubaSN}`);
 	return result[0];
 
@@ -79,7 +79,7 @@ const getCountUbaDeviceByMachineMac = async (machineMac, connection) => {
 		FROM \`${ubaDeviceModel.tableName}\`
 		WHERE machineMac = ?;
 	`;
-	const rows = await withTimeout(selectQuery(ubaDeviceModel.tableName, query, [machineMac]), AWAIT_TIMEOUT);
+	const rows = await selectQuery(ubaDeviceModel.tableName, query, [machineMac]);
 	logger.info(`getCountUbaDeviceByMachineMac ubaCount: ${rows[0]?.ubaCount}`);
 	return rows[0]?.ubaCount;
 
@@ -93,7 +93,7 @@ const getUbaDeviceByConstraint = async (machineMac, address, comPort, connection
 		throw new Error(`Invalid search.`);
 	}
 	const query = `SELECT * FROM \`${ubaDeviceModel.tableName}\` WHERE \`machineMac\` = ? and \`address\` = ? and \`comPort\` = ?;`;
-	const result = await withTimeout(selectQuery(ubaDeviceModel.tableName, query, [machineMac, address, comPort], connection), AWAIT_TIMEOUT);
+	const result = await selectQuery(ubaDeviceModel.tableName, query, [machineMac, address, comPort], connection);
 	logger.info(`getUbaDeviceByConstraint Executing machineMac: ${machineMac}, address: ${address}, comPort: ${comPort}`);
 	return result[0];
 

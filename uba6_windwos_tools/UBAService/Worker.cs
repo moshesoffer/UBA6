@@ -1,8 +1,11 @@
+using Grpc.Core;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 using System.Runtime;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using UBA_MSG;
 using UBA_PROTO_CMD;
 using UBA_PROTO_TR;
@@ -26,18 +29,18 @@ namespace UBAService {
         private static TimeSpan delay = TimeSpan.FromSeconds(1);
 
         //timout control for async requests
-        public const int AWAIT_TIMEOUT = 5000;
-        static async Task<T> WithTimeout<T>(Task<T> task, int milliseconds)
-        {
-            using var cts = new System.Threading.CancellationTokenSource(milliseconds);
-
-            var completedTask = await Task.WhenAny(task, Task.Delay(-1, cts.Token));
-
-            if (completedTask != task)
-                throw new TimeoutException($"Timeout after {milliseconds}ms");
-
-            return await task;
-        }
+//        public const int AWAIT_TIMEOUT = 5000;
+//        static async Task<T> WithTimeout<T>(Task<T> task, int milliseconds)
+//        {
+//            using var cts = new System.Threading.CancellationTokenSource(milliseconds);
+//
+//            var completedTask = await Task.WhenAny(task, Task.Delay(-1, cts.Token));
+//
+//            if (completedTask != task)
+//                throw new TimeoutException($"Timeout after {milliseconds}ms");
+//
+//            return await task;
+//        }
 
         public Worker(ILogger<Worker> logger, ILogger<UBA6> ubaLogger, ILogger<WebConsoleService> webConsoleLogger, ILogger<UBA_Interface> COM_logger, IOptions<MyLocalSettings> settings) {
             _logger = logger;
@@ -47,8 +50,13 @@ namespace UBAService {
             wcs = new WebConsoleService(webConsoleLogger, _settings.ServerIpAddress, "4000");
         }
 
-
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+            var cycle1 = 0;
+            var cycle2 = 0;
+            var cycle3 = 0;
+            var cycle4 = 0;
+            var cycle5 = 0;
+            var cycle6 = 0;
             try {
                 _logger.LogInformation("Service starting. Log path: {Path}, Retry: {Retry}", _settings.LogPath, _settings.RetryCount);
                 while (!stoppingToken.IsCancellationRequested) {
@@ -59,29 +67,68 @@ namespace UBAService {
                         try {
                             GETPendingTasksDTO pt = await wcs.GetPendingTasks();
                             if (pt != null) {
-                                if (pt?.PendingRunningTests?.Count == 0 && pt?.PendingConnectionUbaDevices?.Count == 0) {
-                                    await refreshChannleReading(stoppingToken);
+                                //if (cycle1++ % 1 == 0) {
+                                //    //Change Running test status (uba.Status) - done manually by user (confirm click)
+                                //    if (pt?.PendingRunningTests?.Count == 0 && pt?.PendingConnectionUbaDevices?.Count == 0) {
+                                //        await refreshChannleReading(stoppingToken);
+                                //    }
+                                //    cycle1 = 0;
+                                //}
 
-                                } else {
-                                    if (pt?.PendingRunningTests?.Count > 0) {
-                                        await resolvePendingRunningTest(pt?.PendingRunningTests);
-
-                                    } 
-
-                                    if (pt?.PendingConnectionUbaDevices?.Count > 0) {
-                                        await resolvePendingUBA(pt?.PendingConnectionUbaDevices);
-                                        await addIntreface(stoppingToken);
-                                    }
+                                if (cycle1++ % 1 == 0) {
+                                    //update UBA running test data 
+                                    await updateRunningTestData(pt?.PendingRunningTests);
+                                    cycle1 = 0;
                                 }
 
-                                await updateUBA2List(pt?.PendingRunningTests);
+                                if (cycle2++ % 1 == 0) {
+                                    //handle received message from UBA Device (PendingConnectionUbaDevice, uba.ComPort)
+                                    if (pt?.PendingConnectionUbaDevices?.Count > 0) {
+                                        await resolvePendingUBA(pt?.PendingConnectionUbaDevices);
+                                    }
+                                    cycle2 = 0;
+                                }
+                                if (cycle5++ % 5 == 0) {
+                                    //handle received message from UBA Device (PendingConnectionUbaDevice, uba.ComPort)
+                                    if (pt?.PendingConnectionUbaDevices?.Count > 0) {
+                                        await addIntreface(stoppingToken);
+                                    }
+                                    cycle5 = 0;
+                                }
+                                
+                                if (cycle3++ % 1 == 0) {
+                                    if (pt?.PendingRunningTests?.Count > 0) {
+                                        //pole RunningTestsController.Status change (GETPendingTestResponse)
+                                        await resolvePendingRunningTest(pt?.PendingRunningTests);
+                                    }
+                                    cycle3 = 0;
+                                }
+
+                                if (cycle4++ % 5 == 0) {
+                                    //add UBA device to UBAs list (GETPendingTestResponse)
+                                    await updateUBA2List(pt?.PendingRunningTests);
+                                    cycle4 = 0;
+                                }
+
+                                //nothing to do
+                                //if (cycle5++ % 10 == 0) {
+                                //    await  resolvePendingReports(pt?.PendingReports, pt?.PendingRunningTests);
+                                //    cycle5 = 0;
+                                //}
+
+                                if (cycle6++ % 5 == 0) {
+                                    if (testInProgress == false) {
+                                        updateRunningTestStatus(pt?.PendingRunningTests);
+                                    }
+                                    cycle6 = 0;
+                                }
                             }
                         } catch {
                             _logger.LogError("GetPendingTasks failed");
                             continue;
                         }
                     }
-                    await Task.Delay(300/*msec delay*/, stoppingToken);
+                    await Task.Delay(10/*msec delay*/, stoppingToken);
                 }
             } catch (Exception ex) {
                 _logger.LogError(ex, "An error occurred in the UBA Service: {Message}", ex.Message);
@@ -102,61 +149,70 @@ namespace UBAService {
             }
             else {
                 ////_logger.LogInformation("Found {Count} UBA devices.", ubaDeviceDtos.Count);
-//                foreach (var ubaDto in ubaDeviceDtos) {
-//                    try {
-////_logger.LogInformation("3. {Count}-UBAs channel {Channel} status {Status}", ubaDeviceDtos.Count, ubaDto.Channel, ubaDto.Status);
-//                        if (ubaDto.Channel.Equals("A") || ubaDto.Channel.Equals("Ab")) {
-//                            Message message = await UBAs.First().GetMessage(UBA_PROTO_QUERY.RECIPIENT.BptA);
-//                            if (message != null) {
-//                                await wcs.UpdateTestReadingData(ubaDto.RunningTestID, message.QueryResponse.Bpt, true);
-//                                if ((((RunningTestsController.Status)ubaDto.Status) & RunningTestsController.Status.PENDING) == 0) {
-//                                    ////_logger.LogInformation("Change PENDING Test Status {State}", message.QueryResponse.Bpt.State);
+                foreach (var ubaDto in ubaDeviceDtos) {
+                    try {
+//_logger.LogInformation("3. {Count}-UBAs channel {Channel} status {Status}", ubaDeviceDtos.Count, ubaDto.Channel, ubaDto.Status);
+                        if (ubaDto.Channel.Equals("A") || ubaDto.Channel.Equals("Ab")) {
+                            Message message = await UBAs.First().GetMessage(UBA_PROTO_QUERY.RECIPIENT.BptA);
+                            if (message != null) {
+                                await wcs.UpdateTestReadingData(ubaDto.RunningTestID, message.QueryResponse.Bpt, true);
+                                if ((((RunningTestsController.Status)ubaDto.Status) & RunningTestsController.Status.PENDING) == 0) {
+                                    ////_logger.LogInformation("Change PENDING Test Status {State}", message.QueryResponse.Bpt.State);
 //_logger.LogInformation("3.1.Pending test {Channel} {Status}, set to {newState}", ubaDto.Channel, ubaDto.Status, message.QueryResponse.Bpt.State);
-//                                    await wcs.ChangeRunningTestStatus(ubaDto, Bptstate2DTOstate(message.QueryResponse.Bpt.State, message.QueryResponse.Bpt.StepType));
-//                                }
-//                            }
-//                        }
-//                        } else
-//                        if (ubaDto.Channel.Equals("B") || ubaDto.Channel.Equals("Ab")) {
-//                            Message message = await UBAs.First().GetMessage(UBA_PROTO_QUERY.RECIPIENT.BptB);
-//                            if (message != null) {
-//                                await wcs.UpdateTestReadingData(ubaDto.RunningTestID, message.QueryResponse.Bpt, true);
-//                                if ((((RunningTestsController.Status)ubaDto.Status) & RunningTestsController.Status.PENDING) == 0) {
-//                                    ////_logger.LogInformation("Change PENDING Test Status {State}", message.QueryResponse.Bpt.State);
+                                    await wcs.ChangeRunningTestStatus(ubaDto, Bptstate2DTOstate(message.QueryResponse.Bpt.State, message.QueryResponse.Bpt.StepType));
+                                }
+                            }
+
+                        } else if (ubaDto.Channel.Equals("B") || ubaDto.Channel.Equals("Ab")) {
+                            Message message = await UBAs.First().GetMessage(UBA_PROTO_QUERY.RECIPIENT.BptB);
+                            if (message != null) {
+                                await wcs.UpdateTestReadingData(ubaDto.RunningTestID, message.QueryResponse.Bpt, true);
+                                if ((((RunningTestsController.Status)ubaDto.Status) & RunningTestsController.Status.PENDING) == 0) {
+                                    ////_logger.LogInformation("Change PENDING Test Status {State}", message.QueryResponse.Bpt.State);
 //_logger.LogInformation("3.2.Pending test {Channel} {Status}, set to {newState}", ubaDto.Channel, ubaDto.Status, message.QueryResponse.Bpt.State);
-//                                    await wcs.ChangeRunningTestStatus(ubaDto, Bptstate2DTOstate(message.QueryResponse.Bpt.State, message.QueryResponse.Bpt.StepType));
-//                                }
-//                            }
-//                        }
-//                    } catch {
-//                        _logger.LogError($"1-No Response from UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac}");
-//                    }
-//                }
+                                    await wcs.ChangeRunningTestStatus(ubaDto, Bptstate2DTOstate(message.QueryResponse.Bpt.State, message.QueryResponse.Bpt.StepType));
+                                }
+                            }
+                        }
+
+                    } catch {
+                        _logger.LogError($"1-No Response from UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac}");
+                    }
+                }
             }
         }
 
+        bool testInProgress = false;
         private async Task resolvePendingRunningTest(List<GETPendingTestResponseDTO>? pt) {
             try {
-                _logger.LogInformation("Resolving pending UBA Tests...");
+                _logger.LogInformation("Resolving pending UBA Tests... {count}", pt.Count);
                 if (pt == null || pt.Count == 0) {
                     _logger.LogInformation("No pending tests found.");
                     return;
                 }
 
+                UBA6 uba = getUbaFromList("0"/*UbaSN*/);
+                if (uba == null)
+                {
+                    _logger.LogInformation("Pending tests list empty.");
+                    return;
+                }
+
                 foreach (GETPendingTestResponseDTO pendingTest in pt) {
-                    UBA6 uba = getUbaFromList(pendingTest.UbaSN);
-                    if (uba == null)
-                    {
-                        _logger.LogInformation("Pending tests list empty.");
-                        return;
-                    }
+//_logger.LogInformation("==> pendingTest: {id} {status}", pendingTest.Id, pendingTest.Status);
+                    //UBA6 uba = getUbaFromList(pendingTest.UbaSN);
+                    //if (uba == null)
+                    //{
+                    //    _logger.LogInformation("Pending tests list empty.");
+                    //    return;
+                    //}
 
                     //verify UBA responding
                     try {
-////_logger.LogInformation("==> get message 2");
-                        ////                        await WithTimeout(uba.GetMessage(UBA_PROTO_QUERY.RECIPIENT.Device), AWAIT_TIMEOUT);
+                        var dev = UBA_PROTO_QUERY.RECIPIENT.Device;
+//_logger.LogInformation("==> get message 2 {device}", dev);
                         await uba.GetMessage(UBA_PROTO_QUERY.RECIPIENT.Device);
-                        _logger.LogInformation("Response from UBA Device: {uba.Address}");
+                        //_logger.LogInformation("Response from UBA Device: {uba.Address}");
                     } catch {
                         _logger.LogError("2-No Response from UBA Device: {uba.Address}");
                     }
@@ -165,6 +221,8 @@ namespace UBAService {
                         _logger.LogInformation("==> PENDING...");
                         ////uba.PendingBPT(util.GetChannelFormDTO(pendingTest));
 
+//_logger.LogInformation("2.Pending test {Channel} {Status}, set to {Status}", pendingTest.Channel, pendingTest.Status, pendingTest.Status & ~((uint)RunningTestsController.Status.PENDING));
+                        await wcs.ChangeRunningTestStatus(pendingTest, (int)((uint)pendingTest.Status & ~((uint)RunningTestsController.Status.PENDING)));
                     } /*else*/ if ((((RunningTestsController.Status)pendingTest.Status) & RunningTestsController.Status.RUNNING) > 0) {
                         _logger.LogInformation("==> RUNNING...");
                         await uba.UpdatedTime();
@@ -178,9 +236,10 @@ namespace UBAService {
                             _logger.LogInformation($"SentMessageAsync fail");
                         };
                         //await Task.Delay(500);
+//_logger.LogInformation("1.Pending test ch= {Channel} code= {chcode} st= {Status}, set to RUNNING", pendingTest.Channel, util.GetChannelFormDTO(pendingTest), pendingTest.Status);
                         uba.StartBPT(util.GetChannelFormDTO(pendingTest), util.GetIndexFormDTO(pendingTest));
-_logger.LogInformation("1.Pending test {Channel} {Status}, set to RUNNING", pendingTest.Channel, pendingTest.Status);
                         await wcs.ChangeRunningTestStatus(pendingTest, (int)RunningTestsController.Status.RUNNING);
+                        testInProgress = true;
 
                     } /*else*/ if ((((RunningTestsController.Status)pendingTest.Status) & RunningTestsController.Status.STOPPED) > 0) {
                         _logger.LogInformation("==> STOPPED...");
@@ -190,34 +249,52 @@ _logger.LogInformation("1.Pending test {Channel} {Status}, set to RUNNING", pend
                         _logger.LogInformation("==> PAUSED...");
                         uba.PasueBPT(util.GetChannelFormDTO(pendingTest));
 
+                    } /*else*/ if ((((RunningTestsController.Status)pendingTest.Status) & RunningTestsController.Status.NEXTSTEP) > 0) {
+                        _logger.LogInformation("==> NEXTSTEP...");
+                        uba.StepBPT(util.GetChannelFormDTO(pendingTest));
+
                     } /*else*/ if ((((RunningTestsController.Status)pendingTest.Status) & RunningTestsController.Status.STANDBY) > 0) {
                         _logger.LogInformation("==> STANDBY...");
-////                        string filename = await WithTimeout(uba.GetRunningTestFileName(util.GetChannelFormDTO(pendingTest)), AWAIT_TIMEOUT);
+
                         string filename = await uba.GetRunningTestFileName(util.GetChannelFormDTO(pendingTest));
                         _logger.LogInformation("Stopping BPT on channel {Channel} with file {FileName}", util.GetChannelFormDTO(pendingTest), filename);
-                        uba.ClearBPT(util.GetChannelFormDTO(pendingTest));
 
                         // TODO: input filename
-                        ////await wcs.TestResultUpdateStatus(pendingTest.ReportId,RunningTestsController.Status.PENDING | RunningTestsController.Status.SAVED);
-                        ////    _ = uba.FeatchFileToByteArray(filename).ContinueWith(task => {
-                        ////    byte[] file = task.Result;
-                        ////    _ = wcs.TestResultUpload(pendingTest.ReportId, file);
-                        ////});
+                        await wcs.TestResultUpdateStatus(pendingTest.ReportId,RunningTestsController.Status.PENDING | RunningTestsController.Status.SAVED);
+                            _ = uba.FeatchFileToByteArray(filename).ContinueWith(task => {
+                            byte[] file = task.Result;
+                            _ = wcs.TestResultUpload(pendingTest.ReportId, file);
+                        });
+                        uba.ClearBPT(util.GetChannelFormDTO(pendingTest));
+                        testInProgress = false;
                     
                     } /*else*/ if ((((RunningTestsController.Status)pendingTest.Status) & RunningTestsController.Status.ABORTED) > 0) {
                         _logger.LogInformation("==> ABORTED...");
                         ////uba.AbortedBPT(util.GetChannelFormDTO(pendingTest));
                     }
 
-_logger.LogInformation("2.Pending test {Channel} {Status}, set to {newStatus}", pendingTest.Channel, pendingTest.Status, pendingTest.Status & ~((uint)RunningTestsController.Status.PENDING));
-                    await wcs.ChangeRunningTestStatus(pendingTest, (int)((uint)pendingTest.Status & ~((uint)RunningTestsController.Status.PENDING)));
+                    //UpdateChannelReadingData(pendingTest.Id, UBA_PROTO_CHANNEL.status msg)
+                    //try {
+                    //    Guid guid = new Guid("07d9ad90-0df0-4cde-9482-17327b37b8a3");
+                    //    UBA_PROTO_BPT.status_message msg = new UBA_PROTO_BPT.status_message();
+                    //    msg.ChannelStatus = new UBA_PROTO_CHANNEL.status();
+                    //    msg.ChannelStatus.Data = new UBA_PROTO_CHANNEL.data_message();
+                    //    msg.ChannelStatus.Data.Voltage = 3;
+                    //    msg.ChannelStatus.Data.Temperature = 4;
+                    //    msg.ChannelStatus.Data.Current = 5;
+                    //    msg.ChannelStatus.Data.current
+                    //    await wcs.UpdateTestReadingData(guid, msg);
+                    //} catch (Exception ex) {
+                    //    _logger.LogInformation("==> Test aborted due to an exception: {ex.Message}");
+                    //} finally {
+                    //}
                 }
             } catch (Exception ex) {
                 _logger.LogError(ex, "An error occurred while resolving pending tests: {Message}", ex.Message);
             }
         }
 
-        private async Task resolvePendingReports(List<PendingReportDTO>? PR_List) {
+        private async Task resolvePendingReports(List<PendingReportDTO>? PR_List, List<GETPendingTestResponseDTO>? pendingTest_List) {
             try {
                 if (PR_List == null || PR_List.Count == 0) {
                     _logger.LogInformation("No pending tests found.");
@@ -225,12 +302,13 @@ _logger.LogInformation("2.Pending test {Channel} {Status}, set to {newStatus}", 
                 }
                 foreach (PendingReportDTO pr in PR_List) {
                     if (UBAs.Count > 0) {
-                        List<string> filelist = await UBAs.First().FeatchFileList();
-                        byte[]? file = await UBAs.First().FeatchFileToByteArray(filelist.Last());
-                        await wcs.TestResultUpload(pr, file);
+                    //    _logger.LogInformation("pr {channel} {status}", pr.Channel, pr.Status);
+                        //List<string> filelist = await UBAs.First().FeatchFileList();
+                        //byte[]? file = await UBAs.First().FeatchFileToByteArray(filelist.Last());
+                        //await wcs.TestResultUpload(pr, file);
                     }
                 }
-            } catch (Exception e) {
+                } catch (Exception e) {
                 _logger.LogError("Error in resolvePendingReports: {Message}", e.Message);
             }
         }
@@ -243,17 +321,17 @@ _logger.LogInformation("2.Pending test {Channel} {Status}, set to {newStatus}", 
                 }
                 foreach (var pendingDevice in connecedList) {
                     bool exists = UBA_Interfaces.Any(ui => ui.PortName == pendingDevice.ComPort);
-                    _logger.LogInformation("Interface with PortName {PortName} {Exists}", pendingDevice.ComPort, exists ? "exists" : "does not exist");
+                    //_logger.LogInformation("Interface with PortName {PortName} {Exists}", pendingDevice.ComPort, exists ? "exists" : "does not exist");
                     if (exists == false) {
                         UBA_Interfaces.Add(new UBA_Interface(_comLoger, pendingDevice.ComPort));
                     }
                     UBA_Interface? UbaComInterface = UBA_Interfaces.FirstOrDefault(ui => ui.PortName == pendingDevice.ComPort);
                     if (UbaComInterface != null) {
                         try {
-////_logger.LogInformation("==> get message 3");
+//_logger.LogInformation("==> get message 3");
                             Message? t = await UbaComInterface.GetMessage(UBA_PROTO_QUERY.RECIPIENT.Device, Convert.ToUInt32(pendingDevice.Address));
                             if (t != null) {
-                                _logger.LogInformation($"Received message from UBA Device  {t?.QueryResponse}");
+                                //_logger.LogInformation($"Received message from UBA Device  {t?.QueryResponse}");
                                 await wcs.DeviceFound(t.QueryResponse, pendingDevice.ComPort);
                             } else {
                                 _logger.LogWarning($"wrong message from UBA Device on Port {pendingDevice.ComPort} at Address {pendingDevice.Address}");
@@ -313,18 +391,17 @@ _logger.LogInformation("2.Pending test {Channel} {Status}, set to {newStatus}", 
                             UBA_Interface? intrefaceCOM = UBA_Interfaces.FirstOrDefault(ui => ui.PortName == ubaDto.ComPort);
                             UBA6 newUba = new UBA6(_ubaLogger, intrefaceCOM, ubaDto.UbaSN);
                             newUba.Address = uint.TryParse(ubaDto.Address, out var addr) ? addr : 0;
-////_logger.LogInformation("==> get message 4");
-                        ////                            var result = await WithTimeout (newUba.GetMessage(UBA_PROTO_QUERY.RECIPIENT.Device), 1000);
+//_logger.LogInformation("==> get message 4");
                         var result = await newUba.GetMessage(UBA_PROTO_QUERY.RECIPIENT.Device);
                             if (result != null) {
                                 UBAs.Add(newUba);
-                                _logger.LogInformation($"Added new UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac}");
+                                //_logger.LogInformation($"Added new UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac}");
 
                                 //update UBA running test
-                                _logger.LogInformation($"Update Running Tests for UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac}");
-////_logger.LogInformation("==> get message 5");
+                                //_logger.LogInformation($"Update Running Tests for UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac}");
+//_logger.LogInformation("==> get message 5");
                                 Message message = await UBAs.First().GetMessage(ubaDto.Channel.Equals("A") ? UBA_PROTO_QUERY.RECIPIENT.BptA : UBA_PROTO_QUERY.RECIPIENT.BptB);
-                                ////_logger.LogInformation($"Message: {message}");
+                                //_logger.LogInformation($"Message: {message}");
                                 await wcs.UpdateTestReadingData(ubaDto.RunningTestID, message.QueryResponse.Bpt, true);
                             } else {
                                 //remove UBA device - no response
@@ -356,8 +433,7 @@ _logger.LogInformation("2.Pending test {Channel} {Status}, set to {newStatus}", 
 
                             //check if to add UBA device to UBAs list
                             if (UBAs.Find(uba => uba.SerialNumber.Equals(newUba.SerialNumber)) == null) {
-////_logger.LogInformation("==> get message 6");
-////                                var result = await WithTimeout (newUba.GetMessage(UBA_PROTO_QUERY.RECIPIENT.Device), 1000);
+//_logger.LogInformation("==> get message 6");
                                 var result = await newUba.GetMessage(UBA_PROTO_QUERY.RECIPIENT.Device);
                                 if (result != null) {
                                     UBAs.Add(newUba);
@@ -374,17 +450,58 @@ _logger.LogInformation("2.Pending test {Channel} {Status}, set to {newStatus}", 
                                     newUba = null;
                                 }
                             }
+                        //}                     
+                    }
+                }
+            } catch (Exception ex) {
+                _logger.LogError(ex.Message);
+            }
+        }
 
+
+        protected async Task updateRunningTestData(List<GETPendingTestResponseDTO>? pt) {
+            try {
+                List<UbaDeviceDto> ubaDeviceDtos = await wcs.GetStationUBAs();
+                if (ubaDeviceDtos == null || ubaDeviceDtos.Count == 0) {
+                    _logger.LogInformation("No UBA devices found. Retrying in {Retry} seconds.", _settings.RetryCount);
+                } else {
+                    foreach (var ubaDto in ubaDeviceDtos) {
+                        //if ((((RunningTestsController.Status)ubaDto.Status) & RunningTestsController.Status.IS_TEST_RUNNING) > 0) {
+                        //if (!UBAs.Any(uba => uba.SerialNumber.Equals(ubaDto.UbaSN))) {
                             //update UBA running test
-                            ////_logger.LogInformation($"Update Running Tests for UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac}");
                             try {
-////_logger.LogInformation("==> get message 7");
                                 Message message = await UBAs.First().GetMessage(ubaDto.Channel.Equals("A") ? UBA_PROTO_QUERY.RECIPIENT.BptA : UBA_PROTO_QUERY.RECIPIENT.BptB);
-                                ////_logger.LogInformation($"Message: {message}");
-                                await wcs.UpdateTestReadingData(ubaDto.RunningTestID, message.QueryResponse.Bpt, true);                            
-                            } catch
-                            {
+                                await wcs.UpdateTestReadingData(ubaDto.RunningTestID, message.QueryResponse.Bpt, true);
+
+                            } catch {
+                                _logger.LogInformation($"Trying to update Running Tests for UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac} CH: {ubaDto.Channel} testName: {ubaDto.TestName}");
                                 _logger.LogError($"8-No Response from UBA Device on Port");
+                            }
+                        //}
+                        //}                     
+                    }
+                }
+            } catch (Exception ex) {
+                _logger.LogError(ex.Message);
+            }
+        }
+
+        protected async Task updateRunningTestStatus(List<GETPendingTestResponseDTO>? pt) {
+            try {
+                List<UbaDeviceDto> ubaDeviceDtos = await wcs.GetStationUBAs();
+                if (ubaDeviceDtos == null || ubaDeviceDtos.Count == 0) {
+                    _logger.LogInformation("No UBA devices found. Retrying in {Retry} seconds.", _settings.RetryCount);
+                } else {
+                    foreach (var ubaDto in ubaDeviceDtos) {
+                        //if (!UBAs.Any(uba => uba.SerialNumber.Equals(ubaDto.UbaSN))) {
+                            //update UBA running test
+                            try {
+                                Message message = await UBAs.First().GetMessage(ubaDto.Channel.Equals("A") ? UBA_PROTO_QUERY.RECIPIENT.BptA : UBA_PROTO_QUERY.RECIPIENT.BptB);
+                                await wcs.UpdateTestStatus(ubaDto.RunningTestID, message.QueryResponse.Bpt, true);
+                                
+                            } catch {
+                                _logger.LogInformation($"Trying to update Running Tests for UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac} CH: {ubaDto.Channel} testName: {ubaDto.TestName}");
+                                _logger.LogError($"9-No Response from UBA Device on Port");
                             }
                         //}                     
                     }
@@ -393,6 +510,7 @@ _logger.LogInformation("2.Pending test {Channel} {Status}, set to {newStatus}", 
                 _logger.LogError(ex.Message);
             }
         }
+
         protected async Task InitAsync(CancellationToken stoppingToken) {
             try {
                 if (!isInitialized) {

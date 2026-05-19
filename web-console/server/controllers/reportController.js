@@ -5,6 +5,7 @@ const { createReportAndTestResult, updateReportAndTestResult } = require('../ser
 
 exports.createReportAndTestResult = async (req, res) => {
 	try {
+		logger.info('(ctrl)createReportAndTestResult');
 		await createReportAndTestResult(req.body);
 		res.status(201).json( { success: true } );
 	} catch (error) {

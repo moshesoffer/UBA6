@@ -14,6 +14,8 @@ using UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests;
 using UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.Models;
 using UBA6Library.WebServerApi.Services.WebConsole.Model;
 using System.Text.Json;
+using System.Reflection.Metadata;
+using Google.Protobuf;
 
 namespace UBA6Library.WebServerApi.Services.WebConsole {
     public class WebConsoleService : WebService {
@@ -74,23 +76,25 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
                 .Where(uba => uba.MachineMac == GetMacAddress())
                 .ToList();
 
-            //remove duplications    
-            foreach (var uba in matchingUBAs.ToList()) {
-                string UbaSN = uba.UbaSN;
-                var count = 0;
-                var index = 0;
-                foreach (var uba1 in matchingUBAs.ToList()) {
-                    if (matchingUBAs.Any(uba => uba1.UbaSN.Equals(UbaSN))) {
-                        count = count + 1;
-                        if (count > 1)
-                        {
-                            count = count - 1;
-                            matchingUBAs.RemoveRange(index,1);//RemoveAt(index); 
-                        }
-                    }
-                    index++;
-                }
-            }
+//_logger.LogInformation($"==> msg: {matchingUBAs.Count()}, {JsonSerializer.Serialize(matchingUBAs)}");
+//Moshe: wrong delte. need to based on ubaChannel field!
+//            //remove duplications    
+//            foreach (var uba in matchingUBAs.ToList()) {
+//                string UbaSN = uba.UbaSN;
+//                var count = 0;
+//                var index = 0;
+//                foreach (var uba1 in matchingUBAs.ToList()) {
+//                    if (matchingUBAs.Any(uba => uba1.UbaSN.Equals(UbaSN))) {
+//                        count = count + 1;
+//                        if (count > 1)
+//                        {
+//                            count = count - 1;
+//                            matchingUBAs.RemoveRange(index,1);//RemoveAt(index); 
+//                        }
+//                    }
+//                    index++;
+//                }
+//            }
 
             ////_logger.LogInformation($"=========> List Count: {matchingUBAs.Count()}");
             ////foreach (UbaDeviceDto uba in matchingUBAs) {
@@ -139,6 +143,7 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
         public async Task UpdateChannelReadingData(Guid runningTestID, UBA_PROTO_CHANNEL.status msg) {
             InstantTestResultsDTO instantTestResultsDTO = new InstantTestResultsDTO();
             instantTestResultsDTO.RunningTestID = runningTestID;
+            
             instantTestResultsDTO.Timestamp = DateTime.UtcNow;
             instantTestResultsDTO.TestState = msg.State.ToString();
             instantTestResultsDTO.TestCurrentStep = 0;
@@ -155,7 +160,17 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
         public async Task UpdateTestReadingData(Guid runningTestID, UBA_PROTO_BPT.status_message msg, bool isLog = false) {
             InstantTestResultsDTO instantTestResultsDTO = new InstantTestResultsDTO();
             instantTestResultsDTO.RunningTestID = runningTestID;
-            instantTestResultsDTO.Timestamp = DateTime.UtcNow;
+            
+            //_logger.LogInformation($"==> voltage: {msg.ChannelStatus.Data.Voltage}");
+            //Moshe
+            uint timestamp = msg.StartTime;
+            DateTime dateTime = timestamp == 0
+                ? DateTime.MinValue
+                : DateTimeOffset.FromUnixTimeSeconds(timestamp).DateTime;
+            //DateTime dateTime = DateTimeOffset.FromUnixTimeSeconds(msg.StartTime).DateTime;     
+            instantTestResultsDTO.Timestamp = DateTime.Now; //UtcNow;
+            //_logger.LogInformation($"==> DateTime: {msg.StartTime} {instantTestResultsDTO.Timestamp}");
+
             if (msg.State == UBA_PROTO_BPT.STATE.RunStep) {
                 instantTestResultsDTO.TestState = ((UBA_PROTO_CHANNEL.STATE)msg.ChannelStatus.State).ToString();                
             } else { 
@@ -163,6 +178,8 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
             }
             instantTestResultsDTO.TestCurrentStep =(int) msg.CurrentStep;
             
+            //_logger.LogInformation($"==> date: {instantTestResultsDTO.Timestamp} state: {instantTestResultsDTO.TestState}");
+            //_logger.LogInformation($"==> volt: {msg.ChannelStatus.Data.Voltage}, crnt: {msg.ChannelStatus.Data.Current}, temp: {msg.ChannelStatus.Data.Temperature}, cap: {msg.ChannelStatus.Data.Capacity}");
             instantTestResultsDTO.Voltage = msg.ChannelStatus.Data.Voltage;
             instantTestResultsDTO.Current = msg.ChannelStatus.Data.Current/1000.0f;
             instantTestResultsDTO.Temp = msg.ChannelStatus.Data.Temperature;
@@ -171,6 +188,38 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
             instantTestResultsDTO.IsLogData = isLog ? 1:0;
             List<InstantTestResultsDTO> sadas = new List<InstantTestResultsDTO>() { instantTestResultsDTO };
             await RT_Controller.InstantTestResults.Post<object, List<InstantTestResultsDTO>>(Client, sadas);            
+        }
+
+        public async Task UpdateTestStatus(Guid runningTestID, UBA_PROTO_BPT.status_message msg, bool isLog = false) {
+            int retState = (int)RunningTestsController.Status.STANDBY;
+            switch (msg.State) {
+                case UBA_PROTO_BPT.STATE.RunStep:
+                    retState = (int)RunningTestsController.Status.RUNNING;
+                    break;
+                case UBA_PROTO_BPT.STATE.Pause:
+                    retState = (int)RunningTestsController.Status.PAUSED;
+                    break;
+                case UBA_PROTO_BPT.STATE.TestFailed:
+                    retState = (int)RunningTestsController.Status.ABORTED;
+                    break;
+                case UBA_PROTO_BPT.STATE.TestCompleate:
+                    retState = (int)RunningTestsController.Status.FINISHED;
+                    break;
+                case UBA_PROTO_BPT.STATE.StepCompleate:
+                    retState = (int)RunningTestsController.Status.RUNNING;
+                    break;
+                case UBA_PROTO_BPT.STATE.Init:
+                    retState = (int)RunningTestsController.Status.STANDBY;
+                    break;
+            }
+
+            PATCH_ChangeTR_StatusRequest pATCH_ChangeTR_StatusRequest = new PATCH_ChangeTR_StatusRequest();
+            pATCH_ChangeTR_StatusRequest.RunningTestID = runningTestID;
+            pATCH_ChangeTR_StatusRequest.TestRoutineChannels = msg.ChannelStatus.Id == 'A' ? "A" : "B";
+            pATCH_ChangeTR_StatusRequest.UbaSN = "0";
+            pATCH_ChangeTR_StatusRequest.NewTestStatus = retState; 
+
+            await RT_Controller.ChangeRunningTestStatus.Patch<object, PATCH_ChangeTR_StatusRequest>(Client, pATCH_ChangeTR_StatusRequest);
         }
 
         public async Task<GETPendingTasksDTO> GetPendingTasks() {
@@ -229,7 +278,7 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
                 List<UBA_PROTO_DATA_LOG.data_log> logs = ProtoHelper.DecodeDataLogMessages(file);
                 foreach (UBA_PROTO_DATA_LOG.data_log log in logs) {
                     reportPatchDTO.TestResults.Add(new TestResultDataPointDTO(log));
-                    _logger.LogDebug($"Log Entry - Time: {log.Time}, Voltage: {log.Voltage}, Current: {log.Current}, Temp: {log.Temp}, PlanIndex: {log.PlanIndex}, StepIndex: {log.StepIndex}");
+                    //_logger.LogDebug($"Log Entry - Time: {log.Time}, Voltage: {log.Voltage}, Current: {log.Current}, Temp: {log.Temp}, PlanIndex: {log.PlanIndex}, StepIndex: {log.StepIndex}");
                 }
                 try {
                     await ReportsController.Reports.Patch<object, ReportPatchDTO>(Client, report_id.ToString(), reportPatchDTO);

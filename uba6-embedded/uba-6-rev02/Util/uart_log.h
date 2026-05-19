@@ -50,10 +50,21 @@ do{														\
 	}													\
 }while(0)
 
-
+//default is enable logs
 #define UART_LOG_DEBUG(COMP,format,...) 	UART_LOG_COMPONENT(UART_LOG_LEVEL_DEBUG,	COMP,format,##__VA_ARGS__)
 #define UART_LOG_INFO(COMP,format,...) 		UART_LOG_COMPONENT(UART_LOG_LEVEL_INFO,		COMP,format,##__VA_ARGS__)
 #define UART_LOG_WARNNING(COMP,format,...) 	UART_LOG_COMPONENT(UART_LOG_LEVEL_WARNNING,	COMP,format,##__VA_ARGS__)
 #define UART_LOG_ERROR(COMP,format,...) 	UART_LOG_COMPONENT(UART_LOG_LEVEL_ERROR,	COMP,format,##__VA_ARGS__)
 #define UART_LOG_CRITICAL(COMP,format,...) 	UART_LOG_COMPONENT(UART_LOG_LEVEL_CRITICAL,	COMP,format,##__VA_ARGS__)
 #define UART_LOG_COMM(COMP,format,...) 		UART_LOG_COMPONENT(UART_LOG_LEVEL_COMM,		COMP,format,##__VA_ARGS__)
+#define UART_LOG(COMP,format,...) 	        UART_LOG_COMPONENT(UART_LOG_LEVEL_INFO,	    COMP,format,##__VA_ARGS__)
+
+#ifdef UART_LOG_DISABLE
+//disable log. define it in the package
+#define UART_LOG_DEBUG(COMP,format,...) 	
+#define UART_LOG_INFO(COMP,format,...) 		
+#define UART_LOG_WARNNING(COMP,format,...) 	
+//#define UART_LOG_ERROR(COMP,format,...) 	
+//#define UART_LOG_CRITICAL(COMP,format,...) 	
+#define UART_LOG_COMM(COMP,format,...) 		
+#endif //UART_LOG_DISABLE

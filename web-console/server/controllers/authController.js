@@ -8,7 +8,7 @@ exports.login = async (req, res) => {
 		name: 'Natasha Cherkover'
 	};
 
-	await withTimeout(new Promise(resolve), AWAIT_TIMEOUT);
+	await new Promise(resolve);
 
 	if (req.body?.username === username && req.body?.password === password) {
 		res.json(displayName);
@@ -22,7 +22,7 @@ exports.login = async (req, res) => {
 };
 
 exports.logout = async (req, res) => {
-	await withTimeout(new Promise(resolve), AWAIT_TIMEOUT);
+	await new Promise(resolve);
 
 	res.end();
 };

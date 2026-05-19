@@ -25,7 +25,7 @@ import { enrichUbaDevicesWithRunTime, } from '../utils';
 import CustomTableRow from './CustomTableRow';
 import headLabels from './headLabels';
 
-const POLLING_INTERVAL = 5000;
+const POLLING_INTERVAL = 300;
 
 export default function TableView() {
 

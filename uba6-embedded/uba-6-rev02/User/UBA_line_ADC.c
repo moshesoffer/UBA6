@@ -4,6 +4,7 @@
  *  Created on: Nov 6, 2024
  *      Author: ORA
  */
+#undef UART_LOG_DISABLE
 
 #include <UBA_line_ADC.h>
 #include "uart_log.h"
@@ -100,28 +101,87 @@ void UBA_line_ADC_print_reading(UBA_line *line) {
 	}
 }
 
+#if 1
 float UBA_line_calc_calibrate(UBA_line *line, uint16_t adc_voltage, liner_equation *le) {
+	//no calibration
+	return adc_voltage;
+
 	float ret = 0.0f;
 
 	if (line->calibration.isCalibrated) {
-		ret = (le->slop * adc_voltage + le->y_intercept);
+		ret = (le->slope * adc_voltage + le->y_intercept);
 	} else {
 		ret = (int32_t) adc_voltage;
 	}
-	UART_LOG_LINE_DEBUG("Is Calibrated :%s - Calculate Line with liner Eq:% lu[mV] (%f,%f):%lu[mV]",line->calibration.isCalibrated ? "True" : "False",adc_voltage, le->slop,le->y_intercept,(uint32_t)ret);
+	UART_LOG_LINE_DEBUG("Is Calibrated :%s - Calculate Line with liner Eq:% lu[mV] (%f,%f):%lu[mV]",line->calibration.isCalibrated ? "True" : "False",adc_voltage, le->slope,le->y_intercept,(uint32_t)ret);
 	return ret;
 }
+#else
+float UBA_line_calc_calibrate(UBA_line *line, uint16_t adc_voltage, liner_equation *le)
+{
+	//no calibration
+	//return adc_voltage;
 
+	float ret = (float)adc_voltage;
+
+    if (line->calibration.isCalibrated && le != NULL) {
+        ret = le->slope * adc_voltage + le->y_intercept;
+    }
+
+    UART_LOG_LINE_DEBUG(
+        "Calibrated:%s adc=%u slope=%f offset=%f result=%f",
+        line->calibration.isCalibrated ? "True" : "False",
+        adc_voltage,
+        le ? le->slope : 0.0f,
+        le ? le->y_intercept : 0.0f,
+        ret
+    );
+
+    return ret;
+}
+#endif
+
+#if 1
 float UBA_line_calc_calibrate_float(UBA_line *line, float value, liner_equation *le) {
+	//no calibration
+	return value;
+
 	float ret = 0.0f;
 	if (line->calibration.isCalibrated) {
-		ret = (le->slop * value + le->y_intercept);
+		ret = (le->slope * value + le->y_intercept);
 	} else {
 		ret = value;
 	}
-	UART_LOG_LINE_DEBUG("Is Calibrated :%s - Calculate Line with liner Eq:% lu[mV] (%f,%f):%lf ",line->calibration.isCalibrated ? "True" : "False",value, le->slop,le->y_intercept,ret);
+	UART_LOG_LINE_DEBUG("Is Calibrated :%s - Calculate Line with liner Eq:% lu[mV] (%f,%f):%lf ",line->calibration.isCalibrated ? "True" : "False",value, le->slope,le->y_intercept,ret);
 	return ret;
 }
+#else
+float UBA_line_calc_calibrate_float(UBA_line *line, float value, liner_equation *le)
+{
+	//no calibration
+	return value;
+
+    if (!le) return value;
+
+    float ret = value;
+
+    if (line->calibration.isCalibrated) {
+        ret = le->slope * value + le->y_intercept;
+    }
+
+    UART_LOG_LINE_DEBUG(
+        "Calibrated:%s value=%f slope=%f offset=%f result=%f",
+        line->calibration.isCalibrated ? "True" : "False",
+        value,
+        le->slope,
+        le->y_intercept,
+        ret
+    );
+
+    return ret;
+}
+#endif
+
 /*set the rage and measure the VBAT at that range */
 /**
  *
@@ -192,11 +252,13 @@ int32_t UBA_line_ADC_get_bat_charge_current(UBA_line *line) {
 	return (int32_t) (UBA_line_calc_calibrate(line, (((int32_t) line->EX_ADC_raw_data) * 10000 / 0x1000), &line->calibration.charge_current));
 }
 
+#define ADC_MAX 4095.0f
+#if 1
 float UBA_line_ADC_get_ambient_temperature(UBA_line *line) {
 	float Ntc_Ln = 0;
 	float Ntc_Tmp;
-	uint16_t Ntc_R;
-	if (line->ADC_raw_data[ADC_CHNNEL_AMB_TEMP] > 4000) {
+	float  Ntc_R;
+	if (line->ADC_raw_data[ADC_CHNNEL_AMB_TEMP] > 4096) {
 		if (UBA_line_post_error(line, UBA_PROTO_UBA6_ERROR_LINE_INTRENAL_TEMP_SENSOR_NC)) {
 			UART_LOG_LINE_ERROR("ADC Value: %d --> internal Temp sensor Disconnected", line->ADC_raw_data[ADC_CHNNEL_AMB_TEMP]);
 		}
@@ -208,31 +270,89 @@ float UBA_line_ADC_get_ambient_temperature(UBA_line *line) {
 		Ntc_Ln = log(Ntc_R / NTC_UP_R);
 		/* calc. temperature */
 		Ntc_Tmp = (1.0 / (A + B * Ntc_Ln + C * Ntc_Ln * Ntc_Ln + D * Ntc_Ln * Ntc_Ln * Ntc_Ln)) - 273.15;
-		return UBA_line_calc_calibrate_float(line, Ntc_Tmp, &line->calibration.amb_temp);
+
+//	    UART_LOG_LINE_INFO("ADC amb temp: %s adc=%d Ntc_R=%f temp=%f", line->name, line->ADC_raw_data[ADC_CHNNEL_AMB_TEMP], Ntc_R, Ntc_Tmp);
+
+	return UBA_line_calc_calibrate_float(line, Ntc_Tmp, &line->calibration.amb_temp);
 	}
 }
+#else
+float UBA_line_ADC_get_ambient_temperature(UBA_line *line)
+{
+    uint16_t adc = line->ADC_raw_data[ADC_CHNNEL_AMB_TEMP];
 
+    if (adc <= 0 || adc >= 4096) {
+        if (UBA_line_post_error(line, UBA_PROTO_UBA6_ERROR_LINE_INTRENAL_TEMP_SENSOR_NC)) {
+            UART_LOG_LINE_ERROR("ADC Value: %d --> Bat Temp sensor disconnected", adc);
+        }
+        return -273.15f;
+    }
+
+    UBA_line_clear_error(line, UBA_PROTO_UBA6_ERROR_LINE_INTRENAL_TEMP_SENSOR_NC);
+
+    /* calc resistance */
+    float Ntc_R = NTC_UP_R / ((ADC_MAX / adc) - 1.0f);
+
+    /* Steinhart-Hart */
+    float lnR = log(Ntc_R / NTC_UP_R);
+
+    float temp = (1.0f / (A + B * lnR + C * lnR * lnR + D * lnR * lnR * lnR)) - 273.15f;
+
+    //UART_LOG_LINE_INFO("ADC amb temp: %s adc=%d Ntc_R=%f temp=%f", line->name, adc, Ntc_R, temp);
+
+    return UBA_line_calc_calibrate_float(line, temp, &line->calibration.ntc_temp);
+}
+#endif
+
+#if 1
 float UBA_line_ADC_get_battery_temperature(UBA_line *line) {
 	float Ntc_Ln = 0;
 	float Ntc_Tmp;
-	uint16_t Ntc_R;
-	if (line->ADC_raw_data[ADC_CHNNEL_NTC_BAT] > 4000) {
+	float  Ntc_R;
+	if (line->ADC_raw_data[ADC_CHNNEL_NTC_BAT] > 4096) {
 		if (UBA_line_post_error(line, UBA_PROTO_UBA6_ERROR_LINE_BAT_TEMP_SENSOR_NC)) {
-			UART_LOG_LINE_ERROR("ADC Value: %d --> Bat Temp sensor Disconnected", line->ADC_raw_data[ADC_CHNNEL_NTC_BAT]);
+			UART_LOG_LINE_ERROR("ADC Value: %d --> internal Temp sensor Disconnected", line->ADC_raw_data[ADC_CHNNEL_AMB_TEMP]);
 		}
 		return -273.15;
 	} else {
-		UBA_line_clear_error(line, UBA_PROTO_UBA6_ERROR_LINE_BAT_TEMP_SENSOR_NC);
 		/* calc. ntc resistance */
 		Ntc_R = ((NTC_UP_R) / ((4095.0 / line->ADC_raw_data[ADC_CHNNEL_NTC_BAT]) - 1));
-
 		/* temp */
 		Ntc_Ln = log(Ntc_R / NTC_UP_R);
 		/* calc. temperature */
 		Ntc_Tmp = (1.0 / (A_BAT + B_BAT * Ntc_Ln + C_BAT * Ntc_Ln * Ntc_Ln + D_BAT * Ntc_Ln * Ntc_Ln * Ntc_Ln)) - 273.15;
-		return UBA_line_calc_calibrate_float(line, Ntc_Tmp, &line->calibration.ntc_temp);
+
+    	//UART_LOG_LINE_INFO("ADC bat temp: %s adc=%d Ntc_R=%f temp=%f", line->name, line->ADC_raw_data[ADC_CHNNEL_NTC_BAT], Ntc_R, Ntc_Tmp);
+
+		return UBA_line_calc_calibrate_float(line, Ntc_Tmp, &line->calibration.amb_temp);
 	}
 }
+#else
+float UBA_line_ADC_get_battery_temperature(UBA_line *line)
+{
+    uint16_t adc = line->ADC_raw_data[ADC_CHNNEL_NTC_BAT];
+
+    if (adc == 0 || adc > ADC_MAX) {
+        if (UBA_line_post_error(line, UBA_PROTO_UBA6_ERROR_LINE_BAT_TEMP_SENSOR_NC)) {
+            UART_LOG_LINE_ERROR("ADC Value: %d --> Bat Temp sensor disconnected", adc);
+        }
+        return -273.15f;
+    }
+
+    UBA_line_clear_error(line, UBA_PROTO_UBA6_ERROR_LINE_BAT_TEMP_SENSOR_NC);
+
+    /* calc resistance — formula depends on divider wiring */
+    float Ntc_R = NTC_UP_R * ((float)adc / (ADC_MAX - adc));
+
+    /* Steinhart-Hart */
+    float lnR = log(Ntc_R / NTC_UP_R);
+    float temp = (1.0f / (A_BAT + B_BAT * lnR + C_BAT * lnR*lnR + D_BAT * lnR*lnR*lnR)) - 273.15f;
+
+    //UART_LOG_LINE_INFO("ADC bat temp: %s adc=%d Ntc_R=%f temp=%f", line->name, adc, Ntc_R, temp);
+
+    return UBA_line_calc_calibrate_float(line, temp, &line->calibration.ntc_temp);
+}
+#endif
 
 int32_t UBA_line_ADC_get_V_IN(UBA_line *line) {
 	uint16_t vin = 0, vin_ADC = 0;

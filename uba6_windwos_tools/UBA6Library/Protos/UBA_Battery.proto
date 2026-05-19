@@ -48,8 +48,9 @@ message Cell{
 
 message Battery{
     TYPE type = 1;
-	string serial_number = 2 [(nanopb).max_size = 10];
-	string part_number = 3 [(nanopb).max_size = 10];
-	uint32 number_of_cells = 4  [(nanopb).int_size = IS_8]; 
-	uint32 max_voltage = 5; // in mV    
+	string serial_number = 2 [(nanopb).max_size = 32];
+	string part_number = 3 [(nanopb).max_size = 32];
+	uint32 no_cell_serial = 4  [(nanopb).int_size = IS_8]; 
+	uint32 no_cell_parallel = 5  [(nanopb).int_size = IS_8]; 
+	uint32 max_voltage = 6; // in mV    
 }

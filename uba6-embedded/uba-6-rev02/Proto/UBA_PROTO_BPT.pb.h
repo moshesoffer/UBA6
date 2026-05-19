@@ -57,7 +57,8 @@ typedef enum _UBA_PROTO_BPT_CMD_ID {
     UBA_PROTO_BPT_CMD_ID_SELECT = 1, /* start BPT */
     UBA_PROTO_BPT_CMD_ID_STOP = 2, /* stop bpt */
     UBA_PROTO_BPT_CMD_ID_PAUSED = 3, /* stop bpt */
-    UBA_PROTO_BPT_CMD_ID_CLEAR = 4 /* Clear the BPT reset errro and set to STANDBY */
+    UBA_PROTO_BPT_CMD_ID_CLEAR = 4, /* Clear the BPT reset errro and set to STANDBY */
+    UBA_PROTO_BPT_CMD_ID_STEP = 5 /* next-step bpt */
 } UBA_PROTO_BPT_CMD_ID;
 
 /* Struct definitions */
@@ -70,7 +71,7 @@ typedef struct _UBA_PROTO_BPT_charge_stop_condition {
     float max_temperature; /* the max temp in c */
     uint32_t max_time; /* the max time in ms */
     int32_t cut_off_current; /* the current of charge that below it the step will end */
-    int32_t limit_capacity; /* the capacity in mAh that above it the step will end */
+    int32_t charge_limit; /* the capacity in mAh that above it the step will end */
 } UBA_PROTO_BPT_charge_stop_condition;
 
 typedef struct _UBA_PROTO_BPT_charge {
@@ -86,7 +87,7 @@ typedef struct _UBA_PROTO_BPT_discharge_stop_condition {
     float max_temperature; /* the max temp in c */
     uint32_t max_time; /* the max time in ms */
     int32_t cut_off_voltag; /* the voltage that the battery will reatch that stop the step */
-    int32_t limit_capacity; /* the capacity in mAh that above it the step will end */
+    int32_t charge_limit; /* the capacity in mAh that above it the step will end */
 } UBA_PROTO_BPT_discharge_stop_condition;
 
 typedef struct _UBA_PROTO_BPT_discharge {
@@ -206,7 +207,7 @@ extern "C" {
 #define UBA_PROTO_BPT_charge_stop_condition_max_temperature_tag 1
 #define UBA_PROTO_BPT_charge_stop_condition_max_time_tag 2
 #define UBA_PROTO_BPT_charge_stop_condition_cut_off_current_tag 3
-#define UBA_PROTO_BPT_charge_stop_condition_limit_capacity_tag 4
+#define UBA_PROTO_BPT_charge_stop_condition_charge_limit_tag 4
 #define UBA_PROTO_BPT_charge_source_tag          1
 #define UBA_PROTO_BPT_charge_current_tag         2
 #define UBA_PROTO_BPT_charge_voltage_tag         3
@@ -215,7 +216,7 @@ extern "C" {
 #define UBA_PROTO_BPT_discharge_stop_condition_max_temperature_tag 1
 #define UBA_PROTO_BPT_discharge_stop_condition_max_time_tag 2
 #define UBA_PROTO_BPT_discharge_stop_condition_cut_off_voltag_tag 3
-#define UBA_PROTO_BPT_discharge_stop_condition_limit_capacity_tag 4
+#define UBA_PROTO_BPT_discharge_stop_condition_charge_limit_tag 4
 #define UBA_PROTO_BPT_discharge_source_tag       1
 #define UBA_PROTO_BPT_discharge_current_tag      2
 #define UBA_PROTO_BPT_discharge_min_temperature_tag 3
@@ -248,7 +249,7 @@ X(a, STATIC,   SINGULAR, INT32,    value,             2)
 X(a, STATIC,   SINGULAR, FLOAT,    max_temperature,   1) \
 X(a, STATIC,   SINGULAR, UINT32,   max_time,          2) \
 X(a, STATIC,   SINGULAR, INT32,    cut_off_current,   3) \
-X(a, STATIC,   SINGULAR, INT32,    limit_capacity,    4)
+X(a, STATIC,   SINGULAR, INT32,    charge_limit,    4)
 #define UBA_PROTO_BPT_charge_stop_condition_CALLBACK NULL
 #define UBA_PROTO_BPT_charge_stop_condition_DEFAULT NULL
 
@@ -266,7 +267,7 @@ X(a, STATIC,   SINGULAR, MESSAGE,  sc,                5)
 X(a, STATIC,   SINGULAR, FLOAT,    max_temperature,   1) \
 X(a, STATIC,   SINGULAR, UINT32,   max_time,          2) \
 X(a, STATIC,   SINGULAR, INT32,    cut_off_voltag,    3) \
-X(a, STATIC,   SINGULAR, INT32,    limit_capacity,    4)
+X(a, STATIC,   SINGULAR, INT32,    charge_limit,    4)
 #define UBA_PROTO_BPT_discharge_stop_condition_CALLBACK NULL
 #define UBA_PROTO_BPT_discharge_stop_condition_DEFAULT NULL
 

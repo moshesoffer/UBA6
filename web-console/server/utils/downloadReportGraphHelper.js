@@ -99,6 +99,7 @@ const downloadReportsGraph = async (req, res) => {
 		let previousTimestamp = 0;
 		let maxTemperature = -9999;
 		testResults.forEach((testResult, index) => {
+		logger.info(`downloadReportsGraph [${req.params?.reportID} {index}]`);
 			const currentPlanIndex = testResult.planIndex;
 			const currentStepIndex = testResult.stepIndex;
 			const planStep = planArr[currentPlanIndex];
@@ -168,7 +169,7 @@ const downloadReportsGraph = async (req, res) => {
 
 		const id = uuidv4();
 		excelOutputFilePath = path.join(__dirname, 'output-' + id + '.xlsx');
-		logger.info(`downloadReportsGraph [${req.params?.reportID}] write to [${excelOutputFilePath}]`);
+		logger.info(`downloadReportsGraph [${req.params?.reportID}] write to [${excelOutputFilePath}], exportType [${req.params?.exportType}]`);
 		await workbook.toFileAsync(excelOutputFilePath);
 		if(exportType === 'XSLX'){
 			// Set headers for file download filename="${resultsGraphData[0].reportID}.xlsx"
@@ -189,7 +190,9 @@ const downloadReportsGraph = async (req, res) => {
 			});
 		} else {
 			//exec('soffice --headless --convert-to pdf ' +  excelOutputFilePath, (error, stdout, stderr) => {
-			exec('soffice --headless --convert-to pdf --outdir ' + __dirname + ' ' + excelOutputFilePath, (error, stdout, stderr) => {
+			//exec('soffice --headless --convert-to pdf --outdir ' + __dirname + ' ' + excelOutputFilePath, (error, stdout, stderr) => {
+			const sofficePath = '"C:\\Program Files\\LibreOffice\\program\\soffice.exe"';
+			exec(`${sofficePath} --headless --convert-to pdf --outdir "${__dirname}" "${excelOutputFilePath}"`, (error, stdout, stderr) => {
 				if (error) {
 					logger.error(`****Error: ${error.message}`);
 					deleteFiles(excelOutputFilePath, pdfPath);

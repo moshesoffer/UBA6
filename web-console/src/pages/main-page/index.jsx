@@ -6,6 +6,7 @@ import {getUbaDevices,} from 'src/action-creators/UbaDevices';
 import {pageStateList,} from 'src/constants/unsystematic';
 import WizardTwo from 'src/components/wizard/step-two';
 import WizardOne from 'src/components/wizard/step-one';
+import {paramChangeOption,} from 'src/components/wizard/step-two';
 
 import TableView from './table-view';
 import CardView from './card-view';
@@ -18,6 +19,8 @@ export default function MainPage() {
 
 	const authDispatch = useAuthDispatch();
 	const ubaDevicesDispatch = useUbaDevicesDispatch();
+
+	let changeOption;
 
 	useEffect(() => {
 		//console.log('MainPage useEffect');
@@ -39,7 +42,7 @@ export default function MainPage() {
 			return <WizardOne/>;
 		}
 		case pageStateList.WIZARD_TWO: {
-			return <WizardTwo/>;
+			return <WizardTwo changeOption={paramChangeOption.doRunTest}/>;
 		}
 		case pageStateList.RUN_BATCH_TEST: {
 			return <RunBatchTest/>;

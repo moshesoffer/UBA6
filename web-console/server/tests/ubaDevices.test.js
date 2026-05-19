@@ -25,44 +25,44 @@ describe('Machine API Tests', () => {
     let connection;
 
     beforeAll(async () => {
-        await withTimeout(runSchema(), AWAIT_TIMEOUT);
-        connection = await withTimeout(mysql.createConnection(global.__MYSQL_CONFIG__), AWAIT_TIMEOUT);
+        await runSchema();
+        connection = await mysql.createConnection(global.__MYSQL_CONFIG__);
 
-        let response = await withTimeout(request(global.__SERVER__)
+        let response = await request(global.__SERVER__)
             .post(APIS.machinesApi)
-            .send(machineToAdd), AWAIT_TIMEOUT);
+            .send(machineToAdd);
         expect(response.status).toBe(201);
 
-        response = await withTimeout(request(global.__SERVER__)
+        response = await request(global.__SERVER__)
             .post(APIS.ubaDevicesApi)
-            .send(ubaDeviceToAdd), AWAIT_TIMEOUT);
+            .send(ubaDeviceToAdd);
         expect(response.status).toBe(201);
         expect(response.body.length).toBe(2);//2 ids of running tests
 
-        const [ubaRows] = await withTimeout(connection.query(`SELECT * FROM \`${ubaDeviceModel.tableName}\`;`), AWAIT_TIMEOUT);
+        const [ubaRows] = await connection.query(`SELECT * FROM \`${ubaDeviceModel.tableName}\`;`);
         expect(ubaRows.length).toBe(1);
-        const [runningTestsRows] = await withTimeout(connection.query(`SELECT * FROM \`${runningTestsModel.tableName}\`;`), AWAIT_TIMEOUT);
+        const [runningTestsRows] = await connection.query(`SELECT * FROM \`${runningTestsModel.tableName}\`;`);
         expect(runningTestsRows.length).toBe(2);
-        const [instantTestResultsRows] = await withTimeout(connection.query(`SELECT * FROM \`${instantTestResultsModel.tableName}\`;`), AWAIT_TIMEOUT);
+        const [instantTestResultsRows] = await connection.query(`SELECT * FROM \`${instantTestResultsModel.tableName}\`;`);
         expect(instantTestResultsRows.length).toBe(0);
         
     });
 
     afterAll(async () => {
         console.log('Machine Test suite finished');
-        if(connection) await withTimeout(connection.end(), AWAIT_TIMEOUT);
+        if(connection) await connection.end();
         //delay - waiting for winston server logs to finish
         //await new Promise(resolve => setTimeout(resolve, 500));
     });
     afterEach(async () => {
-        await withTimeout(clearMemInServer(), AWAIT_TIMEOUT);
+        await clearMemInServer();
     });
 
     test('add a new ubaDevice - fail', async () => {
         const { ubaChannel, ...ubaDeviceWithoutUbaChannel } = ubaDeviceToAdd;
-        const response = await withTimeout(request(global.__SERVER__)
+        const response = await request(global.__SERVER__)
             .post(APIS.ubaDevicesApi)
-            .send(ubaDeviceWithoutUbaChannel), AWAIT_TIMEOUT);
+            .send(ubaDeviceWithoutUbaChannel);
         expect(response.status).toBe(500);//missing ubaChannel
     });
 
@@ -74,11 +74,11 @@ describe('Machine API Tests', () => {
             address: '123456',
             ignoredParam: 'something',
         };
-        let response = await withTimeout(request(global.__SERVER__)
+        let response = await request(global.__SERVER__)
             .patch(APIS.ubaDevicesApi + "/" + ubaDeviceToAdd.ubaSN)
-            .send(newObj), AWAIT_TIMEOUT);
+            .send(newObj);
         expect(response.status).toBe(200);
-        response = await withTimeout(request(global.__SERVER__).get(APIS.ubaDevicesApi), AWAIT_TIMEOUT);
+        response = await request(global.__SERVER__).get(APIS.ubaDevicesApi);
         
         const ubaDevices = response.body.ubaDevices;
         const ubaTotal = response.body.ubaTotal;
@@ -101,26 +101,26 @@ describe('Machine API Tests', () => {
     });
 
     test('update a ubaDevice - fail', async () => {
-        let response = await withTimeout(request(global.__SERVER__)
+        let response = await request(global.__SERVER__)
             .patch(APIS.ubaDevicesApi + "/" + ubaDeviceToAdd.ubaSN)
             .send({
                 notExist: 'notExist',
-            }), AWAIT_TIMEOUT);
+            });
         expect(response.status).toBe(500);//nothing to update
         
-        response = await withTimeout(request(global.__SERVER__)
+        response = await request(global.__SERVER__)
             .patch(APIS.ubaDevicesApi + "/" + 'notexist')
             .send({
                 name: 'new',
-            }), AWAIT_TIMEOUT);
+            });
         expect(response.status).toBe(500);//ubaDevice not exists
     });
 
     test('delete a ubaDevice - happy flow', async () => {
-        let response = await withTimeout(request(global.__SERVER__)
-            .delete(APIS.ubaDevicesApi + "/" + ubaDeviceToAdd.ubaSN), AWAIT_TIMEOUT);
+        let response = await request(global.__SERVER__)
+            .delete(APIS.ubaDevicesApi + "/" + ubaDeviceToAdd.ubaSN);
         expect(response.status).toBe(204);
-        response = await withTimeout(request(global.__SERVER__).get(APIS.ubaDevicesApi), AWAIT_TIMEOUT);
+        response = await request(global.__SERVER__).get(APIS.ubaDevicesApi);
         const ubaDevices = response.body.ubaDevices;
         const ubaTotal = response.body.ubaTotal;
         expect(ubaDevices.length).toBe(0);
@@ -128,15 +128,15 @@ describe('Machine API Tests', () => {
         expect(ubaTotal.connected).toBe(0);
         expect(ubaTotal.running).toBe(0);
 
-        const [ubaRows] = await withTimeout(connection.query(`SELECT * FROM \`${ubaDeviceModel.tableName}\`;`), AWAIT_TIMEOUT);
+        const [ubaRows] = await connection.query(`SELECT * FROM \`${ubaDeviceModel.tableName}\`;`);
         expect(ubaRows.length).toBe(0);
-        const [runningTestsRows] = await withTimeout(connection.query(`SELECT * FROM \`${runningTestsModel.tableName}\`;`), AWAIT_TIMEOUT);
+        const [runningTestsRows] = await connection.query(`SELECT * FROM \`${runningTestsModel.tableName}\`;`);
         expect(runningTestsRows.length).toBe(0);
     });
 
     test('delete a ubaDevice - fail', async () => {
-        let response = await withTimeout(request(global.__SERVER__)
-            .delete(APIS.ubaDevicesApi + "/" + 'notexist'), AWAIT_TIMEOUT);
+        let response = await request(global.__SERVER__)
+            .delete(APIS.ubaDevicesApi + "/" + 'notexist');
         expect(response.status).toBe(500);//ubaDevice not exists
     });
 
@@ -156,9 +156,9 @@ describe('Machine API Tests', () => {
             if (field === 'ubaChannel') continue; // nullable fields
             const ubaCopy = { ...ubaDeviceToAdd2 };
             delete ubaCopy[field];
-            const response = await withTimeout(request(global.__SERVER__)
+            const response = await request(global.__SERVER__)
                 .post(APIS.ubaDevicesApi)
-                .send(ubaCopy), AWAIT_TIMEOUT);
+                .send(ubaCopy);
             expect(response.status).toBe(500);
         }
     });
@@ -177,9 +177,9 @@ describe('Machine API Tests', () => {
             hwVersion: "5.2",
         };
         
-        const response = await withTimeout(request(global.__SERVER__)
+        const response = await request(global.__SERVER__)
             .post(APIS.ubaDevicesApi)
-            .send(tooLong), AWAIT_TIMEOUT);
+            .send(tooLong);
         expect(response.status).toBe(500);
     });
 
@@ -195,8 +195,8 @@ describe('Machine API Tests', () => {
             fwVersion: "7.5.3.0",
             hwVersion: "5.2",
         };
-        await withTimeout(request(global.__SERVER__).post(APIS.ubaDevicesApi).send(ubaDeviceToAdd3), AWAIT_TIMEOUT);
-        const response = await withTimeout(request(global.__SERVER__).post(APIS.ubaDevicesApi).send(ubaDeviceToAdd3), AWAIT_TIMEOUT);
+        await request(global.__SERVER__).post(APIS.ubaDevicesApi).send(ubaDeviceToAdd3);
+        const response = await request(global.__SERVER__).post(APIS.ubaDevicesApi).send(ubaDeviceToAdd3);
         expect([409, 500]).toContain(response.status);
     });
 
@@ -212,9 +212,9 @@ describe('Machine API Tests', () => {
             fwVersion: "7.5.3.0",
             hwVersion: "5.2",
         };
-        const response = await withTimeout(request(global.__SERVER__)
+        const response = await request(global.__SERVER__)
             .post(APIS.ubaDevicesApi)
-            .send(invalidUBA), AWAIT_TIMEOUT);
+            .send(invalidUBA);
         expect(response.status).toBe(500);
     });
 
@@ -230,9 +230,9 @@ describe('Machine API Tests', () => {
             fwVersion: "7.5.3.0",
             hwVersion: "5.2",
         };
-        const response = await withTimeout(request(global.__SERVER__)
+        const response = await request(global.__SERVER__)
             .post(APIS.ubaDevicesApi)
-            .send(invalidUBA), AWAIT_TIMEOUT);
+            .send(invalidUBA);
         expect([409, 500]).toContain(response.status);
     });
 
@@ -250,23 +250,23 @@ describe('Machine API Tests', () => {
             extraField: 'shouldBeIgnored'
         };
 
-        const response = await withTimeout(request(global.__SERVER__)
+        const response = await request(global.__SERVER__)
             .post(APIS.ubaDevicesApi)
-            .send(ubaWithExtra), AWAIT_TIMEOUT);
+            .send(ubaWithExtra);
         expect([201]).toContain(response.status);
     });
 
     // co-pilot-empty-payload
     test('co-pilot-empty-payload', async () => {
-        const response = await withTimeout(request(global.__SERVER__)
+        const response = await request(global.__SERVER__)
             .post(APIS.ubaDevicesApi)
-            .send({}), AWAIT_TIMEOUT);
+            .send({});
         expect(response.status).toBe(500);
     });
 
     // co-pilot-get-nonexistent-ubaDevice
     test('co-pilot-get-nonexistent-ubaDevice', async () => {
-        const response = await withTimeout(request(global.__SERVER__).get(APIS.ubaDevicesApi + '/notexist'), AWAIT_TIMEOUT);
+        const response = await request(global.__SERVER__).get(APIS.ubaDevicesApi + '/notexist');
         expect([301, 404, 500]).toContain(response.status);
     });
 

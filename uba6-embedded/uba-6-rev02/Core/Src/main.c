@@ -98,7 +98,9 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+
+
+	HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -157,13 +159,25 @@ int main(void)
 uint32_t lcd_refresh_last_time = 0;
 #endif/*LCD_REFRESH*/
 
+  int cycle1, cycle2 = 0;
 	while (1) {
-		  UBA_6_run(&UBA_6_device_g);
-		  UBA_line_run(&UBA_LINE_A);
-		  UBA_line_run(&UBA_LINE_B);
-		  LCD_run(&UBA_LCD_g);
-		  UBA_UART_comm_run();
-		  UBA_buzzer_run(&buzzer_g);
+	      if ((cycle1++ % 1) == 0) {
+		    UBA_UART_comm_run();
+        cycle1 = 0;
+      }
+      if ((cycle2++ %2) == 0) {
+		    UBA_6_run(&UBA_6_device_g);
+      }
+      if ((cycle2++ %1) == 0) {
+		    UBA_line_run(&UBA_LINE_A);
+		    UBA_line_run(&UBA_LINE_B);
+      }
+      if ((cycle2++ %2) == 0) {
+		    LCD_run(&UBA_LCD_g);
+		    UBA_buzzer_run(&buzzer_g);
+        cycle2 = 0;
+      }
+      HAL_Delay(10); 
       /* USER CODE END WHILE */
 
       /* USER CODE BEGIN 3 */
@@ -179,6 +193,30 @@ uint32_t lcd_refresh_last_time = 0;
     }
   /* USER CODE END 3 */
 }
+
+void peripheralsInit()
+{
+  /* Initialize all configured peripherals */
+//  MX_GPIO_Init();
+  MX_DMA_Init();
+  MX_ADC1_Init();
+  MX_ADC2_Init();
+  MX_DAC1_Init();
+//  MX_I2C3_Init();
+//  MX_I2C4_Init();
+//  MX_SPI2_Init();
+//  MX_SPI4_Init();
+//  if (MX_FATFS_Init() != APP_OK) {
+//    Error_Handler();
+//  }
+//  MX_USART2_UART_Init();
+//  MX_TIM1_Init();
+//  MX_USART1_UART_Init();
+//  MX_TIM8_Init();
+//  MX_RTC_Init();
+//  MX_TIM5_Init();
+}
+
 
 /**
   * @brief System Clock Configuration

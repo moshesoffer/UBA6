@@ -40,9 +40,16 @@ import {
 	validateRepeatStep,
 	validateCheckboxGroup,
 } from '../validators';
-import {changePageState,} from '../utils';
+import {changePageState, actionOption,} from '../utils';
 
-export default function WizardTwo() {
+export const paramChangeOption = {
+	doRunTest: 'doRunTest',
+	doDefineTest: 'doDefineTest'
+};
+
+export default function WizardTwo(props) {
+	
+	const {changeOption} = props;
 
 	const {pathname} = useLocation();
 	let isRunAction = useRef(false);
@@ -134,7 +141,7 @@ export default function WizardTwo() {
 		}
 	}
 
-	const doFinish = isButton => {
+	const doFinish = action => {
 		testRoutinesDispatch(startSaveAction());
 
 		if (!plan.length) {
@@ -152,14 +159,8 @@ export default function WizardTwo() {
 
 		setIsError(false);
 
-		if (
-			isButton &&
-			validateBoolean(existingTest.isTrue) && existingTest.isTrue &&
-			validateBoolean(existingTest.isChanged) && existingTest.isChanged
-		) {
-			// This flow has triggered by clicking the button and not from answering into dialog.
-			// In this case, we are opening the dialog if the test changes has been recognized.
-			// Also, we are interrupting the process here.
+		if (existingTest.isChanged) {
+			//open pop-up menu (save-and-run, run-without-save, cancel)
 			setIsDialogOpen(true);
 			return false;
 		}
@@ -170,9 +171,40 @@ export default function WizardTwo() {
 			plan,
 		};
 
-		if (isRunAction.current) {
+		if (action === actionOption.RUN) {
 			// Running the test.
 			let ubaSNs = [];
+
+
+
+//			if (
+//				(testRoutine.channel === ubaChannel.A || testRoutine.channel === ubaChannel.B) &&
+//				(currentUba.ubaChannel === testRoutine.channel || currentUba.ubaChannel === ubaChannel.AB)
+//			) {
+//				ubaSNs = [
+//					{
+//						ubaSN: currentUba.ubaSN,
+//						channel: currentUba.channel,
+//					},
+//				];
+//			} else if (
+//				testRoutine.channel === UBA_CHANNEL_LIST.A_AND_B
+//			) {
+//				ubaSNs = [
+//					{
+//						ubaSN: currentUba.ubaSN,
+//						channel: ubaChannel.A,
+//					},
+//					{
+//						ubaSN: currentUba.ubaSN,
+//						channel: ubaChannel.B,
+//					},
+//				];
+//			} else {
+//				throw new Error(`Insufficient testRoutine channel ${testRoutine.channel} with currentUba channel ${currentUba.ubaChannel}`);
+//			}
+
+
 
 			if (
 				(testRoutine.channel === ubaChannel.A || testRoutine.channel === ubaChannel.B) &&
@@ -188,35 +220,65 @@ export default function WizardTwo() {
 				testRoutine.channel === UBA_CHANNEL_LIST.A_AND_B &&
 				currentUba.ubaChannel === ubaChannel.AB
 			) {
-				ubaSNs = [
-					{
-						ubaSN: currentUba.ubaSN,
-						channel: ubaChannel.A,
-					},
-					{
-						ubaSN: currentUba.ubaSN,
-						channel: ubaChannel.B,
-					},
-				];
+				if (currentUba.channel === ubaChannel.A) {
+					ubaSNs = [
+						{
+							ubaSN: currentUba.ubaSN,
+							channel: ubaChannel.A,
+						},
+						{
+							ubaSN: currentUba.ubaSN,
+							channel: ubaChannel.B,
+						},
+					];
+				} else if (currentUba.channel === ubaChannel.B) {
+					ubaSNs = [
+						{
+							ubaSN: currentUba.ubaSN,
+							channel: ubaChannel.B,
+						},
+						{
+							ubaSN: currentUba.ubaSN,
+							channel: ubaChannel.A,
+						},
+					];
+				} else {
+					throw new Error(`Dual channel is not associated with currentUba channel ${currentUba.channel}`);
+				}
 			} else {
 				throw new Error(`Insufficient testRoutine channel ${testRoutine.channel} with currentUba channel ${currentUba.ubaChannel}`);
 			}
 
 			createRunningTest(authDispatch, ubaDevicesDispatch, ubaSNs, testRoutine);
-		} else {
+
+		} else if (action === actionOption.SAVE) {
 			// Saving the test routine.
 			if (testRoutine.id === null) {
 				createTestRoutine(authDispatch, testRoutinesDispatch, testRoutine);
 			} else {
-				updateTestRoutine(authDispatch, testRoutinesDispatch, testRoutine);
+				//updateTestRoutine(authDispatch, testRoutinesDispatch, testRoutine);
+				createTestRoutine(authDispatch, testRoutinesDispatch, testRoutine);
 			}
+
+		} else if (action === actionOption.SAVE_RUN) {
+			// save/update the test routine.
+			if (testRoutine.id === null) {
+				createTestRoutine(authDispatch, testRoutinesDispatch, testRoutine);
+			} else {
+				//updateTestRoutine(authDispatch, testRoutinesDispatch, testRoutine);
+				createTestRoutine(authDispatch, testRoutinesDispatch, testRoutine);
+			}
+
+			// run the test routine.
+			existingTest.isChanged = false;
+			doFinish(actionOption.RUN);
 		}
 
 		return true;
 	}
 
-	const finishProcess = isButton => {
-		const isProcessFinished = doFinish(isButton);
+	const finishProcess = action => {
+		const isProcessFinished = doFinish(action);
 		if (!isProcessFinished) {
 			// The process had not been finished because of the dialog had been opened.
 			return;
@@ -229,24 +291,22 @@ export default function WizardTwo() {
 	}
 
 	const handleRunClick = () => {
-		isRunAction.current = true;
-		finishProcess(true);
+		finishProcess(actionOption.RUN);
 	}
 
 	const handleSaveClick = () => {
-		isRunAction.current = false;
-		finishProcess(true);
+		finishProcess(actionOption.SAVE);
 	}
 
-	const handleDialogClose = answer => {
+	const handleDialogClose = action => {
 		setIsDialogOpen(false);
+		existingTest.isChanged = false;
 
-		if (!answer) {
-			// The dialog answer is 'No';
+		if (action === actionOption.CANCEL) {
 			return;
 		}
 
-		finishProcess(false);
+		finishProcess(action);
 	}
 
 	const handleStateChange = state => changePageState(state, pathname, ubaDevicesDispatch, testRoutinesDispatch);
@@ -281,7 +341,7 @@ export default function WizardTwo() {
 				</CardActions>
 			</Card>
 
-			<ParametersChangedDialog open={isDialogOpen} onClose={handleDialogClose}/>
+			<ParametersChangedDialog open={isDialogOpen} onClose={handleDialogClose} doOption={changeOption}/>
 		</Container>
 	);
 }

@@ -6,23 +6,23 @@ const { validateString } = require('../utils/validators');
 const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 
 const getMachines = async () => {
-    return await withTimeout(selectQuery(machineModel.tableName, machineModel.selectAllQuery), AWAIT_TIMEOUT);
+    return await selectQuery(machineModel.tableName, machineModel.selectAllQuery);
 };
 
 const createMachine = async (machine) => {
-    await withTimeout(createModel(machineModel, machine), AWAIT_TIMEOUT);
+    await createModel(machineModel, machine);
 };
 
 const updateMachine = async (mac, machine) => {
-    await withTimeout(updateModel(machineModel, mac, machine), AWAIT_TIMEOUT);
+    await updateModel(machineModel, mac, machine);
 };
 
 const deleteMachine = async (mac) => {
-	const count = await withTimeout(getCountUbaDeviceByMachineMac(mac), AWAIT_TIMEOUT);
+	const count = await getCountUbaDeviceByMachineMac(mac);
 	if (count > 0) {
 		throw new Error(`Machine has ${count} uba devices, can't delete.`);
 	}
-    await withTimeout(deleteModel(machineModel, mac), AWAIT_TIMEOUT);
+    await deleteModel(machineModel, mac);
 };
 
 const getMachine = async (machineMac) => {
@@ -30,7 +30,7 @@ const getMachine = async (machineMac) => {
 		throw new Error(`Invalid machineMac.`);
 	}
 	const query = `SELECT * FROM \`${machineModel.tableName}\` WHERE \`mac\` = ?;`;
-	const result = await withTimeout(selectQuery(machineModel.tableName, query, [machineMac.trim(),]), AWAIT_TIMEOUT);
+	const result = await selectQuery(machineModel.tableName, query, [machineMac.trim(),]);
 	logger.info(`getMachine Executing machineMac: ${machineMac}`);
 	return result[0];
 	

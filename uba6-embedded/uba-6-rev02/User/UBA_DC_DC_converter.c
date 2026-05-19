@@ -4,6 +4,7 @@
  *  Created on: Jan 29, 2025
  *      Author: ORA
  */
+#define UART_LOG_DISABLE
 
 #include "UBA_DC_DC_converter.h"
 #include "uart_log.h"
@@ -182,8 +183,10 @@ static void UBA_DCDC_buck_boost_enter(UBA_DC_DC *dcdc) {
 static void UBA_DCDC_buck_boost(UBA_DC_DC *dcdc) {
 	if (HAL_GetTick() - dcdc->update_time > UPDATED_TIME) {
 		dcdc->update_time = HAL_GetTick();
+
 		if (dcdc->SW1_2_BUCK.value != dcdc->SW1_2_BUCK.value_2_set) {
 			UBA_PWM_update(&dcdc->SW1_2_BUCK, dcdc->SW1_2_BUCK.value_2_set);
+
 		} else if (dcdc->SW3_4_BOOST.value != dcdc->SW3_4_BOOST.value_2_set) {
 			UBA_PWM_update(&dcdc->SW3_4_BOOST, dcdc->SW3_4_BOOST.value_2_set);
 		}
@@ -199,15 +202,18 @@ static void UBA_DCDC_buck_boost_exit(UBA_DC_DC *dcdc) {
 uint32_t UBA_DCDC_bock_boost_down(UBA_DC_DC *dcdc) {
 	uint32_t buck_duty_cycle = (dcdc->SW1_2_BUCK.value * 100) / __HAL_TIM_GET_AUTORELOAD(dcdc->SW1_2_BUCK.handle);
 	uint32_t boost_duty_cycle = (dcdc->SW3_4_BOOST.value * 100) / __HAL_TIM_GET_AUTORELOAD(dcdc->SW3_4_BOOST.handle);
+
 	if (*(dcdc->p_vps) < UBA_VPS_MIN_VALUE) {
 		UART_LOG_CRITICAL(UBA_COMP, "Can't calculate Value (%u) VPS low", *(dcdc->p_vps));
 		return UBA_PROTO_UBA6_ERROR_LINE_LOW_INPUT_VOLTAGE;
 	}
+
 	uint32_t expected_vgen = (*(dcdc->p_vps) * buck_duty_cycle / (100 - boost_duty_cycle));
 	if (expected_vgen > MAX_EXPECTED_VOLTAGE) {
 		UART_LOG_CRITICAL(UBA_COMP, "Expected Vgen (%lu) is OOB", expected_vgen);
 		return UBA_PROTO_UBA6_ERROR_LINE_VGEN_EXPECTED_MAX_VOLTAGE;
 	}
+
 	UART_LOG_INFO(UBA_COMP, "Step Down Buck Duty Cycle:%03lu%% Boost Duty Cycle:%03lu%% Expected:%03lu mV", buck_duty_cycle, boost_duty_cycle,
 			expected_vgen);
 	if (buck_duty_cycle < (boost_duty_cycle + 5)) {
@@ -217,12 +223,15 @@ uint32_t UBA_DCDC_bock_boost_down(UBA_DC_DC *dcdc) {
 
 	if (boost_duty_cycle > UBA_DC_DC_BOOST_MIN_DUTY_CYCLE) {
 		dcdc->SW3_4_BOOST.value_2_set = dcdc->SW3_4_BOOST.value - 1;
+
 	} else if (buck_duty_cycle > UBA_DC_DC_BUCK_MIN_DUTY_CYCLE) {
 		dcdc->SW1_2_BUCK.value_2_set = dcdc->SW1_2_BUCK.value - 1;
+
 	} else {
 		UART_LOG_CRITICAL(UBA_COMP, "Duty Cycle at the limits");
 		return UBA_PROTO_UBA6_ERROR_LINE_VGEN_LIMITES;
 	}
+
 	if ((dcdc->SW3_4_BOOST.value_2_set < dcdc->SW3_4_BOOST.max_value) && (dcdc->SW3_4_BOOST.value_2_set > dcdc->SW3_4_BOOST.min_value)) {
 
 	}
@@ -232,6 +241,7 @@ uint32_t UBA_DCDC_bock_boost_down(UBA_DC_DC *dcdc) {
 uint32_t UBA_DCDC_bock_boost_up(UBA_DC_DC *dcdc , uint8_t step_size) {
 	uint32_t buck_duty_cycle = (dcdc->SW1_2_BUCK.value * 100) / __HAL_TIM_GET_AUTORELOAD(dcdc->SW1_2_BUCK.handle);
 	uint32_t boost_duty_cycle = (dcdc->SW3_4_BOOST.value * 100) / __HAL_TIM_GET_AUTORELOAD(dcdc->SW3_4_BOOST.handle);
+	
 	if (*(dcdc->p_vps) < UBA_VPS_MIN_VALUE) {
 		UART_LOG_CRITICAL(UBA_COMP, "Can't calculate Value (%u) VPS low", *(dcdc->p_vps));
 		return UBA_PROTO_UBA6_ERROR_LINE_LOW_INPUT_VOLTAGE;
@@ -247,8 +257,10 @@ uint32_t UBA_DCDC_bock_boost_up(UBA_DC_DC *dcdc , uint8_t step_size) {
 			expected_vgen);
 	if (buck_duty_cycle < UBA_DC_DC_BUCK_MAX_DUTY_CYCLE - step_size) {
 		dcdc->SW1_2_BUCK.value_2_set = dcdc->SW1_2_BUCK.value + step_size;
+
 	} else if (boost_duty_cycle < UBA_DC_DC_BOOST_MAX_DUTY_CYCLE - step_size) {
 		dcdc->SW3_4_BOOST.value_2_set = dcdc->SW3_4_BOOST.value + step_size;
+
 	} else {
 		UART_LOG_CRITICAL(UBA_COMP, "Duty Cycle at the limits");
 		return UBA_PROTO_UBA6_ERROR_LINE_VGEN_LIMITES;

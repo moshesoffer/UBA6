@@ -120,7 +120,7 @@ function AddEditUbaDevice() {
 			queryObj.ubaSN = currentUba.ubaSN;
 			queryObj.ubaChannel = currentUba.ubaChannel;
 		}
-		const res = await withTimeout( queryUbaDevice(false, queryObj), AWAIT_TIMEOUT);
+		const res = await queryUbaDevice(false, queryObj);
 		if(res?.error) {
 			//authDispatch(setNotification({message: res.error,}));
 			setQueryError(res.error);

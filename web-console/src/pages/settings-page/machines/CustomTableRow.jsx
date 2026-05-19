@@ -15,7 +15,7 @@ export default function CustomTableRow(props) {
 	const {ubaDevices,} = useUbaDevices();
 
 	const handleDeleteClick = () => {
-		let choice = confirm('Do you want to delete this Station?');
+		let choice = confirm('Confirm Delete UBA Machine?');
 		if(choice === true) {
 			deleteMachine(authDispatch, settingsDispatch, row?.mac);
 			return true;

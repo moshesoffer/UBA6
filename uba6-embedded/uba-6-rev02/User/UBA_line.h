@@ -114,7 +114,7 @@ typedef struct UBA_line {
 	uint16_t EX_ADC_raw_data;
 	bool isBusy;
 	bool isBattery_connected; // if a battery connection has made
-	bool isBattery_temperature_connected; //
+//	bool isBattery_temperature_connected; //
 	uint16_t R28_R60;
 	uint32_t R23_R55;
 	uint32_t adc_resistance[4];

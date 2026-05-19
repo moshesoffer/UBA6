@@ -9,20 +9,20 @@ describe('Edge Cases and Error Scenarios', () => {
     let connection;
 
     beforeAll(async () => {
-        await withTimeout(runSchema(), AWAIT_TIMEOUT);
-        connection = await withTimeout(mysql.createConnection(global.__MYSQL_CONFIG__), AWAIT_TIMEOUT);
+        await runSchema();
+        connection = await mysql.createConnection(global.__MYSQL_CONFIG__);
     });
 
     afterAll(async () => {
         console.log('Edge Cases Test suite finished');
-        if (connection) await withTimeout(connection.end(), AWAIT_TIMEOUT);
+        if (connection) await connection.end();
         //delay - waiting for winston server logs to finish
         //await new Promise(resolve => setTimeout(resolve, 500));
     });
 
     describe('Database Connection Edge Cases', () => {
         test('should handle health check when database is accessible', async () => {
-            const response = await withTimeout(request(global.__SERVER__).get('/health'), AWAIT_TIMEOUT);
+            const response = await request(global.__SERVER__).get('/health');
             
             expect(response.status).toBe(200);
             expect(response.body.status).toBe('ok');
@@ -46,14 +46,14 @@ describe('Edge Cases and Error Scenarios', () => {
                 chargeOption: 'P'
             };
 
-            const response = await withTimeout(request(global.__SERVER__)
+            const response = await request(global.__SERVER__)
                 .post(APIS.cellsApi)
-                .send(minValidCell), AWAIT_TIMEOUT);
+                .send(minValidCell);
             
             expect([201, 400, 500]).toContain(response.status);
             
             if (response.status === 201) {
-                await withTimeout(request(global.__SERVER__).delete(APIS.cellsApi + '/MIN_TEST'), AWAIT_TIMEOUT);
+                await request(global.__SERVER__).delete(APIS.cellsApi + '/MIN_TEST');
             }
         });
 
@@ -72,14 +72,14 @@ describe('Edge Cases and Error Scenarios', () => {
                 chargeOption: 'x'.repeat(64)
             };
 
-            const response = await withTimeout(request(global.__SERVER__)
+            const response = await request(global.__SERVER__)
                 .post(APIS.cellsApi)
-                .send(maxValidCell), AWAIT_TIMEOUT);
+                .send(maxValidCell);
             
             expect([201, 400, 500]).toContain(response.status);
             
             if (response.status === 201) {
-                await withTimeout(request(global.__SERVER__).delete(APIS.cellsApi + '/MAX_TEST'), AWAIT_TIMEOUT);
+                await request(global.__SERVER__).delete(APIS.cellsApi + '/MAX_TEST');
             }
         });
 
@@ -98,14 +98,14 @@ describe('Edge Cases and Error Scenarios', () => {
                 chargeOption: 'Primary'
             };
 
-            const response = await withTimeout(request(global.__SERVER__)
+            const response = await request(global.__SERVER__)
                 .post(APIS.cellsApi)
-                .send(zeroValueCell), AWAIT_TIMEOUT);
+                .send(zeroValueCell);
             
             expect([201, 400, 500]).toContain(response.status);
             
             if (response.status === 201) {
-                await withTimeout(request(global.__SERVER__).delete(APIS.cellsApi + '/ZERO_TEST'), AWAIT_TIMEOUT);
+                await request(global.__SERVER__).delete(APIS.cellsApi + '/ZERO_TEST');
             }
         });
     });
@@ -126,18 +126,18 @@ describe('Edge Cases and Error Scenarios', () => {
                 chargeOption: 'Primary'
             };
 
-            const response = await withTimeout(request(global.__SERVER__)
+            const response = await request(global.__SERVER__)
                 .post(APIS.cellsApi)
-                .send(unicodeCell), AWAIT_TIMEOUT);
+                .send(unicodeCell);
             
             expect([201, 400, 500]).toContain(response.status);
             
             if (response.status === 201) {
-                const getResponse = await withTimeout(request(global.__SERVER__).get(APIS.cellsApi), AWAIT_TIMEOUT);
+                const getResponse = await request(global.__SERVER__).get(APIS.cellsApi);
                 const createdCell = getResponse.body.find(c => c.itemPN === 'UNICODE_TEST');
                 expect(createdCell).toBeDefined();
                 
-                await withTimeout(request(global.__SERVER__).delete(APIS.cellsApi + '/UNICODE_TEST'), AWAIT_TIMEOUT);
+                await request(global.__SERVER__).delete(APIS.cellsApi + '/UNICODE_TEST');
             }
         });
 
@@ -156,14 +156,14 @@ describe('Edge Cases and Error Scenarios', () => {
                 chargeOption: 'Primary'
             };
 
-            const response = await withTimeout(request(global.__SERVER__)
+            const response = await request(global.__SERVER__)
                 .post(APIS.cellsApi)
-                .send(specialCharCell), AWAIT_TIMEOUT);
+                .send(specialCharCell);
             
             expect([201, 400, 500]).toContain(response.status);
             
             if (response.status === 201) {
-                await withTimeout(request(global.__SERVER__).delete(APIS.cellsApi + '/SPECIAL_TEST'), AWAIT_TIMEOUT);
+                await request(global.__SERVER__).delete(APIS.cellsApi + '/SPECIAL_TEST');
             }
         });
     });
@@ -185,14 +185,14 @@ describe('Edge Cases and Error Scenarios', () => {
                 optionalField: null
             };
 
-            const response = await withTimeout(request(global.__SERVER__)
+            const response = await request(global.__SERVER__)
                 .post(APIS.cellsApi)
-                .send(nullFieldsCell), AWAIT_TIMEOUT);
+                .send(nullFieldsCell);
             
             expect([201, 400, 500]).toContain(response.status);
             
             if (response.status === 201) {
-                await withTimeout(request(global.__SERVER__).delete(APIS.cellsApi + '/NULL_TEST'), AWAIT_TIMEOUT);
+                await request(global.__SERVER__).delete(APIS.cellsApi + '/NULL_TEST');
             }
         });
 
@@ -212,14 +212,14 @@ describe('Edge Cases and Error Scenarios', () => {
                 undefinedField: undefined
             };
 
-            const response = await withTimeout(request(global.__SERVER__)
+            const response = await request(global.__SERVER__)
                 .post(APIS.cellsApi)
-                .send(undefinedFieldsCell), AWAIT_TIMEOUT);
+                .send(undefinedFieldsCell);
             
             expect([201, 400, 500]).toContain(response.status);
             
             if (response.status === 201) {
-                await withTimeout(request(global.__SERVER__).delete(APIS.cellsApi + '/UNDEFINED_TEST'), AWAIT_TIMEOUT);
+                await request(global.__SERVER__).delete(APIS.cellsApi + '/UNDEFINED_TEST');
             }
         });
     });
@@ -240,14 +240,14 @@ describe('Edge Cases and Error Scenarios', () => {
                 chargeOption: 'Primary'
             };
 
-            const response = await withTimeout(request(global.__SERVER__)
+            const response = await request(global.__SERVER__)
                 .post(APIS.cellsApi)
-                .send(precisionCell), AWAIT_TIMEOUT);
+                .send(precisionCell);
             
             expect([201, 400, 500]).toContain(response.status);
             
             if (response.status === 201) {
-                await withTimeout(request(global.__SERVER__).delete(APIS.cellsApi + '/PRECISION_TEST'), AWAIT_TIMEOUT);
+                await request(global.__SERVER__).delete(APIS.cellsApi + '/PRECISION_TEST');
             }
         });
     });
@@ -255,7 +255,7 @@ describe('Edge Cases and Error Scenarios', () => {
     describe('Complex JSON Structures', () => {
         test('should handle complex plan structures in test routines', async () => {
             // First create a cell
-            await withTimeout(request(global.__SERVER__)
+            await request(global.__SERVER__)
                 .post(APIS.cellsApi)
                 .send({
                     chemistry: 'Li-Ion',
@@ -269,7 +269,7 @@ describe('Edge Cases and Error Scenarios', () => {
                     minTemp: -10,
                     maxTemp: 50,
                     chargeOption: 'Primary'
-                }), AWAIT_TIMEOUT);
+                });
 
             const complexPlan = [];
             for (let i = 0; i < 50; i++) {
@@ -325,19 +325,19 @@ describe('Edge Cases and Error Scenarios', () => {
                 plan: complexPlan
             };
 
-            const response = await withTimeout(request(global.__SERVER__)
+            const response = await request(global.__SERVER__)
                 .post(APIS.testRoutinesApi)
-                .send(complexTestRoutine), AWAIT_TIMEOUT);
+                .send(complexTestRoutine);
             
             expect([201, 400, 413, 500]).toContain(response.status);
             
             // Clean up
-            await withTimeout(request(global.__SERVER__).delete(APIS.cellsApi + '/COMPLEX_CELL'), AWAIT_TIMEOUT);
+            await request(global.__SERVER__).delete(APIS.cellsApi + '/COMPLEX_CELL');
             if (response.status === 201) {
-                const routines = await withTimeout(request(global.__SERVER__).get(APIS.testRoutinesApi), AWAIT_TIMEOUT);
+                const routines = await request(global.__SERVER__).get(APIS.testRoutinesApi);
                 const createdRoutine = routines.body.find(r => r.testName === 'Complex Plan Test');
                 if (createdRoutine) {
-                    await withTimeout(request(global.__SERVER__).delete(APIS.testRoutinesApi + '/' + createdRoutine.id), AWAIT_TIMEOUT);
+                    await request(global.__SERVER__).delete(APIS.testRoutinesApi + '/' + createdRoutine.id);
                 }
             }
         });
@@ -365,7 +365,7 @@ describe('Edge Cases and Error Scenarios', () => {
                 request(global.__SERVER__).post(APIS.cellsApi).send(cellData)
             ];
 
-            const responses = await withTimeout(Promise.all(promises), AWAIT_TIMEOUT);
+            const responses = await Promise.all(promises);
             
             // Only one should succeed due to unique constraint
             const successCount = responses.filter(r => r.status === 201).length;
@@ -375,7 +375,7 @@ describe('Edge Cases and Error Scenarios', () => {
             expect(errorCount).toBe(2);
             
             // Clean up
-            await withTimeout(request(global.__SERVER__).delete(APIS.cellsApi + '/RACE_TEST'), AWAIT_TIMEOUT);
+            await request(global.__SERVER__).delete(APIS.cellsApi + '/RACE_TEST');
         });
     });
 
@@ -416,9 +416,9 @@ describe('Edge Cases and Error Scenarios', () => {
                 testResults: largeTestResults
             };
 
-            const response = await withTimeout(request(global.__SERVER__)
+            const response = await request(global.__SERVER__)
                 .post(APIS.createReportApi)
-                .send(reportData), AWAIT_TIMEOUT);
+                .send(reportData);
             
             expect([201, 413, 500]).toContain(response.status);
         });

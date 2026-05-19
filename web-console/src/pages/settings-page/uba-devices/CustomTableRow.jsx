@@ -26,7 +26,7 @@ export default function CustomTableRow(props) {
 	};
 
 	const handleDeleteClick = () => {
-		let choice = confirm('Do you want to delete this UBA device?');
+		let choice = confirm('Confirm Delete UBA Device?');
 		if(choice === true) {
 			deleteUbaDevice(authDispatch, ubaDevicesDispatch, row?.ubaSN);
 			return true;

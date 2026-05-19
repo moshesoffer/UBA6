@@ -80,10 +80,10 @@ export default function CustomTableRow(props) {
 				{row?.lastInstantResultsTimestamp ? (
 					<>
 						<Typography sx={{fontSize: '0.6rem'}}>
-							{`${getVoltage(row?.voltage)} ${getChargeCurrent(row?.current)} ${getTemperature(row?.temp)}`}
+							{`${String(getVoltage(row?.voltage).slice(0, 5))} ${String(getChargeCurrent(row?.current)).slice(0, 4)} ${String(getTemperature(row?.temp).slice(0, 4))}`}
 						</Typography>
 						<Typography sx={{fontSize: '0.6rem'}}>
-							{getDate(row?.lastInstantResultsTimestamp)}
+							{String(getDate(row?.lastInstantResultsTimestamp).slice(0, 116))}
 						</Typography>
 					</>
 				) : getText('common.NOT_APPLICABLE')}

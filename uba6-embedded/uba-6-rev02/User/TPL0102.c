@@ -4,6 +4,7 @@
  *  Created on: Sep 29, 2024
  *      Author: ORA
  */
+#define UART_LOG_DISABLE
 
 #include "TPL0102.h"
 #include "uart_log.h"

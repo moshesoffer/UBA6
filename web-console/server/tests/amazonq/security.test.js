@@ -6,7 +6,7 @@ const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 describe('Security Tests', () => {
 
     beforeAll(async () => {
-        await withTimeout(runSchema(), AWAIT_TIMEOUT);
+        await runSchema();
     });
 
     afterAll(async () => {
@@ -31,48 +31,48 @@ describe('Security Tests', () => {
                 chargeOption: 'Primary'
             };
 
-            const response = await withTimeout(request(global.__SERVER__)
+            const response = await request(global.__SERVER__)
                 .post(APIS.cellsApi)
-                .send(maliciousPayload), AWAIT_TIMEOUT);
+                .send(maliciousPayload);
             
             // Should either create safely or reject, but not execute SQL injection
             expect([201, 400, 500]).toContain(response.status);
             
             // Verify table still exists by making a GET request
-            const getResponse = await withTimeout(request(global.__SERVER__).get(APIS.cellsApi), AWAIT_TIMEOUT);
+            const getResponse = await request(global.__SERVER__).get(APIS.cellsApi);
             expect(getResponse.status).toBe(200);
         });
 
         test('should prevent SQL injection in search parameters', async () => {
-            const response = await withTimeout(request(global.__SERVER__)
-                .get(APIS.cellsApi + "?search='; DROP TABLE CellPartNumbers; --"), AWAIT_TIMEOUT);
+            const response = await request(global.__SERVER__)
+                .get(APIS.cellsApi + "?search='; DROP TABLE CellPartNumbers; --");
             
             expect([200, 400, 500]).toContain(response.status);
         });
 
         test('should prevent SQL injection in machine updates', async () => {
             // First create a machine
-            await withTimeout(request(global.__SERVER__)
+            await request(global.__SERVER__)
                 .post(APIS.machinesApi)
                 .send({
                     mac: '00-AA-BB-CC-DD-EE',
                     name: 'Security Test Machine',
                     ip: '192.168.1.200'
-                }), AWAIT_TIMEOUT);
+                });
 
             const maliciousUpdate = {
                 name: "'; UPDATE Machines SET name='HACKED' WHERE 1=1; --",
                 ip: "'; DROP TABLE Machines; --"
             };
 
-            const response = await withTimeout(request(global.__SERVER__)
+            const response = await request(global.__SERVER__)
                 .patch(APIS.machinesApi + '/00-AA-BB-CC-DD-EE')
-                .send(maliciousUpdate), AWAIT_TIMEOUT);
+                .send(maliciousUpdate);
             
             expect([200, 400, 500]).toContain(response.status);
             
             // Clean up
-            await withTimeout(request(global.__SERVER__).delete(APIS.machinesApi + '/00-AA-BB-CC-DD-EE'), AWAIT_TIMEOUT);
+            await request(global.__SERVER__).delete(APIS.machinesApi + '/00-AA-BB-CC-DD-EE');
         });
     });
 
@@ -92,15 +92,15 @@ describe('Security Tests', () => {
                 chargeOption: 'Primary'
             };
 
-            const response = await withTimeout(request(global.__SERVER__)
+            const response = await request(global.__SERVER__)
                 .post(APIS.cellsApi)
-                .send(xssPayload), AWAIT_TIMEOUT);
+                .send(xssPayload);
             
             expect([201, 400, 500]).toContain(response.status);
             
             if (response.status === 201) {
                 // If created, verify the data is properly handled
-                const getResponse = await withTimeout(request(global.__SERVER__).get(APIS.cellsApi), AWAIT_TIMEOUT);
+                const getResponse = await request(global.__SERVER__).get(APIS.cellsApi);
                 const createdCell = getResponse.body.find(c => c.itemPN === 'XSS_TEST');
                 
                 if (createdCell) {
@@ -110,13 +110,13 @@ describe('Security Tests', () => {
                 }
                 
                 // Clean up
-                await withTimeout(request(global.__SERVER__).delete(APIS.cellsApi + '/XSS_TEST'), AWAIT_TIMEOUT);
+                await request(global.__SERVER__).delete(APIS.cellsApi + '/XSS_TEST');
             }
         });
 
         test('should handle extremely long strings', async () => {
             const longString = 'A'.repeat(10000);
-            const response = await withTimeout(request(global.__SERVER__)
+            const response = await request(global.__SERVER__)
                 .post(APIS.cellsApi)
                 .send({
                     chemistry: longString,
@@ -130,7 +130,7 @@ describe('Security Tests', () => {
                     minTemp: -10,
                     maxTemp: 50,
                     chargeOption: 'Primary'
-                }), AWAIT_TIMEOUT);
+                });
             
             expect([400, 413, 500]).toContain(response.status);
         });
@@ -143,7 +143,7 @@ describe('Security Tests', () => {
             ];
 
             for (const ranges of invalidRanges) {
-                const response = await withTimeout(request(global.__SERVER__)
+                const response = await request(global.__SERVER__)
                     .post(APIS.cellsApi)
                     .send({
                         chemistry: 'Li-Ion',
@@ -155,7 +155,7 @@ describe('Security Tests', () => {
                         maxTemp: 50,
                         chargeOption: 'Primary',
                         ...ranges
-                    }), AWAIT_TIMEOUT);
+                    });
                 
                 expect([201, 400, 500]).toContain(response.status);
             }
@@ -179,9 +179,9 @@ describe('Security Tests', () => {
                 largeField: 'x'.repeat(1000000 * 501) // 501MB string
             };
 
-            const response = await withTimeout(request(global.__SERVER__)
+            const response = await request(global.__SERVER__)
                 .post(APIS.cellsApi)
-                .send(oversizedData), AWAIT_TIMEOUT);
+                .send(oversizedData);
             
             expect([413, 500]).toContain(response.status);
         });
@@ -189,8 +189,8 @@ describe('Security Tests', () => {
 
     describe('Header Security', () => {
         test('should include security headers', async () => {
-            const response = await withTimeout(request(global.__SERVER__)
-                .get(APIS.cellsApi), AWAIT_TIMEOUT);
+            const response = await request(global.__SERVER__)
+                .get(APIS.cellsApi);
             
             expect(response.status).toBe(200);
             // Helmet middleware should add security headers
@@ -198,10 +198,10 @@ describe('Security Tests', () => {
         });
 
         test('should handle malicious headers', async () => {
-            const response = await withTimeout(request(global.__SERVER__)
+            const response = await request(global.__SERVER__)
                 .get(APIS.cellsApi)
                 .set('X-Forwarded-For', '<script>alert("XSS")</script>')
-                .set('User-Agent', '"; DROP TABLE CellPartNumbers; --'), AWAIT_TIMEOUT);
+                .set('User-Agent', '"; DROP TABLE CellPartNumbers; --');
             
             expect(response.status).toBe(200);
         });
@@ -209,10 +209,10 @@ describe('Security Tests', () => {
 
     describe('JSON Parsing Security', () => {
         test('should handle malformed JSON gracefully', async () => {
-            const response = await withTimeout(request(global.__SERVER__)
+            const response = await request(global.__SERVER__)
                 .post(APIS.cellsApi)
                 .set('Content-Type', 'application/json')
-                .send('{"chemistry": "Li-Ion", "invalid": }'), AWAIT_TIMEOUT);
+                .send('{"chemistry": "Li-Ion", "invalid": }');
             
             expect([400, 500]).toContain(response.status);
         });
@@ -223,9 +223,9 @@ describe('Security Tests', () => {
                 deepObject = { nested: deepObject };
             }
 
-            const response = await withTimeout(request(global.__SERVER__)
+            const response = await request(global.__SERVER__)
                 .post(APIS.cellsApi)
-                .send(deepObject), AWAIT_TIMEOUT);
+                .send(deepObject);
             
             expect([400, 413, 500]).toContain(response.status);
         });
@@ -240,8 +240,8 @@ describe('Security Tests', () => {
             ];
 
             for (const path of maliciousPaths) {
-                const response = await withTimeout(request(global.__SERVER__)
-                    .get('/' + path), AWAIT_TIMEOUT);
+                const response = await request(global.__SERVER__)
+                    .get('/' + path);
                 
                 // Should not expose system files
                 expect([301, 404, 403, 400]).toContain(response.status);

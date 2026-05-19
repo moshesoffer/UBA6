@@ -4,6 +4,8 @@
  *  Created on: Nov 2, 2025
  *      Author: ORA
  */
+#define UART_LOG_DISABLE
+
 #include "PLI74HC166.h"
 #include "spi.h"
 #include "main.h"

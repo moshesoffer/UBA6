@@ -6,7 +6,7 @@ const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 describe('Integration Tests', () => {
 
     beforeAll(async () => {
-        await withTimeout(runSchema(), AWAIT_TIMEOUT);
+        await runSchema();
     });
 
     afterAll(async () => {
@@ -17,7 +17,7 @@ describe('Integration Tests', () => {
 
     describe('Health Check', () => {
         test('should return healthy status', async () => {
-            const response = await withTimeout(request(global.__SERVER__).get('/health'), AWAIT_TIMEOUT);
+            const response = await request(global.__SERVER__).get('/health');
             
             expect(response.status).toBe(200);
             expect(response.body).toHaveProperty('status', 'ok');
@@ -30,9 +30,9 @@ describe('Integration Tests', () => {
             // Test with CORS enabled environment
             process.env.ENABLE_CORS_FOR_LOCALHOST = 'true';
             
-            const response = await withTimeout(request(global.__SERVER__)
+            const response = await request(global.__SERVER__)
                 .get(APIS.cellsApi)
-                .set('Origin', 'http://localhost:3000'), AWAIT_TIMEOUT);
+                .set('Origin', 'http://localhost:3000');
             
             expect(response.status).toBe(200);
         });
@@ -40,19 +40,19 @@ describe('Integration Tests', () => {
 
     describe('Error Handling', () => {
         test('should handle malformed JSON', async () => {
-            const response = await withTimeout(request(global.__SERVER__)
+            const response = await request(global.__SERVER__)
                 .post(APIS.cellsApi)
                 .set('Content-Type', 'application/json')
-                .send('{"invalid": json}'), AWAIT_TIMEOUT);
+                .send('{"invalid": json}');
             
             expect(response.status).toBe(400);
         });
 
         test('should handle unsupported content type', async () => {
-            const response = await withTimeout(request(global.__SERVER__)
+            const response = await request(global.__SERVER__)
                 .post(APIS.cellsApi)
                 .set('Content-Type', 'text/plain')
-                .send('plain text data'), AWAIT_TIMEOUT);
+                .send('plain text data');
             
             expect([400, 415, 500]).toContain(response.status);
         });
@@ -72,9 +72,9 @@ describe('Integration Tests', () => {
                 chargeOption: 'Primary'
             };
 
-            const response = await withTimeout(request(global.__SERVER__)
+            const response = await request(global.__SERVER__)
                 .post(APIS.cellsApi)
-                .send(largePayload), AWAIT_TIMEOUT);
+                .send(largePayload);
             
             expect([413, 500]).toContain(response.status);
         });
@@ -83,7 +83,7 @@ describe('Integration Tests', () => {
     describe('API Endpoints Integration', () => {
         test('should handle complex workflow', async () => {
             // Create a cell
-            const cellResponse = await withTimeout(request(global.__SERVER__)
+            const cellResponse = await request(global.__SERVER__)
                 .post(APIS.cellsApi)
                 .send({
                     chemistry: 'Li-Ion',
@@ -97,24 +97,24 @@ describe('Integration Tests', () => {
                     minTemp: -10,
                     maxTemp: 50,
                     chargeOption: 'Primary'
-                }), AWAIT_TIMEOUT);
+                });
             
             expect(cellResponse.status).toBe(201);
 
             // Create a machine
-            const machineResponse = await withTimeout(request(global.__SERVER__)
+            const machineResponse = await request(global.__SERVER__)
                 .post(APIS.machinesApi)
                 .send({
                     mac: '00-11-22-33-44-55',
                     name: 'Integration Test Machine',
                     ip: '192.168.1.100'
-                }), AWAIT_TIMEOUT);
+                });
             
             expect(machineResponse.status).toBe(201);
 
             // Verify both exist
-            const cellsResponse = await withTimeout(request(global.__SERVER__).get(APIS.cellsApi), AWAIT_TIMEOUT);
-            const machinesResponse = await withTimeout(request(global.__SERVER__).get(APIS.machinesApi), AWAIT_TIMEOUT);
+            const cellsResponse = await request(global.__SERVER__).get(APIS.cellsApi);
+            const machinesResponse = await request(global.__SERVER__).get(APIS.machinesApi);
             
             expect(cellsResponse.status).toBe(200);
             expect(machinesResponse.status).toBe(200);
@@ -126,8 +126,8 @@ describe('Integration Tests', () => {
             expect(createdMachine).toBeDefined();
 
             // Clean up
-            await withTimeout(request(global.__SERVER__).delete(APIS.cellsApi + '/INT_TEST_001'), AWAIT_TIMEOUT);
-            await withTimeout(request(global.__SERVER__).delete(APIS.machinesApi + '/00-11-22-33-44-55'), AWAIT_TIMEOUT);
+            await request(global.__SERVER__).delete(APIS.cellsApi + '/INT_TEST_001');
+            await request(global.__SERVER__).delete(APIS.machinesApi + '/00-11-22-33-44-55');
         });
     });
 
@@ -142,7 +142,7 @@ describe('Integration Tests', () => {
                 );
             }
             
-            const responses = await withTimeout(Promise.all(promises), AWAIT_TIMEOUT);
+            const responses = await Promise.all(promises);
             
             responses.forEach(response => {
                 expect(response.status).toBe(200);
@@ -172,7 +172,7 @@ describe('Integration Tests', () => {
                 );
             }
             
-            const responses = await withTimeout(Promise.all(promises), AWAIT_TIMEOUT);
+            const responses = await Promise.all(promises);
             
             responses.forEach(response => {
                 expect([201]).toContain(response.status);
@@ -180,7 +180,7 @@ describe('Integration Tests', () => {
 
             // Clean up
             for (let i = 0; i < 3; i++) {
-                await withTimeout(request(global.__SERVER__).delete(APIS.cellsApi + `/CONCURRENT_${i}`), AWAIT_TIMEOUT);
+                await request(global.__SERVER__).delete(APIS.cellsApi + `/CONCURRENT_${i}`);
             }
         });
     });

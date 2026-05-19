@@ -27,7 +27,7 @@ function withTimeout(promise, ms) {
 
 export const getUbaDevices = async (authDispatch, ubaDevicesDispatch, hideLoading) => {
 	try {
-		const response = await withTimeout( postData(hideLoading ? null : authDispatch, 'uba-devices', 'GET'), AWAIT_TIMEOUT);
+		const response = await postData(hideLoading ? null : authDispatch, 'uba-devices', 'GET');
 		if (!validateArray(response?.ubaDevices, false)) {
 			throw new Error('Invalid response. ubaDevices is missing.');
 		}
@@ -46,7 +46,7 @@ export const getUbaDevices = async (authDispatch, ubaDevicesDispatch, hideLoadin
 
 export const createUbaDevice = async (authDispatch, ubaDevicesDispatch, data) => {
 	try {
-		await withTimeout( postData(authDispatch, 'uba-devices', 'POST', data), AWAIT_TIMEOUT);
+		await postData(authDispatch, 'uba-devices', 'POST', data);
 		getUbaDevices(authDispatch, ubaDevicesDispatch);
 	} catch (error) {
 		const preparedMessage = handleRequestError(error);
@@ -56,7 +56,7 @@ export const createUbaDevice = async (authDispatch, ubaDevicesDispatch, data) =>
 
 export const queryUbaDevice = async (authDispatch, data) => {
 	try {
-		return await withTimeout( postData2(authDispatch, 'query-uba-devices', 'POST', data), AWAIT_TIMEOUT);
+		return await postData2(authDispatch, 'query-uba-devices', 'POST', data);
 	} catch (error) {
 		return handleRequestError(error);
 	}
@@ -64,7 +64,7 @@ export const queryUbaDevice = async (authDispatch, data) => {
 
 export const updateUbaDevice = async (authDispatch, ubaDevicesDispatch, data) => {
 	try {
-		await withTimeout( postData(authDispatch, `uba-devices/${data.ubaSN}`, 'PATCH', data), AWAIT_TIMEOUT);
+		await postData(authDispatch, `uba-devices/${data.ubaSN}`, 'PATCH', data);
 		getUbaDevices(authDispatch, ubaDevicesDispatch);
 	} catch (error) {
 		const preparedMessage = handleRequestError(error);
@@ -74,7 +74,7 @@ export const updateUbaDevice = async (authDispatch, ubaDevicesDispatch, data) =>
 
 export const deleteUbaDevice = async (authDispatch, ubaDevicesDispatch, ubaSN) => {
 	try {
-		await withTimeout( postData(authDispatch, `uba-devices/${ubaSN}`, 'DELETE'), AWAIT_TIMEOUT);
+		await postData(authDispatch, `uba-devices/${ubaSN}`, 'DELETE');
 		getUbaDevices(authDispatch, ubaDevicesDispatch);
 	} catch (error) {
 		const preparedMessage = handleRequestError(error);

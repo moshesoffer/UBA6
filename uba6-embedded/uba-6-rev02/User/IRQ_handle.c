@@ -4,6 +4,8 @@
  *  Created on: Aug 15, 2024
  *      Author: ORA
  */
+#define UART_LOG_DISABLE
+
 #include "IRQ_handle.h"
 #include "..\Util\uart_log.h"
 #include "gpio.h"

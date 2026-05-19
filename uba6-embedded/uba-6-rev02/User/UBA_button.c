@@ -67,3 +67,9 @@ bool UBA_button_is_pending(UBA_button *btn) {
 		return false;
 	}
 }
+
+bool UBA_button_set_pending(UBA_button *btn) {
+	if (btn != NULL) {
+		btn->state |= UBA_BUTTON_STATE_PENDING;
+	} 
+}

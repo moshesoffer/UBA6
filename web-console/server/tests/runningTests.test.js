@@ -71,55 +71,55 @@ describe('Machine API Tests', () => {
     let connection;
 
     beforeAll(async () => {
-        await withTimeout(runSchema(), AWAIT_TIMEOUT);
-        connection = await withTimeout(mysql.createConnection(global.__MYSQL_CONFIG__), AWAIT_TIMEOUT);
+        await runSchema();
+        connection = await mysql.createConnection(global.__MYSQL_CONFIG__);
 
-        let response = await withTimeout(request(global.__SERVER__).post(APIS.machinesApi).send(machineToAdd), AWAIT_TIMEOUT);
-        expect(response.status).toBe(201);
-
-        response = await withTimeout(request(global.__SERVER__).post(APIS.ubaDevicesApi).send(ubaDeviceToAdd1), AWAIT_TIMEOUT);
-        expect(response.status).toBe(201);
-        response = await withTimeout(request(global.__SERVER__).post(APIS.ubaDevicesApi).send(ubaDeviceToAdd2), AWAIT_TIMEOUT);
-        expect(response.status).toBe(201);
-        response = await withTimeout(request(global.__SERVER__).post(APIS.cellsApi).send(cellToAdd), AWAIT_TIMEOUT);
-        expect(response.status).toBe(201);
-        response = await withTimeout(request(global.__SERVER__).post(APIS.testRoutinesApi).send(testRoutineToAdd), AWAIT_TIMEOUT);
+        let response = await request(global.__SERVER__).post(APIS.machinesApi).send(machineToAdd);
         expect(response.status).toBe(201);
 
-        await withTimeout(sqlValidateAmounts(ubaDeviceModel.tableName, 2), AWAIT_TIMEOUT);
-        await withTimeout(sqlValidateAmounts(runningTestsModel.tableName, 3), AWAIT_TIMEOUT);//there are 3 because ubaDeviceToAdd2 has 2 channels
-        await withTimeout(sqlValidateAmounts(instantTestResultsModel.tableName, 0), AWAIT_TIMEOUT);
+        response = await request(global.__SERVER__).post(APIS.ubaDevicesApi).send(ubaDeviceToAdd1);
+        expect(response.status).toBe(201);
+        response = await request(global.__SERVER__).post(APIS.ubaDevicesApi).send(ubaDeviceToAdd2);
+        expect(response.status).toBe(201);
+        response = await request(global.__SERVER__).post(APIS.cellsApi).send(cellToAdd);
+        expect(response.status).toBe(201);
+        response = await request(global.__SERVER__).post(APIS.testRoutinesApi).send(testRoutineToAdd);
+        expect(response.status).toBe(201);
+
+        await sqlValidateAmounts(ubaDeviceModel.tableName, 2);
+        await sqlValidateAmounts(runningTestsModel.tableName, 3);//there are 3 because ubaDeviceToAdd2 has 2 channels
+        await sqlValidateAmounts(instantTestResultsModel.tableName, 0);
     });
 
     afterAll(async () => {
         console.log('Machine Test suite finished');
-        if(connection) await withTimeout(connection.end(), AWAIT_TIMEOUT);
+        if(connection) await connection.end();
         //delay - waiting for winston server logs to finish
         //await new Promise(resolve => setTimeout(resolve, 500));
     });
     afterEach(async () => {
-        await withTimeout(clearMemInServer(), AWAIT_TIMEOUT);
+        await clearMemInServer();
     });
 
     test('start runningTest', async () => {
       try {
-        let ubaDevices = await withTimeout(validateRunningTests(3/*StandBy*/, 0/*Running*/, 0/*Pending*/), AWAIT_TIMEOUT);
+        let ubaDevices = await validateRunningTests(3/*StandBy*/, 0/*Running*/, 0/*Pending*/);
         let runningTestOfDevice1 = ubaDevices.find(obj => obj.ubaSN===ubaDeviceToAdd1.ubaSN);
-        let pendingTasksRes = await withTimeout(request(global.__SERVER__).get(APIS.pendingTasksApi + '?machineMac=' + machineToAdd.mac), AWAIT_TIMEOUT);
+        let pendingTasksRes = await request(global.__SERVER__).get(APIS.pendingTasksApi + '?machineMac=' + machineToAdd.mac);
         expect(pendingTasksRes.body.pendingRunningTests.length).toBe(0);
         expect(pendingTasksRes.body.pendingReports.length).toBe(0);
 
         //start a single channel test
-        await withTimeout(startRunningTest(runningTestOfDevice1.runningTestID, runningTestOfDevice1.ubaSN, runningTestOfDevice1.channel), AWAIT_TIMEOUT);
-        ubaDevices = await withTimeout(validateRunningTests(2, 1, 1), AWAIT_TIMEOUT);
-        pendingTasksRes = await withTimeout(request(global.__SERVER__).get(APIS.pendingTasksApi + '?machineMac=' + machineToAdd.mac), AWAIT_TIMEOUT);
+        await startRunningTest(runningTestOfDevice1.runningTestID, runningTestOfDevice1.ubaSN, runningTestOfDevice1.channel);
+        ubaDevices = await validateRunningTests(2, 1, 1);
+        pendingTasksRes = await request(global.__SERVER__).get(APIS.pendingTasksApi + '?machineMac=' + machineToAdd.mac);
         expect(pendingTasksRes.body.pendingRunningTests.length).toBe(1);
         expect(pendingTasksRes.body.pendingReports.length).toBe(1);
         expect(pendingTasksRes.body.pendingRunningTests[0].reportId).toBe(pendingTasksRes.body.pendingReports[0].id);
         expect(pendingTasksRes.body.pendingReports[0].pendingRunningTestId).toBe(pendingTasksRes.body.pendingRunningTests[0].id);
 
         runningTestOfDevice1 = ubaDevices.find(obj => obj.ubaSN===ubaDeviceToAdd1.ubaSN);
-        const allPending = await withTimeout(getAllPendingRunningTests(), AWAIT_TIMEOUT);
+        const allPending = await getAllPendingRunningTests();
         expect(allPending.length).toBe(1);
         expect(allPending[0].channel).toBe(runningTestOfDevice1.channel);
         expect(allPending[0].status).toBe(status.PENDING_RUNNING);
@@ -127,96 +127,96 @@ describe('Machine API Tests', () => {
         expect(allPending[0].id).toBe(runningTestOfDevice1.runningTestID);
         expect(allPending[0].machineMac).toBe(machineToAdd.mac);
         expect(allPending[0].testRoutineChannels).toBe(TEST_ROUTINE_CHANNELS.A_AND_B);
-        const [instantTestResultsRows] = await withTimeout(connection.query(`SELECT * FROM \`${instantTestResultsModel.tableName}\`;`), AWAIT_TIMEOUT);
+        const [instantTestResultsRows] = await connection.query(`SELECT * FROM \`${instantTestResultsModel.tableName}\`;`);
         expect(instantTestResultsRows.length).toBe(0);
         
         //should be 1 report without testResults
-        let [reportsRows] = await withTimeout(connection.query(`SELECT * FROM \`${reportModel.tableName}\`;`), AWAIT_TIMEOUT);
+        let [reportsRows] = await connection.query(`SELECT * FROM \`${reportModel.tableName}\`;`);
         expect(reportsRows.length).toBe(1);
         verifyReportObj(reportsRows[0]);
 
-        let testResultsRes = await withTimeout(request(global.__SERVER__).post(APIS.reportsGraphApi).send([reportsRows[0].id]), AWAIT_TIMEOUT);
+        let testResultsRes = await request(global.__SERVER__).post(APIS.reportsGraphApi).send([reportsRows[0].id]);
         expect(testResultsRes.body[0].reportID).toBe(reportsRows[0].id);
         expect(testResultsRes.body[0].testResults.length).toBe(0);
 
         //now updating the report with status and testResults
         const reportUpdateObj = { status: 0x0008, testResults: [{"current": 0.343692, "voltage": 14.4064, "timestamp": 20, "temperature": ""},{"current": 0.143692, "voltage": 12.4064, "timestamp": 40, "temperature": ""}] };
-        const updateReportRes = await withTimeout(request(global.__SERVER__)
+        const updateReportRes = await request(global.__SERVER__)
                     .patch(APIS.updateReportApi + "/" + reportsRows[0].id)
-                    .send(reportUpdateObj), AWAIT_TIMEOUT);
+                    .send(reportUpdateObj);
         expect(updateReportRes.status).toBe(200);
         //verify that update worked
-        [reportsRows] = await withTimeout(connection.query(`SELECT * FROM \`${reportModel.tableName}\`;`), AWAIT_TIMEOUT);
+        [reportsRows] = await connection.query(`SELECT * FROM \`${reportModel.tableName}\`;`);
         expect(reportsRows[0].status).toBe(0x0008);
         expect(reportsRows[0].timeOfTest).toBe('00:00:40');
-        testResultsRes = await withTimeout(request(global.__SERVER__).post(APIS.reportsGraphApi).send([reportsRows[0].id]), AWAIT_TIMEOUT);
+        testResultsRes = await request(global.__SERVER__).post(APIS.reportsGraphApi).send([reportsRows[0].id]);
         expect(testResultsRes.body[0].reportID).toBe(reportsRows[0].id);
         expect(testResultsRes.body[0].testResults.length).toBe(2);
         
-        pendingTasksRes = await withTimeout(request(global.__SERVER__).get(APIS.pendingTasksApi + '?machineMac=' + machineToAdd.mac), AWAIT_TIMEOUT);
+        pendingTasksRes = await request(global.__SERVER__).get(APIS.pendingTasksApi + '?machineMac=' + machineToAdd.mac);
         expect(pendingTasksRes.body.pendingRunningTests.length).toBe(1);
         expect(pendingTasksRes.body.pendingReports.length).toBe(0);//because report was marked as finished
         expect(pendingTasksRes.body.pendingRunningTests[0].reportId).toBeUndefined();
         
         //running a and b channels together
         let runningTestOfDevice2 = ubaDevices.filter(obj => obj.ubaSN===ubaDeviceToAdd2.ubaSN);
-        await withTimeout(startRunningTest(runningTestOfDevice2[0].runningTestID, runningTestOfDevice2[0].ubaSN, runningTestOfDevice2[0].channel, runningTestOfDevice2[1].channel), AWAIT_TIMEOUT);
-        pendingTasksRes = await withTimeout(request(global.__SERVER__).get(APIS.pendingTasksApi + '?machineMac=' + machineToAdd.mac), AWAIT_TIMEOUT);
+        await startRunningTest(runningTestOfDevice2[0].runningTestID, runningTestOfDevice2[0].ubaSN, runningTestOfDevice2[0].channel, runningTestOfDevice2[1].channel);
+        pendingTasksRes = await request(global.__SERVER__).get(APIS.pendingTasksApi + '?machineMac=' + machineToAdd.mac);
         expect(pendingTasksRes.body.pendingRunningTests.length).toBe(3);
         expect(pendingTasksRes.body.pendingReports.length).toBe(2);//because report was marked as finished
-        ubaDevices = await withTimeout(validateRunningTests(0, 3, 3), AWAIT_TIMEOUT);
+        ubaDevices = await validateRunningTests(0, 3, 3);
         
-        await withTimeout(sqlValidateAmounts(runningTestsModel.tableName, 3), AWAIT_TIMEOUT);
-        await withTimeout(sqlValidateAmounts(reportModel.tableName, 3), AWAIT_TIMEOUT);
+        await sqlValidateAmounts(runningTestsModel.tableName, 3);
+        await sqlValidateAmounts(reportModel.tableName, 3);
 
         runningTestOfDevice1 = ubaDevices.find(obj => obj.ubaSN===ubaDeviceToAdd1.ubaSN);//because when started in first time it was deleted and recreated
-        await withTimeout(changeRunningTestStatus(runningTestOfDevice1.runningTestID, ubaDeviceToAdd1.ubaSN, TEST_ROUTINE_CHANNELS.A_OR_B, status.RUNNING), AWAIT_TIMEOUT);//in order to be able to pause
-        ubaDevices = await withTimeout(validateRunningTests(0, 3, 2), AWAIT_TIMEOUT);
+        await changeRunningTestStatus(runningTestOfDevice1.runningTestID, ubaDeviceToAdd1.ubaSN, TEST_ROUTINE_CHANNELS.A_OR_B, status.RUNNING);//in order to be able to pause
+        ubaDevices = await validateRunningTests(0, 3, 2);
         //pause 1 test
-        await withTimeout(pendingPauseRunningTest(runningTestOfDevice1.runningTestID, ubaDeviceToAdd1.ubaSN, TEST_ROUTINE_CHANNELS.A_OR_B), AWAIT_TIMEOUT);
-        ubaDevices = await withTimeout(validateRunningTests(0, 3, 3), AWAIT_TIMEOUT);
+        await pendingPauseRunningTest(runningTestOfDevice1.runningTestID, ubaDeviceToAdd1.ubaSN, TEST_ROUTINE_CHANNELS.A_OR_B);
+        ubaDevices = await validateRunningTests(0, 3, 3);
         
-        await withTimeout(changeRunningTestStatus(runningTestOfDevice1.runningTestID, ubaDeviceToAdd1.ubaSN, TEST_ROUTINE_CHANNELS.A_OR_B, status.PAUSED), AWAIT_TIMEOUT);//fully paused for resume
+        await changeRunningTestStatus(runningTestOfDevice1.runningTestID, ubaDeviceToAdd1.ubaSN, TEST_ROUTINE_CHANNELS.A_OR_B, status.PAUSED);//fully paused for resume
         //resume 1 test
-        await withTimeout(pendingResumeRunningTest(runningTestOfDevice1.runningTestID, ubaDeviceToAdd1.ubaSN, TEST_ROUTINE_CHANNELS.A_OR_B), AWAIT_TIMEOUT);
-        ubaDevices = await withTimeout(validateRunningTests(0, 3, 3), AWAIT_TIMEOUT);
+        await pendingResumeRunningTest(runningTestOfDevice1.runningTestID, ubaDeviceToAdd1.ubaSN, TEST_ROUTINE_CHANNELS.A_OR_B);
+        ubaDevices = await validateRunningTests(0, 3, 3);
 
-        await withTimeout(changeRunningTestStatus(runningTestOfDevice1.runningTestID, ubaDeviceToAdd1.ubaSN, TEST_ROUTINE_CHANNELS.A_OR_B, status.RUNNING), AWAIT_TIMEOUT);//fully started for doing stop
+        await changeRunningTestStatus(runningTestOfDevice1.runningTestID, ubaDeviceToAdd1.ubaSN, TEST_ROUTINE_CHANNELS.A_OR_B, status.RUNNING);//fully started for doing stop
         //stop 1 test
-        await withTimeout(pendingStopRunningTest(runningTestOfDevice1.runningTestID, ubaDeviceToAdd1.ubaSN, TEST_ROUTINE_CHANNELS.A_OR_B), AWAIT_TIMEOUT);
-        await withTimeout(changeRunningTestStatus(runningTestOfDevice1.runningTestID, ubaDeviceToAdd1.ubaSN, TEST_ROUTINE_CHANNELS.A_OR_B, status.STOPPED), AWAIT_TIMEOUT);//fully stopped
-        ubaDevices = await withTimeout(validateRunningTests(0, 2, 2), AWAIT_TIMEOUT);
+        await pendingStopRunningTest(runningTestOfDevice1.runningTestID, ubaDeviceToAdd1.ubaSN, TEST_ROUTINE_CHANNELS.A_OR_B);
+        await changeRunningTestStatus(runningTestOfDevice1.runningTestID, ubaDeviceToAdd1.ubaSN, TEST_ROUTINE_CHANNELS.A_OR_B, status.STOPPED);//fully stopped
+        ubaDevices = await validateRunningTests(0, 2, 2);
 
         //now going to pause,resume, stop the parallel test
         runningTestOfDevice2 = ubaDevices.filter(obj => obj.ubaSN===ubaDeviceToAdd2.ubaSN);//because when started in first time it was deleted and recreated
-        await withTimeout(changeRunningTestStatus(runningTestOfDevice2[0].runningTestID, ubaDeviceToAdd2.ubaSN, TEST_ROUTINE_CHANNELS.A_AND_B, status.RUNNING), AWAIT_TIMEOUT);//in order to be able to pause
+        await changeRunningTestStatus(runningTestOfDevice2[0].runningTestID, ubaDeviceToAdd2.ubaSN, TEST_ROUTINE_CHANNELS.A_AND_B, status.RUNNING);//in order to be able to pause
         
         //pause 2 tests
-        await withTimeout(pendingPauseRunningTest(runningTestOfDevice2[0].runningTestID, ubaDeviceToAdd2.ubaSN, TEST_ROUTINE_CHANNELS.A_AND_B), AWAIT_TIMEOUT);
-        ubaDevices = await withTimeout(validateRunningTests(0, 2, 2), AWAIT_TIMEOUT);
+        await pendingPauseRunningTest(runningTestOfDevice2[0].runningTestID, ubaDeviceToAdd2.ubaSN, TEST_ROUTINE_CHANNELS.A_AND_B);
+        ubaDevices = await validateRunningTests(0, 2, 2);
         
-        await withTimeout(changeRunningTestStatus(runningTestOfDevice2[0].runningTestID, ubaDeviceToAdd2.ubaSN, TEST_ROUTINE_CHANNELS.A_AND_B, status.PAUSED), AWAIT_TIMEOUT);//fully paused for resume
+        await changeRunningTestStatus(runningTestOfDevice2[0].runningTestID, ubaDeviceToAdd2.ubaSN, TEST_ROUTINE_CHANNELS.A_AND_B, status.PAUSED);//fully paused for resume
 
         //resume 2 tests
-        await withTimeout(pendingResumeRunningTest(runningTestOfDevice2[0].runningTestID, ubaDeviceToAdd2.ubaSN, TEST_ROUTINE_CHANNELS.A_AND_B), AWAIT_TIMEOUT);
-        ubaDevices = await withTimeout(validateRunningTests(0, 2, 2), AWAIT_TIMEOUT);
+        await pendingResumeRunningTest(runningTestOfDevice2[0].runningTestID, ubaDeviceToAdd2.ubaSN, TEST_ROUTINE_CHANNELS.A_AND_B);
+        ubaDevices = await validateRunningTests(0, 2, 2);
 
-        await withTimeout(changeRunningTestStatus(runningTestOfDevice2[0].runningTestID, ubaDeviceToAdd2.ubaSN, TEST_ROUTINE_CHANNELS.A_AND_B, status.RUNNING), AWAIT_TIMEOUT);//fully started for doing stop
+        await changeRunningTestStatus(runningTestOfDevice2[0].runningTestID, ubaDeviceToAdd2.ubaSN, TEST_ROUTINE_CHANNELS.A_AND_B, status.RUNNING);//fully started for doing stop
         
         //stop 2 tests
-        await withTimeout(pendingStopRunningTest(runningTestOfDevice2[0].runningTestID, ubaDeviceToAdd2.ubaSN, TEST_ROUTINE_CHANNELS.A_AND_B), AWAIT_TIMEOUT);
-        await withTimeout(changeRunningTestStatus(runningTestOfDevice2[0].runningTestID, ubaDeviceToAdd2.ubaSN, TEST_ROUTINE_CHANNELS.A_AND_B, status.STOPPED), AWAIT_TIMEOUT);//fully stopped
+        await pendingStopRunningTest(runningTestOfDevice2[0].runningTestID, ubaDeviceToAdd2.ubaSN, TEST_ROUTINE_CHANNELS.A_AND_B);
+        await changeRunningTestStatus(runningTestOfDevice2[0].runningTestID, ubaDeviceToAdd2.ubaSN, TEST_ROUTINE_CHANNELS.A_AND_B, status.STOPPED);//fully stopped
 
-        ubaDevices = await withTimeout(validateRunningTests(0, 0, 0), AWAIT_TIMEOUT);
+        ubaDevices = await validateRunningTests(0, 0, 0);
         
-        await withTimeout(pendingConfirmRunningTest(runningTestOfDevice2[0].runningTestID, ubaDeviceToAdd2.ubaSN, TEST_ROUTINE_CHANNELS.A_AND_B), AWAIT_TIMEOUT);
-        ubaDevices = await withTimeout(validateRunningTests(0, 2, 2), AWAIT_TIMEOUT);
-        await withTimeout(changeRunningTestStatus(runningTestOfDevice2[0].runningTestID, ubaDeviceToAdd2.ubaSN, TEST_ROUTINE_CHANNELS.A_AND_B, status.STANDBY), AWAIT_TIMEOUT);
+        await pendingConfirmRunningTest(runningTestOfDevice2[0].runningTestID, ubaDeviceToAdd2.ubaSN, TEST_ROUTINE_CHANNELS.A_AND_B);
+        ubaDevices = await validateRunningTests(0, 2, 2);
+        await changeRunningTestStatus(runningTestOfDevice2[0].runningTestID, ubaDeviceToAdd2.ubaSN, TEST_ROUTINE_CHANNELS.A_AND_B, status.STANDBY);
 
-        ubaDevices = await withTimeout(validateRunningTests(2, 0, 0), AWAIT_TIMEOUT);
+        ubaDevices = await validateRunningTests(2, 0, 0);
 
         //check graph data for the instantTestResults
-        response = await withTimeout(request(global.__SERVER__).get(APIS.instantTestResultsApi + "/" + runningTestOfDevice1.runningTestID), AWAIT_TIMEOUT);
+        response = await request(global.__SERVER__).get(APIS.instantTestResultsApi + "/" + runningTestOfDevice1.runningTestID);
         expect(response.body.length).toBe(0);
 
         //test add instantTestResults
@@ -230,14 +230,14 @@ describe('Machine API Tests', () => {
                 {runningTestID: runningTestOfDevice2[0].runningTestID, timestamp: '2024-08-15 09:01:30.000', testState: 'charging', testCurrentStep: 1, 
                     voltage: 3.6, current: 2.6, temp: 26.6, capacity: 0, error: undefined, isLogData: 1},
             ];
-        response = await withTimeout(request(global.__SERVER__).post(APIS.instantTestResultsApi).send(arr), AWAIT_TIMEOUT);
+        response = await request(global.__SERVER__).post(APIS.instantTestResultsApi).send(arr);
         expect(response.status).toBe(201);
-        await withTimeout(sqlValidateAmounts(instantTestResultsModel.tableName, 3), AWAIT_TIMEOUT);
-        response = await withTimeout(request(global.__SERVER__).get(APIS.instantTestResultsApi + "/" + runningTestOfDevice1.runningTestID), AWAIT_TIMEOUT);
+        await sqlValidateAmounts(instantTestResultsModel.tableName, 3);
+        response = await request(global.__SERVER__).get(APIS.instantTestResultsApi + "/" + runningTestOfDevice1.runningTestID);
         expect(response.body.length).toBe(2);
-        response = await withTimeout(request(global.__SERVER__).get(APIS.instantTestResultsApi + "/" + runningTestOfDevice2[0].runningTestID), AWAIT_TIMEOUT);
+        response = await request(global.__SERVER__).get(APIS.instantTestResultsApi + "/" + runningTestOfDevice2[0].runningTestID);
         expect(response.body.length).toBe(1);
-        response = await withTimeout(request(global.__SERVER__).get(APIS.ubaDevicesApi), AWAIT_TIMEOUT);
+        response = await request(global.__SERVER__).get(APIS.ubaDevicesApi);
         expect(response.body.ubaTotal.connected).toBe(2);
         const enrichedRunningTest1 = response.body.ubaDevices.find(obj => obj.runningTestID===runningTestOfDevice1.runningTestID);
         const enrichedRunningTest2 = response.body.ubaDevices.find(obj => obj.runningTestID===runningTestOfDevice2[0].runningTestID);
@@ -261,28 +261,28 @@ describe('Machine API Tests', () => {
                 {runningTestID: runningTestOfDevice2[1].runningTestID, timestamp: '2024-08-15 09:01:32.000', testState: 'charging', testCurrentStep: 1, 
                     voltage: 3.2, current: 2.2, temp: 26.2, capacity: 0, error: undefined, isLogData: 0}
             ];
-        response = await withTimeout(request(global.__SERVER__).post(APIS.instantTestResultsApi).send(arr), AWAIT_TIMEOUT);
+        response = await request(global.__SERVER__).post(APIS.instantTestResultsApi).send(arr);
         expect(response.status).toBe(201);
-        await withTimeout(sqlValidateAmounts(instantTestResultsModel.tableName, 4), AWAIT_TIMEOUT);//in first time, only one more added because both are isLogData 0 and only the first one is added
-        response = await withTimeout(request(global.__SERVER__).get(APIS.instantTestResultsApi + "/" + runningTestOfDevice2[1].runningTestID), AWAIT_TIMEOUT);
+        await sqlValidateAmounts(instantTestResultsModel.tableName, 4);//in first time, only one more added because both are isLogData 0 and only the first one is added
+        response = await request(global.__SERVER__).get(APIS.instantTestResultsApi + "/" + runningTestOfDevice2[1].runningTestID);
         expect(response.body.length).toBe(1);
-        response = await withTimeout(request(global.__SERVER__).get(APIS.ubaDevicesApi), AWAIT_TIMEOUT);
+        response = await request(global.__SERVER__).get(APIS.ubaDevicesApi);
         enrichedRunningTest3 = response.body.ubaDevices.find(obj => obj.runningTestID===runningTestOfDevice2[1].runningTestID);
         expect(new Date(enrichedRunningTest3.lastInstantResultsTimestamp).getTime()).toBe(new Date('2024-08-15 09:01:32.000 UTC').getTime());
         expect(enrichedRunningTest3.ubaDeviceConnectedTimeAgoMs < 60000).toBeTruthy();
         expect(enrichedRunningTest3.current).toBe(2.2);
 
         //check that when deleting ubaDevice, the running tests are deleted and instantTestResults are deleted
-        response = await withTimeout(request(global.__SERVER__).delete(APIS.ubaDevicesApi + "/" + ubaDeviceToAdd1.ubaSN), AWAIT_TIMEOUT);
+        response = await request(global.__SERVER__).delete(APIS.ubaDevicesApi + "/" + ubaDeviceToAdd1.ubaSN);
         expect(response.status).toBe(204);
-        response = await withTimeout(request(global.__SERVER__).delete(APIS.ubaDevicesApi + "/" + ubaDeviceToAdd2.ubaSN), AWAIT_TIMEOUT);
+        response = await request(global.__SERVER__).delete(APIS.ubaDevicesApi + "/" + ubaDeviceToAdd2.ubaSN);
         expect(response.status).toBe(204);
-        let { body: {ubaDevices1, ubaTotal1} } = await withTimeout(request(global.__SERVER__).get(APIS.ubaDevicesApi), AWAIT_TIMEOUT);
+        let { body: {ubaDevices1, ubaTotal1} } = await request(global.__SERVER__).get(APIS.ubaDevicesApi);
         expect(ubaDevices1).toBe(undefined);
-        await withTimeout(sqlValidateAmounts(ubaDeviceModel.tableName, 0), AWAIT_TIMEOUT);
-        await withTimeout(sqlValidateAmounts(runningTestsModel.tableName, 0), AWAIT_TIMEOUT);
-        await withTimeout(sqlValidateAmounts(instantTestResultsModel.tableName, 0), AWAIT_TIMEOUT);
-        await withTimeout(sqlValidateAmounts(reportModel.tableName, 3), AWAIT_TIMEOUT);
+        await sqlValidateAmounts(ubaDeviceModel.tableName, 0);
+        await sqlValidateAmounts(runningTestsModel.tableName, 0);
+        await sqlValidateAmounts(instantTestResultsModel.tableName, 0);
+        await sqlValidateAmounts(reportModel.tableName, 3);
 
       } catch (err) {
         console.log('start test error: ' + err)
@@ -305,7 +305,7 @@ describe('Machine API Tests', () => {
 
     const validateRunningTests = async (amountOfStandBy, amountOfRunning, amountOfPending) => {
       try {
-        let { body: {ubaDevices, ubaTotal} } = await withTimeout(request(global.__SERVER__).get(APIS.ubaDevicesApi), AWAIT_TIMEOUT);
+        let { body: {ubaDevices, ubaTotal} } = await request(global.__SERVER__).get(APIS.ubaDevicesApi);
         let standByTests = ubaDevices.filter(obj => obj.status===status.STANDBY);
         let runningStatusTests = ubaDevices.filter(obj => isTestRunning(obj.status));
         let pendingStatusTest = ubaDevices.filter(obj => isTestInPending(obj.status));
@@ -314,7 +314,7 @@ describe('Machine API Tests', () => {
         expect(runningStatusTests.length).toBe(amountOfRunning);
         expect(ubaTotal.running).toBe(amountOfRunning);
 
-        const allPending = await withTimeout(getAllPendingRunningTests(), AWAIT_TIMEOUT);
+        const allPending = await getAllPendingRunningTests();
         expect(allPending.length).toBe(amountOfPending);
         return ubaDevices;
 
@@ -344,7 +344,7 @@ describe('Machine API Tests', () => {
             "channel": channel2,
           });
         }
-        let response = await withTimeout(request(global.__SERVER__).post(APIS.startTestApi).send(obj), AWAIT_TIMEOUT);
+        let response = await request(global.__SERVER__).post(APIS.startTestApi).send(obj);
         expect(response.status).toBe(200);
 
       } catch (err) {
@@ -357,37 +357,42 @@ describe('Machine API Tests', () => {
     }
 
     const pendingPauseRunningTest = async (runningTestID, ubaSN, testRoutineChannels) => {
-        let response = await withTimeout(request(global.__SERVER__).patch(APIS.changeRunningTestStatusApi).send({runningTestID, testRoutineChannels, ubaSN, newTestStatus: status.PENDING_PAUSE}), AWAIT_TIMEOUT);
+        let response = await request(global.__SERVER__).patch(APIS.changeRunningTestStatusApi).send({runningTestID, testRoutineChannels, ubaSN, newTestStatus: status.PENDING_PAUSE});
         expect(response.status).toBe(200);
     };
 
     const pendingResumeRunningTest = async (runningTestID, ubaSN, testRoutineChannels) => {
-        let response = await withTimeout(request(global.__SERVER__).patch(APIS.changeRunningTestStatusApi).send({runningTestID, testRoutineChannels, ubaSN, newTestStatus: status.PENDING_RUNNING}), AWAIT_TIMEOUT);
+        let response = await request(global.__SERVER__).patch(APIS.changeRunningTestStatusApi).send({runningTestID, testRoutineChannels, ubaSN, newTestStatus: status.PENDING_RUNNING});
         expect(response.status).toBe(200);
     };
 
     const pendingConfirmRunningTest = async (runningTestID, ubaSN, testRoutineChannels) => {
-        let response = await withTimeout(request(global.__SERVER__).patch(APIS.changeRunningTestStatusApi).send({runningTestID, testRoutineChannels, ubaSN, newTestStatus: status.PENDING_STANDBY}), AWAIT_TIMEOUT);
+        let response = await request(global.__SERVER__).patch(APIS.changeRunningTestStatusApi).send({runningTestID, testRoutineChannels, ubaSN, newTestStatus: status.PENDING_STANDBY});
+       expect(response.status).toBe(200);
+    };
+
+    const pendingNextStepTest = async (runningTestID, ubaSN, testRoutineChannels) => {
+        let response = await request(global.__SERVER__).patch(APIS.changeRunningTestStatusApi).send({runningTestID, testRoutineChannels, ubaSN, newTestStatus: status.PENDING_NEXTSTEP});
         expect(response.status).toBe(200);
     };
 
     const pendingStopRunningTest = async (runningTestID, ubaSN, testRoutineChannels) => {
-        let response = await withTimeout(request(global.__SERVER__).patch(APIS.changeRunningTestStatusApi).send({runningTestID, testRoutineChannels, ubaSN, newTestStatus: status.PENDING_STOP}), AWAIT_TIMEOUT);
+        let response = await request(global.__SERVER__).patch(APIS.changeRunningTestStatusApi).send({runningTestID, testRoutineChannels, ubaSN, newTestStatus: status.PENDING_STOP});
         expect(response.status).toBe(200);
     };
 
     const changeRunningTestStatus = async (runningTestID, ubaSN, testRoutineChannels, newTestStatus) => {
-        let response = await withTimeout(request(global.__SERVER__).patch(APIS.changeRunningTestStatusApi).send({runningTestID, testRoutineChannels, ubaSN, newTestStatus}), AWAIT_TIMEOUT);
+        let response = await request(global.__SERVER__).patch(APIS.changeRunningTestStatusApi).send({runningTestID, testRoutineChannels, ubaSN, newTestStatus});
         expect(response.status).toBe(200);
     };
 
     const sqlValidateAmounts = async (tableName, amount) => {
-        const [rows] = await withTimeout(connection.query(`SELECT * FROM \`${tableName}\`;`), AWAIT_TIMEOUT);
+        const [rows] = await connection.query(`SELECT * FROM \`${tableName}\`;`);
         expect(rows.length).toBe(amount);
     };
 
     const getAllPendingRunningTests = async () => {
-        const response = await withTimeout(request(global.__SERVER__).get(APIS.getAllPendingRunningTestsApi), AWAIT_TIMEOUT);
+        const response = await request(global.__SERVER__).get(APIS.getAllPendingRunningTestsApi);
         expect(response.status).toBe(200);
         return response.body;
     }

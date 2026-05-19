@@ -18,7 +18,7 @@ const createTestRoutine = async data => {
 	let dataPlan = validatePlan(data?.plan, true);
 	logger.info(`createTestRoutine.validatePlan ${dataPlan}`);
 	data.plan = JSON.stringify(dataPlan);
-	await withTimeout(createModel(testRoutineModel, data), AWAIT_TIMEOUT);;
+	await createModel(testRoutineModel, data);;
 }
 
 const updateTestRoutine = async (id, data) => {
@@ -27,11 +27,11 @@ const updateTestRoutine = async (id, data) => {
 	let dataPlan = validatePlan(data?.plan, false);
 	logger.info(`updateTestRoutine.validatePlan ${dataPlan}`);
 	if(dataPlan) data.plan = JSON.stringify(dataPlan);
-	await withTimeout(updateModel(testRoutineModel, id, data), AWAIT_TIMEOUT);;
+	await updateModel(testRoutineModel, id, data);;
 }
 
 const deleteTestRoutine = async (id) => {
-	await withTimeout(deleteModel(testRoutineModel, id), AWAIT_TIMEOUT);;
+	await deleteModel(testRoutineModel, id);;
 };
 
 module.exports = {

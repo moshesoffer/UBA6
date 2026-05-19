@@ -14,23 +14,28 @@ const { sendConnectionPendingTaskToUba, UI_FLOWS, UBA_DEVICE_ACTIONS, } = requir
 const { formatSecondsToHHMMSS } = require('../utils/helper');
 const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 const createReportAndTestResult = async (body) => {
     let connection;
     try {
-logger.info(`await connection 1`);
-        connection = await withTimeout(pool.getConnection(), AWAIT_TIMEOUT);
-        await withTimeout(connection.beginTransaction(), AWAIT_TIMEOUT);
-        logger.info(`createReportAndTestResult`);
+//logger.info(`await connection 1`);
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+        logger.info(`(trns)createReportAndTestResult`);
         addTimeOfTest(body);
-        const id = await withTimeout(createReport(body, connection), AWAIT_TIMEOUT);
+logger.info('==> addTimeOfTest', { body });
+        const id = await createReport(body, connection);
         logger.info(`createReportAndTestResult finished createReport`, {id: id});
-        await withTimeout(createTestResultsFile(id, body), AWAIT_TIMEOUT);
+        await createTestResultsFile(id, body);
         logger.info(`createReportAndTestResult finished createTestResultsFile`);
-        await withTimeout(connection.commit(), AWAIT_TIMEOUT);// Commit if all functions succeed
+        await connection.commit();// Commit if all functions succeed
         return id;
     } catch (error) {
         if (connection) 
-            await withTimeout(connection.rollback(), AWAIT_TIMEOUT); // Rollback on error
+            await connection.rollback(); // Rollback on error
         logger.error('createReportAndTestResult Transaction error:', error);
         throw error;
     } finally {
@@ -41,19 +46,20 @@ logger.info(`await connection 1`);
 const updateReportAndTestResult = async (id, body) => {
     let connection;
     try {
-logger.info(`await connection 2`);
-        connection = await withTimeout(pool.getConnection(), AWAIT_TIMEOUT);
-        await withTimeout(connection.beginTransaction(), AWAIT_TIMEOUT);
-        logger.info(`updateReportAndTestResult`);
+//logger.info(`await connection 2`);
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+        logger.info(`(trns)updateReportAndTestResult`);
+//logger.info('==> addTimeOfTest', { body });
         addTimeOfTest(body);
-        await withTimeout(updateReport(id, body, connection), AWAIT_TIMEOUT);
+        await updateReport(id, body, connection);
         logger.info(`updateReportAndTestResult finished updateReport`, id);
         if(body.testResults) 
-            await withTimeout(createTestResultsFile(id, body), AWAIT_TIMEOUT);
+            await createTestResultsFile(id, body);
         logger.info(`updateReportAndTestResult finished createTestResultsFile`);
-        await withTimeout(connection.commit(), AWAIT_TIMEOUT);// Commit if all functions succeed
+        await connection.commit();// Commit if all functions succeed
     } catch (error) {
-        if (connection) await withTimeout(connection.rollback(), AWAIT_TIMEOUT); // Rollback on error
+        if (connection) await connection.rollback(); // Rollback on error
         logger.error('updateReportAndTestResult Transaction error:', error);
         throw error;
     } finally {
@@ -66,40 +72,40 @@ const runTest = async (body) => {
     let connection;
     try {
 logger.info(`await connection 3`);
-        connection = await withTimeout(pool.getConnection(), AWAIT_TIMEOUT);
+        connection = await pool.getConnection();
         try {
 logger.info(`connection.beginTransaction start`);
-        await withTimeout(connection.beginTransaction(), AWAIT_TIMEOUT);
+        await connection.beginTransaction();
         } catch {
             logger.error(`connection beginTransaction failed`);
         }
         //Moshe
         logger.info(`runTest`, {body});
-        await withTimeout(deleteRunningTest(connection, body?.ubaSNs), AWAIT_TIMEOUT);
+        await deleteRunningTest(connection, body?.ubaSNs);
         //Moshe
         logger.info(`runTest finished deleteRunningTest`, {ubaSNs: body?.ubaSNs});
-        const ids = await withTimeout(createRunningTest(connection, body?.ubaSNs, body, status.PENDING_RUNNING), AWAIT_TIMEOUT);
+        const ids = await createRunningTest(connection, body?.ubaSNs, body, status.PENDING_RUNNING);
         //Moshe
         logger.info(`runTest finished createRunningTest`, {ids: ids});
         
         for (const value of ids) {
-            const runningTest = await withTimeout(getRunningTestByIdWithJoins(value, connection), AWAIT_TIMEOUT);
+            const runningTest = await getRunningTestByIdWithJoins(value, connection);
             const { id, ...withoutId } = runningTest;
-            const reportId = await withTimeout(createReport({ ...withoutId }, connection), AWAIT_TIMEOUT);
+            const reportId = await createReport({ ...withoutId }, connection);
             //Moshe
             logger.info(`runTest finished createReport`, {reportId: reportId});
-            await withTimeout(createTestResultsFile(reportId, { testResults: [] }, false), AWAIT_TIMEOUT);//will create an empty file in file system
+            await createTestResultsFile(reportId, { testResults: [] }, false);//will create an empty file in file system
             //Moshe
             logger.info(`runTest finished createTestResultsFile`, {reportId: reportId});
         }
         
-        await withTimeout(connection.commit(), AWAIT_TIMEOUT);// Commit if all functions succeed
+        await connection.commit();// Commit if all functions succeed
         //Moshe
         logger.info(`runTest connection commit`);
         return {ids};
     } catch (error) {
         logger.error('runTest Transaction error:', error);
-        if (connection) await withTimeout(connection.rollback(), AWAIT_TIMEOUT); // Rollback on error
+        if (connection) await connection.rollback(); // Rollback on error
         throw error;
     } finally {
         if (connection) connection.release(); // Release connection back to the pool
@@ -110,11 +116,11 @@ logger.info(`connection.beginTransaction start`);
 const createUbaAndTest = async (body) => {
     let connection;
     try {
-logger.info(`await connection 4`);
-        connection = await withTimeout(pool.getConnection(), AWAIT_TIMEOUT);
-        await withTimeout(connection.beginTransaction(), AWAIT_TIMEOUT);
+//logger.info(`await connection 4`);
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
         
-        await withTimeout(createUbaDevice(body, connection), AWAIT_TIMEOUT);
+        await createUbaDevice(body, connection);
             
         let ubaSNs = [{
             ubaSN: body.ubaSN,
@@ -133,15 +139,15 @@ logger.info(`await connection 4`);
             ];
         }
         logger.info(`uba-devices going to createRunningTest`);
-        const ids = await withTimeout(createRunningTest(connection, ubaSNs, { ...body, }, status.STANDBY), AWAIT_TIMEOUT);
+        const ids = await createRunningTest(connection, ubaSNs, { ...body, }, status.STANDBY);
         logger.info(`uba-devices finished to createRunningTest`);
-        await withTimeout(connection.commit(), AWAIT_TIMEOUT);// Commit if all functions succeed
+        await connection.commit();// Commit if all functions succeed
 
         sendConnectionPendingTaskToUba( body.machineMac, body.address, body.comPort, undefined, undefined, body.name, UBA_DEVICE_ACTIONS.ADD_TO_WATCH_LIST, UI_FLOWS.ADD_UBA_DEVICE );
 
         return ids;
     } catch (error) {
-        if (connection) await withTimeout(connection.rollback(), AWAIT_TIMEOUT); // Rollback on error
+        if (connection) await connection.rollback(); // Rollback on error
         logger.error('createUbaAndTest Transaction error:', error);
         throw error;
     } finally {
@@ -152,10 +158,10 @@ logger.info(`await connection 4`);
 const deleteUbaDeviceAndTest = async (serial) => {
     let connection;
     try {
-logger.info(`await connection 5`);
-        connection = await withTimeout(pool.getConnection(), AWAIT_TIMEOUT);
-        await withTimeout(connection.beginTransaction(), AWAIT_TIMEOUT);
-        const ubaDevice = await withTimeout(getUbaDeviceByUbaSN(serial, connection), AWAIT_TIMEOUT);
+//logger.info(`await connection 5`);
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+        const ubaDevice = await getUbaDeviceByUbaSN(serial, connection);
         ubaSNs = [
 			{
 				ubaSN: serial,
@@ -167,17 +173,17 @@ logger.info(`await connection 5`);
 			},
 		];
 		logger.info(`uba-devices going to deleteRunningTest`, {ubaSNs});
-		await withTimeout(deleteRunningTest(connection, ubaSNs), AWAIT_TIMEOUT);
+		await deleteRunningTest(connection, ubaSNs);
 
         logger.info(`uba-devices going to deleteUbaDevice ${serial}`);
-		await withTimeout(deleteUbaDevice(serial, connection), AWAIT_TIMEOUT);
+		await deleteUbaDevice(serial, connection);
 
-        await withTimeout(connection.commit(), AWAIT_TIMEOUT);// Commit if all functions succeed
+        await connection.commit();// Commit if all functions succeed
 
         sendConnectionPendingTaskToUba( ubaDevice.machineMac, ubaDevice.address, ubaDevice.comPort, undefined, undefined, undefined, UBA_DEVICE_ACTIONS.REMOVE_FROM_WATCH_LIST, UI_FLOWS.DELETE_UBA_DEVICE );
 
     } catch (error) {
-        if (connection) await withTimeout(connection.rollback(), AWAIT_TIMEOUT); // Rollback on error
+        if (connection) await connection.rollback(); // Rollback on error
         logger.error('deleteUbaDeviceAndTest Transaction error:', error);
         throw error;
     } finally {
@@ -188,23 +194,24 @@ logger.info(`await connection 5`);
 const changeRunningTestStatus = async (runningTestID, testRoutineChannels, ubaSN, statusToSet) => {
     let connection;
     
+    //logger.info(`changeRunningTestStatus`, {runningTestID, testRoutineChannels, ubaSN, statusToSet});
     if(statusToSet === undefined){
         logger.error(`Invalid statusToSet ${statusToSet}`);
         throw new Error(`Invalid statusToSet ${statusToSet}`);
     }
     if(!runningTestID || !ubaSN) {
+    //if(!runningTestID) {
         logger.error(`mandatory fields runningTestID ${runningTestID}, ubaSN ${ubaSN}`);
         throw new Error(`mandatory fields runningTestID ${runningTestID}, ubaSN ${ubaSN}`);
     }
-    //logger.info(`changeRunningTestStatus`, {runningTestID, testRoutineChannels, ubaSN, statusToSet});
     
     try {
-logger.info(`await connection 6`);
-        connection = await withTimeout(pool.getConnection(), AWAIT_TIMEOUT);
+//logger.info(`await connection 6`);
+        connection = await pool.getConnection();
         const runningTestIDs = [runningTestID];
         if(testRoutineChannels && testRoutineChannels === TEST_ROUTINE_CHANNELS.A_AND_B){
             logger.info(`this is a test on both channels, going to find the other channel running test`);
-            const runningsTests = await withTimeout(getRunningTestsByUbaSN(ubaSN, connection), AWAIT_TIMEOUT);
+            const runningsTests = await getRunningTestsByUbaSN(ubaSN, connection);
             //logger.info(`****1`, {runningsTests});
             const runningTestOnDifferentChannel = runningsTests.find(runningTest => runningTest.id !== runningTestID);
             //logger.info(`runningTestOnDifferentChannel`, {runningTestOnDifferentChannel});
@@ -216,12 +223,12 @@ logger.info(`await connection 6`);
         for (let index = 0; index < runningTestIDs.length; index++) {
             promises.push(changeTestStatus(runningTestIDs[index], statusToSet, connection));
         }
-        await withTimeout(Promise.all(promises), AWAIT_TIMEOUT);
+        await Promise.all(promises);
 
-        await withTimeout(connection.commit(), AWAIT_TIMEOUT);// Commit if all functions succeed
+        await connection.commit();// Commit if all functions succeed
 
     } catch (error) {
-        if (connection) await withTimeout(connection.rollback(), AWAIT_TIMEOUT); // Rollback on error
+        if (connection) await connection.rollback(); // Rollback on error
         logger.error('resumeRunningTest Transaction error:', error);
         throw error;
     } finally {

@@ -26,7 +26,7 @@ export default function CustomTableRow({row}) {
 	}
 
 	const handleTestDelete = () => {
-		let choice = confirm('Do you want to delete this test routine?');
+		let choice = confirm('Confirm Delete Test Routine?');
 		if(choice === true) {
 			deleteTestRoutine(authDispatch, testRoutinesDispatch, row?.id);
 			return true;

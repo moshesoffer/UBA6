@@ -35,8 +35,10 @@ import {
 } from '../validators';
 import { getInputColor, } from './utils';
 
-function ConfigurationsMandatory(props, ref) {
+let shadowUba = null;
+let batteryPN, channel, batterySN, cellPN, numCellSerial, numCellParallel, testName;
 
+function ConfigurationsMandatory(props, ref) {
 	const {initialTestRoutine,} = props;
 	const inputColors = useRef(null);
 
@@ -48,7 +50,7 @@ function ConfigurationsMandatory(props, ref) {
 	const [cellsInParallelError, setCellsInParallelError] = useState('');
 
 	const theme = useTheme();
-	const {currentUba, ubaDevices} = useUbaDevices();
+	const {currentUba, ubaDevices,} = useUbaDevices();
 	const {testRoutines, testData, existingTest,} = useTestRoutines();
 	const {cells,} = useSettings();
 
@@ -63,57 +65,124 @@ function ConfigurationsMandatory(props, ref) {
 
 	const testRoutinesDispatch = useTestRoutinesDispatch();
 
+	//console.log("==> ConfigurationsMandatory ===================================");
+	if ((existingTest.isChanged == false) ||
+		(shadowUba === null) || (shadowUba.testName != testData.testName)) {
+		shadowUba = ubaDevices;
+		shadowUba.batteryPN      = testData.batteryPN;      batteryPN       = shadowUba.batteryPN;
+		shadowUba.ubaChannel     = testData.channel;		channel         = shadowUba.ubaChannel;
+		shadowUba.batterySN      = testData.batterySN;		batterySN       = shadowUba.batterySN;
+		shadowUba.cellPN         = testData.cellPN;			cellPN          = shadowUba.cellPN;
+		shadowUba.noCellSerial   = testData.noCellSerial;	numCellSerial   = shadowUba.noCellSerial;
+		shadowUba.noCellParallel = testData.noCellParallel;	numCellParallel = shadowUba.noCellParallel;
+		shadowUba.testName       = testData.testName;		testName        = shadowUba.testName;
+		console.log('==> shadowUba', shadowUba.testName);
+	}
+
 	const handleBatteryPNChange = (event, newInputValue) => {
-		inputColors.current = getInputColor('batteryPN', newInputValue, initialTestRoutine, existingTest, theme.palette.primary.main, inputColors.current);
-		handleInputChange(testRoutinesDispatch, setTestData, 'batteryPN', newInputValue)
-		validateBatteryPN(newInputValue, setBatteryPNError);
+		console.log('==> handleBatteryPNChange ===================', newInputValue, shadowUba.batteryPN);
+		//if (newInputValue !== shadowUba.batteryPN)
+		//{
+			inputColors.current = getInputColor('batteryPN', newInputValue, initialTestRoutine, existingTest, theme.palette.primary.main, inputColors.current);
+			handleInputChange(testRoutinesDispatch, setTestData, 'batteryPN', newInputValue)
+			validateBatteryPN(newInputValue, setBatteryPNError);
+			batteryPN = newInputValue;
+			isConfigChanged();
+		//}
 	};
 
 	const handleUbaChannelChange = event => {
+		console.log('==> handleUbaChannelChange ===================');
 		const newInputValue = event.target.value;
-		inputColors.current = getInputColor('channel', newInputValue, initialTestRoutine, existingTest, theme.palette.primary.main, inputColors.current);
-		handleInputChange(testRoutinesDispatch, setTestData, 'channel', newInputValue)
+		console.log('==> handleUbaChannelChange newInputValue shadowUba:', newInputValue, shadowUba.ubaChannel);
+		//if ((newInputValue === ubaChannel.A)  && (shadowUba.ubaChannel !== ubaChannel.A) ||
+		//	(newInputValue === ubaChannel.B)  && (shadowUba.ubaChannel !== ubaChannel.B) ||
+		//	(newInputValue === UBA_CHANNEL_LIST.A_AND_B) && (shadowUba.ubaChannel !== ubaChannel.AB)) {
+			inputColors.current = getInputColor('channel', newInputValue, initialTestRoutine, existingTest, theme.palette.primary.main, inputColors.current);
+			handleInputChange(testRoutinesDispatch, setTestData, 'channel', newInputValue)
+			channel = newInputValue;
+			isConfigChanged();
+		//}
+		//console.log('==> isChanged', existingTest.isChanged);
 	};
 
 	const handleBatterySNChange = (event, newInputValue) => {
-		inputColors.current = getInputColor('batterySN', newInputValue, initialTestRoutine, existingTest, theme.palette.primary.main, inputColors.current);
-		handleInputChange(testRoutinesDispatch, setTestData, 'batterySN', newInputValue)
-		validateBatterySN(newInputValue, setBatterySNError);
+		console.log('==> handleBatteryPNChange ===================');
+		//if (newInputValue !== shadowUba.batterySN)
+		//{
+			inputColors.current = getInputColor('batterySN', newInputValue, initialTestRoutine, existingTest, theme.palette.primary.main, inputColors.current);
+			handleInputChange(testRoutinesDispatch, setTestData, 'batterySN', newInputValue)
+			validateBatterySN(newInputValue, setBatterySNError);
+			batterySN = newInputValue;
+			isConfigChanged();
+		//}
+		//console.log('==> isChanged', existingTest.isChanged);
 	};
 
 	const handleCellPNChange = (event, newInputValue) => {
-		inputColors.current = getInputColor('cellPN', newInputValue?.cellPN, initialTestRoutine, existingTest, theme.palette.primary.main, inputColors.current);
-		handleInputChange(testRoutinesDispatch, setTestData, 'cellPN', newInputValue?.cellPN);
-		validateCellPN(newInputValue?.cellPN, setCellPNError);
+		console.log('==> handleCellPNChange ===================');
+		//if (newInputValue !== shadowUba.cellPN)
+		//{
+			inputColors.current = getInputColor('cellPN', newInputValue?.cellPN, initialTestRoutine, existingTest, theme.palette.primary.main, inputColors.current);
+			handleInputChange(testRoutinesDispatch, setTestData, 'cellPN', newInputValue?.cellPN);
+			validateCellPN(newInputValue?.cellPN, setCellPNError);
+			cellPN = newInputValue;
+			isConfigChanged();
+		//}
+		//console.log('==> isChanged', existingTest.isChanged);
 	};
 
 	const handleCellsInSerialChange = event => {
+		//console.log('==> handleCellsInSerialChange ===================');
 		const noCellSerial = event.target.value;
-		inputColors.current = getInputColor('noCellSerial', noCellSerial, initialTestRoutine, existingTest, theme.palette.primary.main, inputColors.current);
-		handleInputChange(testRoutinesDispatch, setTestData, 'noCellSerial', noCellSerial);
-		validateCellsInSerial(noCellSerial, setCellsInSerialError);
+		if (noCellSerial !== shadowUba.noCellSerial)
+		{
+			inputColors.current = getInputColor('noCellSerial', noCellSerial, initialTestRoutine, existingTest, theme.palette.primary.main, inputColors.current);
+			handleInputChange(testRoutinesDispatch, setTestData, 'noCellSerial', noCellSerial);
+			validateCellsInSerial(noCellSerial, setCellsInSerialError);
+			numCellSerial = noCellSerial;
+			isConfigChanged();
+		}
+		//console.log('==> isChanged', existingTest.isChanged);
 	};
 
 	const handleCellsInParallelChange = event => {
+		console.log('==> handleCellsInParallelChange ===================');
 		const noCellParallel = event.target.value;
-		inputColors.current = getInputColor('noCellParallel', noCellParallel, initialTestRoutine, existingTest, theme.palette.primary.main, inputColors.current);
-		handleInputChange(testRoutinesDispatch, setTestData, 'noCellParallel', noCellParallel);
-		validateCellsInParallel(noCellParallel, setCellsInParallelError);
+		if (noCellParallel !== shadowUba.noCellParallel)
+		{
+			inputColors.current = getInputColor('noCellParallel', noCellParallel, initialTestRoutine, existingTest, theme.palette.primary.main, inputColors.current);
+			handleInputChange(testRoutinesDispatch, setTestData, 'noCellParallel', noCellParallel);
+			validateCellsInParallel(noCellParallel, setCellsInParallelError);
+			numCellParallel = noCellParallel;
+			isConfigChanged();
+		}
+		//console.log('==> isChanged', existingTest.isChanged);
 	};
 
 	const handleTestNameChange = newInputValue => {
-		inputColors.current = getInputColor('testName', newInputValue, initialTestRoutine, existingTest, theme.palette.primary.main, inputColors.current);
-		handleInputChange(testRoutinesDispatch, setTestData, 'testName', newInputValue);
-		validateTestName(newInputValue, testRoutines, testData?.id, setTestNameError);
+		console.log('==> newInputValue ===================');
+		if (newInputValue !== shadowUba.testName)
+		{
+			inputColors.current = getInputColor('testName', newInputValue, initialTestRoutine, existingTest, theme.palette.primary.main, inputColors.current);
+			handleInputChange(testRoutinesDispatch, setTestData, 'testName', newInputValue);
+			validateTestName(newInputValue, testRoutines, testData?.id, setTestNameError);
+			testName = newInputValue;
+			isConfigChanged();
+		}
+		//console.log('==> isChanged', existingTest.isChanged);
 	};
 
 	const handleFieldChange = (event, fieldName) => {
+		console.log('==> handleFieldChange ===================');
 		const newInputValue = event.target.value;
 		inputColors.current = getInputColor(fieldName, newInputValue, initialTestRoutine, existingTest, theme.palette.primary.main, inputColors.current);
 		handleInputChange(testRoutinesDispatch, setTestData, fieldName, newInputValue);
+		isConfigChanged();
 	}
 
 	const doValidation = () => {
+		//console.log('==> doValidation ===================');
 		const testName = getInputValue(testData, 'testName');
 		const batteryPN = getInputValue(testData, 'batteryPN');
 		const batterySN = getInputValue(testData, 'batterySN');
@@ -134,6 +203,28 @@ function ConfigurationsMandatory(props, ref) {
 	useImperativeHandle(ref, () => ({
 		doValidation: doValidation,
 	}));
+
+	const isConfigChanged = () => {
+		console.log('==> numCellSerial  ', numCellSerial,   shadowUba.noCellSerial);			
+		console.log('==> numCellParallel', numCellParallel, shadowUba.noCellParallel);			
+		console.log('==> batteryPN      ', batteryPN,       shadowUba.batteryPN);			
+		console.log('==> batterySN      ', batterySN,       shadowUba.batterySN);			
+		console.log('==> cellPN         ', cellPN,          shadowUba.cellPN);			
+		console.log('==> testName       ', testName,        shadowUba.testName);			
+		console.log('==> channel        ', channel,         shadowUba.ubaChannel);			
+		if ((batteryPN       != shadowUba.batteryPN) ||
+			(batterySN       != shadowUba.batterySN) ||
+			(cellPN          != shadowUba.cellPN) ||
+			(numCellSerial   != shadowUba.noCellSerial) ||
+			(numCellParallel != shadowUba.noCellParallel) ||
+			(testName        != shadowUba.testName) ||
+		    (channel         != shadowUba.ubaChannel)) {
+			existingTest.isChanged = true;
+		} else {
+			existingTest.isChanged = false;
+		}
+		return;
+	}
 
 	const printTestPlanElement = () => {
 		const label = getText(`mainPage.wizardZero.${LOCK_STATUS[testData?.isLocked]?.toUpperCase()}`);
@@ -186,15 +277,18 @@ function ConfigurationsMandatory(props, ref) {
 	};
 
 	const getUbaChannlesElement = () => {
+		//console.log('==> getUbaChannlesElement ===================', testData.testName);
 		//console.log('currentUba', currentUba, testData);
 		if (validateString(currentUba?.ubaChannel)) {
 			// We are on the Main Page.
 			switch (currentUba?.ubaChannel) {
 				case ubaChannel.A:
 				case ubaChannel.B: {
+					//console.log('==> ubaChannel.A or B');
 					return ubaChannelText(currentUba.ubaChannel)
 				}
 				case ubaChannel.AB: {
+					//console.log('==> ubaChannel.A and B');
 					const ubaChannelList = [];
 					if(currentUba.channel === ubaChannel.A) {
 						ubaChannelList.push(ubaChannel.A);

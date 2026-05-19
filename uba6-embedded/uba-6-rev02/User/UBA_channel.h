@@ -53,6 +53,7 @@ typedef struct UBA_channel_shadow {
 typedef struct UBA_channel {
 	UBA_CHANNLE_ID id;
 	UBA_PROTO_UBA6_ERROR error;
+	int8_t num_consecutive_errors;
 	uint8_t name[11];
 	struct {
 		UBA_CHANNEL_STATE pre;
@@ -87,6 +88,8 @@ uint32_t UBA_channel_set_next_state(UBA_channel *ch, UBA_CHANNEL_STATE next_stat
 UBA_PROTO_UBA6_ERROR UBA_channel_set_discharge_param(UBA_channel *ch, UBA_PROTO_BPT_discharge_current * discharge_current);
 UBA_PROTO_UBA6_ERROR  UBA_channel_set_charge_param(UBA_channel *ch, int32_t charge_current, int32_t charge_voltage);
 UBA_PROTO_UBA6_ERROR UBA_channel_get_lines_errors(UBA_channel *ch);
+bool UBA_channel_are_lines_connected(UBA_channel *ch);
+void UBA_channel_get_lines_connected(UBA_channel *ch, bool *lines_connected);
 
 void UBA_channel_run(UBA_channel *ch);
 

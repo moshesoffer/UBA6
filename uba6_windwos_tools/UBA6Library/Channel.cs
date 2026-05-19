@@ -24,14 +24,13 @@ namespace UBA6Library {
                 return $"CH {ID}";
             } 
         }
-
-
         public Channel() { 
-        
-        
         }
         public Channel(UBA_PROTO_CHANNEL.ID id) {
             ID= id; 
+        }
+        public UBA_PROTO_CHANNEL.ID GetId () {
+            return ID; 
         }
 
         public Channel(UBA_PROTO_CHANNEL.status status) {

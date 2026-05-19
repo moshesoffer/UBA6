@@ -4,6 +4,7 @@
  *  Created on: Feb 6, 2025
  *      Author: ORA
  */
+#define UART_LOG_DISABLE
 
 #include "UBA_UART_comm.h"
 #include <stdio.h>
@@ -34,10 +35,14 @@ uint8_t uart_tx_dma_buffer[UART_RX_BUFFER_SIZE];
 volatile uint16_t old_pos = 0;
 uint16_t frame_index = 0;
 bool in_frame = false;
-static bool DMA_done = false;
+static bool TX_done = false;
+static bool RX_done = false;
 static UBA_UART_QUERY_RECIPIENT query_pending_reqest = UBA_UART_QUERY_RECIPIENT_NONE;
+static int cmd_pending_msg_num = 0;
 
 static uint32_t query_pending_id = 0;
+static uint32_t cmd_pending_start_index = 0;
+static UBA_PROTO_CMD_command_message cmd_pending_msg[32];
 
 #if (UBA_LOG_LEVEL_COMM <= UART_LOG_LEVEL_INFO)
 #define UART_LOG_COMM_INFO(...) UART_LOG_INFO(COMP,##__VA_ARGS__)
@@ -50,6 +55,13 @@ static uint32_t query_pending_id = 0;
 #else
 #define UART_LOG_COMM_DEBUG(...)
 #endif
+
+//Moshe - NO logs
+#define UART_LOG_DEBUG(COMP,format,...) 	
+#define UART_LOG_INFO(COMP,format,...) 		
+#define UART_LOG_WARNNING(COMP,format,...) 	
+#define UART_LOG_COMM(COMP,format,...) 		
+
 // ===================== private functions declarations =====================
 void UBA_UART_query_response_message(UBA_UART_QUERY_RECIPIENT id);
 void process_uart_data(uint8_t *data, uint16_t len);
@@ -58,10 +70,18 @@ void process_uart_data(uint8_t *data, uint16_t len);
 void UBA_UART_qeury_pending_post(UBA_UART_QUERY_RECIPIENT new_query_request, uint32_t query_id) {
 	query_pending_reqest |= new_query_request;
 	query_pending_id = query_id;
-
 }
 void UBA_UART_qeury_pending_clear(UBA_UART_QUERY_RECIPIENT clear_query_request) {
 	query_pending_reqest = (query_pending_reqest & (~clear_query_request));
+}
+
+void UBA_UART_cmd_pending_post(UBA_PROTO_CMD_command_message *cmd) {
+	cmd_pending_msg_num++;
+	memcpy (&cmd_pending_msg [(cmd_pending_start_index + cmd_pending_msg_num - 1) % 32], cmd, sizeof(UBA_PROTO_CMD_command_message));
+}
+void UBA_UART_cmd_pending_clear() {
+	cmd_pending_msg_num--;
+	cmd_pending_start_index = (cmd_pending_start_index+1) %32;
 }
 
 bool uart_write_callback(pb_ostream_t *stream, const uint8_t *buf, size_t count) {
@@ -102,14 +122,14 @@ size_t encode_varint(uint32_t value, uint8_t *output) {
 bool UBA_UART_sent_message(MSG_Message *message, int tag) {
 	size_t message_size = 0, index;
 	bool status;
-	HAL_UART_StateTypeDef ret = HAL_UART_GetState(&COMM_CH);
-	HAL_StatusTypeDef st;
-	if ((ret == HAL_UART_STATE_READY ||
-			ret == HAL_UART_STATE_BUSY_RX) == false) {
-		// UART is not ready to transmit
-		UART_LOG_ERROR(COMP, "UART not ready : 0x%X", ret);
-		return false;
-	}
+	//HAL_UART_StateTypeDef ret = HAL_UART_GetState(&COMM_CH);
+	//HAL_StatusTypeDef st;
+	//if ((ret == HAL_UART_STATE_READY ||
+	//		ret == HAL_UART_STATE_BUSY_RX) == false) {
+	//	// UART is not ready to transmit
+	//	UART_LOG_ERROR(COMP, "UART not ready : 0x%X", ret);
+	//	return false;
+	//}
 	message->head.target_address = 0x00; // sent it to master
 	message->head.sender_address = UBA_6_device_g.settings.address;
 	message->which_pyload = tag;
@@ -120,6 +140,7 @@ bool UBA_UART_sent_message(MSG_Message *message, int tag) {
 		UART_LOG_COMM_DEBUG("Error getting encoded size");
 		return false;
 	}
+
 	index = encode_varint(message_size, uart_tx_dma_buffer);
 	UART_LOG_COMM_DEBUG("varint size: %u bytes", index);
 	pb_ostream_t stream = pb_ostream_from_buffer(&uart_tx_dma_buffer[index], sizeof(uart_tx_dma_buffer) - index);
@@ -128,16 +149,37 @@ bool UBA_UART_sent_message(MSG_Message *message, int tag) {
 		UART_LOG_COMM_DEBUG("Encoding failed: %s", PB_GET_ERROR(&stream));
 		return false;
 	} else {
+ 		uint32_t tickstart;
+		uint32_t timeout = 1000; // 1 sec
+
 		UBA_UART_print_buffer(uart_tx_dma_buffer, message_size + index);
-		//process_uart_data(uart_tx_dma_buffer, message_size + index);
-		st = HAL_UART_Transmit_DMA(&COMM_CH, uart_tx_dma_buffer, message_size + index);
-		if (st != HAL_OK) {
-			UART_LOG_ERROR(COMP, "TX failed:%u", st);
-			return false;
-		} else {
-			UART_LOG_COMM(COMP, "TX sent: %u = %u+%u", message_size + index, message_size, index);
-			//UBA_util_print_buffer(buffer, stream.bytes_written + 1);
-			return true;
+
+    	/* Init tickstart for timeout management */
+    	tickstart = HAL_GetTick();
+
+		while (1) {
+			HAL_UART_StateTypeDef ret = HAL_UART_GetState(&COMM_CH);
+
+      		if (((HAL_GetTick() - tickstart) > timeout) || (timeout == 0U))
+      		{
+				// UART is not ready to transmit
+				UART_LOG_ERROR(COMP, "UART not ready : 0x%X", ret);
+      		  	return false; //HAL_TIMEOUT;
+      		}
+
+			if (ret == HAL_UART_STATE_READY || ret == HAL_UART_STATE_BUSY_RX) {
+				//process_uart_data(uart_tx_dma_buffer, message_size + index);
+				HAL_UART_StateTypeDef st = HAL_UART_Transmit_DMA(&COMM_CH, uart_tx_dma_buffer, message_size + index);
+				if (st != HAL_OK) {
+					UART_LOG_ERROR(COMP, "TX failed:%u", st);
+					return false;
+				} else {
+					UART_LOG_COMM(COMP, "TX sent: %u = %u+%u", message_size + index, message_size, index);
+					//UBA_util_print_buffer(buffer, stream.bytes_written + 1);
+					return true;
+				}
+			}
+			HAL_Delay(20);
 		}
 	}
 }
@@ -155,6 +197,7 @@ void UBA_UART_query_line(UBA_PROTO_LINE_status *ls, UBA_UART_QUERY_RECIPIENT lin
 			UART_LOG_ERROR(COMP, "ID is unknoun:%x", line_recipient_id);
 			return;
 	}
+	UART_LOG("UART", "UART_query_line: line_recipient_id %d", line_recipient_id);
 	UBA_line_update_message(query_line, ls);
 }
 void UBA_UART_query_channel(UBA_PROTO_CHANNEL_status *cs, UBA_UART_QUERY_RECIPIENT ch_recipient_id) {
@@ -173,6 +216,7 @@ void UBA_UART_query_channel(UBA_PROTO_CHANNEL_status *cs, UBA_UART_QUERY_RECIPIE
 			UART_LOG_ERROR(COMP, "ID is unknoun:%x", ch_recipient_id);
 			return;
 	}
+	UART_LOG("UART", "UART_query_channel: ch_recipient_id %d", ch_recipient_id);
 	UBA_channel_update_message(query_ch, cs);
 }
 
@@ -192,7 +236,10 @@ void UBA_UART_query_BPT(UBA_PROTO_BPT_status_message *bpss, UBA_UART_QUERY_RECIP
 			UART_LOG_ERROR(COMP, "ID is not a known BPT id:%x", bpt_recipient_id);
 			return;
 	}
-	UBA_BPT_update_message(bpt, bpss);
+//	UART_LOG("UART", "==> UART_query_BPT 0x%x", bpt_recipient_id);
+	//UBA_BPT_update_message(bpt, bpss); //handle within ISR
+	//read cache status message
+	UBA_BPT_get_cached_status_msg(bpt, bpss); //handle in task context
 }
 
 int UBA_UART_comm_init()
@@ -215,11 +262,13 @@ int process_message(MSG_Message *message) {
 	switch (message->which_pyload) {
 		case MSG_Message_query_tag:
 			UART_LOG_COMM_DEBUG("Query message: recipient:%u", message->pyload.query.recipient);
+			//UBA_UART_query_response_message(message->pyload.query.recipient); //within the intterupt
 			UBA_UART_qeury_pending_post(message->pyload.query.recipient, message->head.id);
 			break;
 		case MSG_Message_cmd_tag:
 			UART_LOG_COMM_DEBUG("CMD message");
-			UBA_COMMAND_execute(&message->pyload.cmd);
+			//UBA_COMMAND_execute(&message->pyload.cmd);
+			UBA_UART_cmd_pending_post(&message->pyload.cmd);
 			break;
 		case MSG_Message_tr_tag:
 #if 0//save TR history in TR_file list */
@@ -268,6 +317,7 @@ uint32_t decode_varint(uint8_t *data, uint16_t len, uint8_t *varint_index) {
 
 void process_uart_data(uint8_t *data, uint16_t len) {
 	uint8_t message_index;
+	UART_LOG_COMM_INFO("process uart data len:%u", len);
 	UART_LOG_COMM_DEBUG("process uart data len:%u", len);
 	uint32_t message_size = decode_varint(data, len, &message_index);
 	UART_LOG_COMM_DEBUG("Message Size:%u start At index:%u", message_size, message_index);
@@ -339,24 +389,30 @@ void UBA_UART_Idle_callback(UART_HandleTypeDef *huart) {
 	}
 }
 
+/*Call legacy weak Rx complete callback*/
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	if (huart->Instance == COMM_CH.Instance) {
+		RX_done = true;
 	}
 }
 
+/*Call legacy weak Tx complete callback*/
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
 	if (huart->Instance == COMM_CH.Instance) {
-		DMA_done = true;
+		TX_done = true;
 	}
 }
 
+uint32_t start_time = 0;
+extern RTC_HandleTypeDef hrtc;
 void UBA_UART_comm_run() {
+#if 0
 	HAL_UART_StateTypeDef state;
 	if (query_pending_reqest) {
 		UBA_UART_query_response_message(query_pending_reqest);
 	}
-	if (DMA_done) {
-		DMA_done = false;
+	if (TX_done) {
+		TX_done = false;
 		UART_LOG_COMM_DEBUG("Successfully Sent Message!");
 	}
 	state = HAL_UART_GetState(&COMM_CH);
@@ -364,7 +420,52 @@ void UBA_UART_comm_run() {
 		//UART_LOG_WARNNING(COMP, "USART state is %lx", state);
 		//HAL_UART_Receive_DMA(&COMM_CH, uart_rx_dma_buffer, UART_RX_BUFFER_SIZE);
 	}
+#else
+//	RTC_TimeTypeDef sTime;
+//	uint32_t time_seconds;
+//	uint32_t diff_seconds = 0;
+//
+//	if (!query_pending_reqest) {
+//		if (start_time == 0) {
+//			HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+//			start_time = TimeToSeconds(&sTime);
+//		}
+//
+//		HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+//		time_seconds = TimeToSeconds(&sTime);
+//
+//		if (time_seconds >= start_time) {
+//			diff_seconds = time_seconds - start_time;
+//			if (diff_seconds > 3) {
+//				UBA_UART_query_response_message(UBA_UART_QUERY_RECIPIENT_BPT_A);
+//				UBA_UART_query_response_message(UBA_UART_QUERY_RECIPIENT_BPT_B);
+//			}
+//		}
+//	} else {
+//		start_time = 0;
+//	}
 
+	int max_msgs = 3;
+	while (cmd_pending_msg_num) {
+		UBA_COMMAND_execute(&cmd_pending_msg[cmd_pending_start_index]);
+		cmd_pending_start_index = (cmd_pending_start_index+1) % 32;
+		cmd_pending_msg_num--;
+		//prevent startvation
+		if (max_msgs-- == 0) {
+			break;
+		}
+	}
+
+	int max_queries = 2;
+	while (query_pending_reqest) {
+		UBA_UART_query_response_message(query_pending_reqest);
+		//prevent startvation
+		if (max_queries-- == 0) {
+			break;
+		}
+	}
+
+#endif
 }
 void UBA_UART_query_device(UBA_PROTO_UBA6_status *status_updated) {
 	UBA_6_update_message(&UBA_6_device_g, status_updated);
@@ -373,6 +474,7 @@ void UBA_UART_query_device(UBA_PROTO_UBA6_status *status_updated) {
 void UBA_UART_query_response_message(UBA_UART_QUERY_RECIPIENT id) {
 	MSG_Message message = { 0 };
 	UBA_UART_QUERY_RECIPIENT clear_id = UBA_UART_QUERY_RECIPIENT_NONE;
+
 	if (id == UBA_UART_QUERY_RECIPIENT_NONE) {
 		UART_LOG_WARNNING(COMP, "there is no :%u", id);
 	} else if ((id & UBA_UART_QUERY_RECIPIENT_DEVICE) == UBA_UART_QUERY_RECIPIENT_DEVICE) {
@@ -420,6 +522,8 @@ void UBA_UART_query_response_message(UBA_UART_QUERY_RECIPIENT id) {
 		}
 		if (UBA_UART_sent_message(&message, MSG_Message_query_response_tag)) {
 			UART_LOG_COMM_INFO("Sent Response for :%u message ID", query_pending_id);
+			UBA_UART_qeury_pending_clear(clear_id);
+		} else {
 			UBA_UART_qeury_pending_clear(clear_id);
 		}
 	}

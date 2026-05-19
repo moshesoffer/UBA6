@@ -3,8 +3,11 @@ import {pageStateList,} from 'src/constants/unsystematic';
 
 import WizardOne from 'src/components/wizard/step-one';
 import WizardTwo from 'src/components/wizard/step-two';
+import {paramChangeOption,} from 'src/components/wizard/step-two';
 
 import TableView from './table-view';
+
+let changeOption;
 
 export default function TestRoutines() {
 
@@ -21,7 +24,7 @@ export default function TestRoutines() {
 			return <WizardOne/>;
 		}
 		case pageStateList.WIZARD_TWO: {
-			return <WizardTwo/>;
+			return <WizardTwo  changeOption={paramChangeOption.doDefineTest}/>;
 		}
 		default: {
 			return <TableView/>;

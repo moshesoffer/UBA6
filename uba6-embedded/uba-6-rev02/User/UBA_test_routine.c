@@ -4,6 +4,7 @@
  *  Created on: Sep 25, 2024
  *      Author: ORA
  */
+#define UART_LOG_DISABLE
 
 #include "UBA_test_routine.h"
 #include "stdlib.h"
@@ -43,9 +44,11 @@ int UBA_TR_demo_init(void) {
 	UBA_6_device_g.BPT_A.ch = &UBA_CH_A;
 	UBA_6_device_g.BPT_A.type = UBA_BPT_TYPE_SINGLE_CHANNEL;
 	UBA_6_device_g.BPT_A.error = UBA_PROTO_UBA6_ERROR_NO_ERROR;
+
 	UBA_6_device_g.BPT_B.ch = &UBA_CH_B;
 	UBA_6_device_g.BPT_B.type = UBA_BPT_TYPE_SINGLE_CHANNEL;
 	UBA_6_device_g.BPT_B.error = UBA_PROTO_UBA6_ERROR_NO_ERROR;
+	
 	UBA_6_device_g.BPT_AB.ch = &UBA_CH_AB;
 	UBA_6_device_g.BPT_AB.type = UBA_BPT_TYPE_DUAL_CHANNEL;
 	if (UBA_PROTO_load_from_file(UBA_FM_FOLDER_TEST_ROUTINE, UBA_FM_FILE_NAME_TEST_ROUTINE, TR_Test_Routine_File_fields, &TR_file) == false) {
@@ -131,8 +134,9 @@ int32_t UBA_TR_unpack(TR_Test_Routine *tr, UBA_BPT *bpt) {
 	UBA_BPT_free(bpt);
 	UBA_TR_reset_loop_counter(tr, tr->length);
 	bpt->state.next = UBA_BPT_STATE_INIT; // TODO: Set next state only if the BPF is not running
-	bpt->log_intreval = (tr->log_interval == 0) ? 1000 : tr->log_interval;
-	memcpy(bpt->name, tr->name, sizeof(bpt->name));
+	bpt->log_intreval = (tr->log_interval == 0) ? 1000 : 1000;//tr->log_interval;
+	memcpy(((TR_Test_Routine *)bpt->tr)->name, tr->name, sizeof(((TR_Test_Routine *)bpt->tr)->name));
+	bpt->tr = tr;
 
 	int step_index = 0;
 	for (index = 0; index < tr->length;) {
@@ -143,10 +147,12 @@ int32_t UBA_TR_unpack(TR_Test_Routine *tr, UBA_BPT *bpt) {
 			return -1;
 		}
 		new_step->next = NULL;
+
+		isAdd_step = false;
 		switch (tr->config[index].type_id) {
 			case TEST_ROUTINE_STEP_TYPE_CHARGE:
-				case TEST_ROUTINE_STEP_TYPE_DISCHARGE:
-				case TEST_ROUTINE_STEP_TYPE_DELAY:
+			case TEST_ROUTINE_STEP_TYPE_DISCHARGE:
+			case TEST_ROUTINE_STEP_TYPE_DELAY:
 				if (UBA_TR_set_step_and_validate(new_step, &tr->config[index])) {
 					new_step->plan_index = index;
 					isAdd_step = true;
@@ -159,6 +165,7 @@ int32_t UBA_TR_unpack(TR_Test_Routine *tr, UBA_BPT *bpt) {
 				//memcpy(bpt->type, tr->type, sizeof(bpt->type));
 				//TODO: copy stop param
 				break;
+
 			case TEST_ROUTINE_STEP_TYPE_LOOP:
 				if (tr->config[index].type.loop.loop_counter < tr->config[index].type.loop.loop_size) {
 					tr->config[index].type.loop.loop_counter++;
@@ -167,12 +174,13 @@ int32_t UBA_TR_unpack(TR_Test_Routine *tr, UBA_BPT *bpt) {
 					index++;
 					UBA_TR_reset_loop_counter(tr, index);
 				}
-				isAdd_step = false;
 				break;
+
 			default:
 				UART_LOG_CRITICAL(UBA_COMP, "Type Id Is Unknoun");
 				return 1;
 		}
+
 		if (isAdd_step) {
 			new_step->step_index = step_index++;
 			if (new_step->step_index == 0) {
@@ -201,9 +209,9 @@ void UBA_TR_print_step_config(TR_config_step *step) {
 					step->type.charge.voltage,
 					step->type.charge.current,
 					step->type.charge.min_temperature);
-			LOG_COMP_DEBUG( "Cut off Current %d\tlimit Cap: %d\t Max Temp: %f, Max Time:%u",
+			LOG_COMP_DEBUG( "Cut off Current %d\tMax Charge: %d\t Max Temp: %f, Max Time:%u",
 					step->type.charge.sc.cut_off_current,
-					step->type.charge.sc.limit_capacity,
+					step->type.charge.sc.charge_limit,
 					step->type.charge.sc.max_temperature,
 					step->type.charge.sc.max_time
 					);

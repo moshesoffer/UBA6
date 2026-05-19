@@ -35,6 +35,7 @@ export default function UpperPart(props) {
 	const theme = useTheme();
 	const {currentUba,} = useUbaDevices();
 	const {testData, saveIsRun,} = useTestRoutines();
+	const {existingTest,} = useTestRoutines();
 
 	useEffect(() => {
 		if (!saveIsRun) {
@@ -56,6 +57,7 @@ export default function UpperPart(props) {
 		const minTemp = dataValue.trim();
 		const validateMinTempResult = validateMinTemp(isMinTemp, minTemp, setMinTempError);
 		handleInputChange(testRoutinesDispatch, id, 'minTemp', minTemp);
+		existingTest.isChanged = true;
 
 		if (validateMinTempResult) {
 			const numberMinTemp = Number(minTemp?.toString());
@@ -74,6 +76,7 @@ export default function UpperPart(props) {
 		const dataPart = dataValue.trim();
 		const parts = dischargeCurrent.split(':');
 		let dischargeCurrentResult;
+		existingTest.isChanged = true;
 
 		switch (part) {
 			case chargeLimitParts.DATA_VALUE: {
@@ -195,7 +198,7 @@ export default function UpperPart(props) {
 							onChange={event => handleMinTempChange(event.target.value)}
 							disabled={!isMinTemp || (!!testData?.isLocked && validateObject(currentUba, true))}
 							sx={{width: 132,}}
-							label='℃'
+							label='?'
 						/>
 					</Stack>
 

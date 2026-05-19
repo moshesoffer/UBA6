@@ -12,7 +12,7 @@
 #include "stdint.h"
 #include "UBA_channel.h"
 #include "UBA_common_def.h"
-#include  "UBA_PROTO_BPT.pb.h"
+#include "UBA_PROTO_BPT.pb.h"
 #include "UBA_PROTO_UBA6.pb.h"
 #include "UBA_GFX.h"
 
@@ -51,7 +51,7 @@ typedef struct UBA_BPT_charge {
 		float max_emperature; /*the max temp in c*/
 		uint32_t max_time; /*the max time in ms*/
 		int32_t cut_off_current; /*the current of charge that below it the step will end*/
-		int32_t limit_capacity; /*the capacity in mAh that above it the step will end*/
+		int32_t charge_limit; /*the capacity in mAh that above it the step will end*/
 	} stop_condition;
 } UBA_BPT_charge;
 
@@ -93,7 +93,7 @@ typedef struct UBA_BPT_discharge {
 		float max_emperature;
 		uint32_t max_time;
 		int32_t cut_off_voltage;
-		int32_t limit_capacity; /*the capacity in mAh that above it the step will end*/
+		int32_t charge_limit; /*the capacity in mAh that above it the step will end*/
 	} stop_condition;
 } UBA_BPT_discharge;
 
@@ -202,7 +202,7 @@ typedef struct UBA_BPT {
 		UBA_BPT_STATE current;
 		UBA_BPT_STATE next;
 	} state;
-	char name[UBA_BPT_NAME_MAX_SIZE];
+	void *tr;
 	uint32_t log_tick_ms;
 	uint16_t log_intreval;
 	UBA_BPT_step *head_step;
@@ -219,12 +219,23 @@ typedef struct UBA_BPT {
 	uint8_t filename[UBA_BPT_FILENAME_MAX_SIZE]; /*the file name that the data will be store at*/
 	uint8_t TR_selected_index;
 
+	//cache status message
+	UBA_PROTO_BPT_status_message start_status_msg;
+	UBA_PROTO_BPT_status_message next_status_msg;
+	bool set_start_msg;
+	bool get_start_msg;
+
+#define WR_BUFFER_LEN 2048
+	uint8_t buffer[WR_BUFFER_LEN];
+	uint32_t wr_from;
+
 	UBA_BPT_SHADOW shadow;
 } UBA_BPT;
 
 
 
 bool UBA_BPT_isRunning(UBA_BPT *bpt);
+bool UBA_BPT_isChannelRunning(UBA_channel *ch);
 bool UBA_BPT_isPause(UBA_BPT *bpt);
 bool UBA_BPT_start(UBA_BPT *bpt);
 bool UBA_BPT_stop(UBA_BPT *bpt);
@@ -240,6 +251,10 @@ UBA_PROTO_UBA6_ERROR UBA_BPT_pair(UBA_BPT *bpt, UBA_channel *ch, int list_index)
 
 void UBA_BPT_command_execute(UBA_BPT *bpt,UBA_PROTO_BPT_command *cmd);
 void UBA_BPT_update_message(UBA_BPT *bpt,UBA_PROTO_BPT_status_message *msg);
+void UBA_BPT_get_tr_filename(UBA_BPT *bpt, char *tr_filename);
+
+void UBA_BPT_set_cached_status_msg(UBA_BPT *bpt, bool start);
+void UBA_BPT_get_cached_status_msg(UBA_BPT *bpt, UBA_PROTO_BPT_status_message *msg);
 
 #endif /* UBA_BATTERY_PERFORMANCE_TEST_H_ */
 

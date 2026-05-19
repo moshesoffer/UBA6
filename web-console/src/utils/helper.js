@@ -126,6 +126,7 @@ export const resetTestParameters = testRoutinesDispatch => {
 };
 
 export const fillTestRoutine = (testRoutine, isDup, channel, testRoutinesDispatch) => {
+	//console.log('==> fillTestRoutine');
 	let testRoutineNew = {
 		...testRoutine,
 	};

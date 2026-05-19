@@ -4,7 +4,7 @@ const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 
 exports.getTestRoutines = async (req, res) => {
 	try {
-		const result = await withTimeout(getTestRoutines(), AWAIT_TIMEOUT);
+		const result = await getTestRoutines();
 		res.json(result);
 	} catch (error) {
 		logger.error('getTestRoutines', error);
@@ -14,7 +14,7 @@ exports.getTestRoutines = async (req, res) => {
 
 exports.createTestRoutine = async (req, res) => {
 	try {
-		await withTimeout(createTestRoutine(req.body), AWAIT_TIMEOUT);
+		await createTestRoutine(req.body);
 		res.status(201).json( { success: true } );
 	} catch (error) {
 		logger.error('createTestRoutine', error);
@@ -24,7 +24,7 @@ exports.createTestRoutine = async (req, res) => {
 
 exports.updateTestRoutine = async (req, res) => {
 	try {
-		await withTimeout(updateTestRoutine(req.params?.id, req.body), AWAIT_TIMEOUT);
+		await updateTestRoutine(req.params?.id, req.body);
 		res.end();
 	} catch (error) {
 		logger.error('updateTestRoutine', error);
@@ -34,7 +34,7 @@ exports.updateTestRoutine = async (req, res) => {
 
 exports.deleteTestRoutine = async (req, res) => {
 	try {
-		await withTimeout(deleteTestRoutine(req.params?.id), AWAIT_TIMEOUT);
+		await deleteTestRoutine(req.params?.id);
 		res.status(204).end();
 	} catch (error) {
 		logger.error('deleteTestRoutine', error);

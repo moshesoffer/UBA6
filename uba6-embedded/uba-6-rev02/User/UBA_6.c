@@ -63,7 +63,8 @@ bool UBA_6_set_RTC(UBA_6 *uba, uint32_t unix_ts) {
 	struct tm *timeinfo;
 	time_t rawtime = (time_t) unix_ts;
 	// Convert timestamp to broken-down time (UTC)
-	timeinfo = gmtime(&rawtime);
+	//timeinfo = gmtime(&rawtime);
+	timeinfo = localtime(&rawtime);
 	UART_LOG_DEBUG("RTC Update", "before:%s", get_RTC_date_time_str());
 	if (timeinfo == NULL) {
 		return false;
@@ -101,14 +102,14 @@ void UBA_6_fan_control(UBA_6 *uba) {
 	if (uba->isFan_on) {
 		if ((UBA_BPT_isPause(&uba->BPT_A))|| UBA_BPT_isPause(&uba->BPT_B) || UBA_BPT_isPause(&uba->BPT_AB)) {
 			HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_RESET);
-			UART_LOG_WARNNING(UBA_COMP, "=======================FAN Off========================================");
+			UART_LOG_WARNNING(UBA_COMP, "==== FAN Off ====");
 			uba->isFan_on = false;
 		
 		} else if(UBA_BPT_isRunning(&uba->BPT_A) || UBA_BPT_isRunning(&uba->BPT_B) || UBA_BPT_isRunning(&uba->BPT_AB)) {
 
 		} else {
 			HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_RESET);
-			UART_LOG_WARNNING(UBA_COMP, "=======================FAN Off========================================");
+			UART_LOG_WARNNING(UBA_COMP, "==== FAN Off ====");
 			uba->isFan_on = false;
 		}
 
@@ -118,7 +119,7 @@ void UBA_6_fan_control(UBA_6 *uba) {
 		} else if (UBA_BPT_isRunning(&uba->BPT_A) || UBA_BPT_isRunning(&uba->BPT_B) || UBA_BPT_isRunning(&uba->BPT_AB)) {
 			HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_SET);
 			uba->isFan_on = true;
-			UART_LOG_WARNNING(UBA_COMP, "=======================FAN ON========================================");
+			UART_LOG_WARNNING(UBA_COMP, "==== FAN On ====");
 		} else {
 		}
 	}

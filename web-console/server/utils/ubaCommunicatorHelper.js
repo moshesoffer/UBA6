@@ -69,7 +69,7 @@ const sendPendingTaskToUba = (machineMac, pendingTaskType, key, body, timeoutMs 
 
     waitersPerMachineMac.get(machineMac).get(pendingTaskType).set(key,
         { 
-            releaseFn: (msg) => {
+          releaseFn: (msg) => {
               logger.debug(`releasing waiter for pending task ${pendingTaskType} for machine ${machineMac} with key ${key}`);
               clearTimeout(timeout);
               waitersPerMachineMac.get(machineMac)?.get(pendingTaskType)?.delete(key);

@@ -4,6 +4,7 @@
  *  Created on: Nov 20, 2024
  *      Author: ORA
  */
+#define UART_LOG_DISABLE
 
 #include "UBA_command.h"
 #include "UBA_util.h"
@@ -40,11 +41,13 @@ UBA_BPT* UBA_CMD_select_bpt(UBA_CHANNLE_ID ch_id) {
 UBA_STATUS_CODE UBA_COMMAND_execute(UBA_PROTO_CMD_command_message *cmd) {
 	UBA_channel *ch = NULL;
 	UBA_BPT * bpt = NULL;
+
 	switch (cmd->which_command) {
 		case UBA_PROTO_CMD_command_message_line_tag:
 			UBA_line *line = cmd->command.line.line_id == UBA_PROTO_LINE_ID_A ? &UBA_LINE_A : &UBA_LINE_B;
 			UBA_line_command_execute(line, &cmd->command.line);
 			break;
+
 		case UBA_PROTO_CMD_command_message_channel_tag:
 			switch (cmd->command.channel.channel) {
 				case UBA_PROTO_CHANNEL_ID_A:
@@ -62,10 +65,12 @@ UBA_STATUS_CODE UBA_COMMAND_execute(UBA_PROTO_CMD_command_message *cmd) {
 			UART_LOG_INFO(UBA_COMP, "Channel Command Message");
 			UBA_channel_command_execute(ch, &cmd->command.channel);
 			break;
+
 		case UBA_PROTO_CMD_command_message_uba_tag:
 			UART_LOG_INFO(UBA_COMP, "UBA Command Message :%u",cmd->command.uba.id);
 			UBA_6_command_execute(&UBA_6_device_g, &cmd->command.uba);
 			break;
+
 		case UBA_PROTO_CMD_command_message_bpt_tag:
 			UART_LOG_INFO(UBA_COMP, "BPT Command Message");
 			//HAL_Delay(500);
@@ -74,6 +79,7 @@ UBA_STATUS_CODE UBA_COMMAND_execute(UBA_PROTO_CMD_command_message *cmd) {
 				UBA_BPT_command_execute(bpt, &cmd->command.bpt);
 			}
 			break;
+
 		case UBA_PROTO_CMD_command_message_file_tag:
 			UART_LOG_INFO(UBA_COMP, "File Manager Command Message");
 			UBA_FM_command_execute(&cmd->command.file);

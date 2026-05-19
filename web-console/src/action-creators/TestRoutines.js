@@ -6,9 +6,21 @@ import { validateArray, } from 'src/utils/validators';
 import { statusCodes, } from 'src/constants/unsystematic';
 import { getUbaDevices, } from './UbaDevices';
 
+function incrementFileName(name) {
+    const match = name.match(/^(?<base>.*?)(?:\.(?<num>\d+))?$/);
+
+    if (!match) return `${name}.1`;
+
+    const { base, num } = match.groups;
+
+    return num
+        ? `${base}.${Number(num) + 1}`
+        : `${base}.1`;
+}
+
 /* async with timeout *
 const AWAIT_TIMEOUT = 5000;
-function withTimeout(promise, ms) {
+function promise, ms) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       reject(new Error(`Timeout after ${ms}ms`));
@@ -46,12 +58,35 @@ export const getTestRoutines = async (authDispatch, testRoutinesDispatch) => {
 }
 
 export const createTestRoutine = async (authDispatch, testRoutinesDispatch, data) => {
-	try {
-		await postData(authDispatch, 'test-routines', 'POST', data);
-		getTestRoutines(authDispatch, testRoutinesDispatch);
-	} catch (error) {
-		const preparedMessage = handleRequestError(error);
-		authDispatch(setNotification({message: preparedMessage,}));
+	/* eslint-disable no-await-in-loop */
+
+	let maxRetries = 16;
+	while (maxRetries > 0) {
+	    try {
+	        const result = await postData(authDispatch, 'test-routines', 'POST', data);
+
+	        if (result.ok) {
+	            return {
+	                success: true,
+	                data: result.data
+	            };
+	        }
+
+	        if (result.status === 409) {
+	            data.testName = incrementFileName(data.testName);
+	        } else {
+	            return {
+	                success: false,
+	                status: result.status,
+	                error: result.message || "Server error"
+	            };
+	        }
+
+	    } catch (error) {
+	        data.testName = incrementFileName(data.testName);
+	    }
+
+	    maxRetries -= 1;
 	}
 }
 
@@ -116,6 +151,7 @@ export const stopRunningTest = async (authDispatch, ubaDevicesDispatch, runningT
 	try {
 		await postData(null, 'change-running-test-status', 'PATCH', data); //No tomeout!
 		getUbaDevices(authDispatch, ubaDevicesDispatch, true);
+console.log('==> stopRunningTest afrer post');
 	} catch (error) {
 		const preparedMessage = handleRequestError(error);
 		authDispatch(setNotification({message: preparedMessage,}));
@@ -180,6 +216,28 @@ export const confirmRunningTest = async (authDispatch, ubaDevicesDispatch, runni
 		testRoutineChannels,
 		ubaSN,
 		newTestStatus: statusCodes.PENDING_STANDBY
+	};
+
+	try {
+		await postData(null, 'change-running-test-status', 'PATCH', data); //No tomeout!
+		getUbaDevices(authDispatch, ubaDevicesDispatch, true);
+
+		setTimeout(() => {
+    		location.reload();
+		}, 3000); // 1 seconds	} catch (error) {
+
+	} catch (error) {
+		const preparedMessage = handleRequestError(error);
+		authDispatch(setNotification({message: preparedMessage,}));
+	}
+}
+
+export const nextStepRunningTest = async (authDispatch, ubaDevicesDispatch, runningTestID, ubaSN, testRoutineChannels) => {
+	const data = {
+		runningTestID,
+		testRoutineChannels,
+		ubaSN,
+		newTestStatus: statusCodes.PENDING_NEXTSTEP
 	};
 
 	try {

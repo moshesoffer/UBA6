@@ -27,7 +27,7 @@ function withTimeout(promise, ms) {
 
 export const getMachines = async (authDispatch, settingsDispatch) => {
 	try {
-		const response = await withTimeout( postData(authDispatch, 'machines', 'GET'), AWAIT_TIMEOUT);
+		const response = await postData(authDispatch, 'machines', 'GET');
 		if (!validateArray(response, false)) {
 			throw new Error('Invalid response. Machine Settings is missing.');
 		}
@@ -41,7 +41,7 @@ export const getMachines = async (authDispatch, settingsDispatch) => {
 
 export const getCells = async (authDispatch, settingsDispatch) => {
 	try {
-		const response = await withTimeout( postData(authDispatch, 'cells', 'GET'), AWAIT_TIMEOUT);
+		const response = await postData(authDispatch, 'cells', 'GET');
 		if (!validateArray(response, false)) {
 			throw new Error('Invalid response. Cell Settings is missing.');
 		}
@@ -55,7 +55,7 @@ export const getCells = async (authDispatch, settingsDispatch) => {
 
 export const createCell = async (authDispatch, settingsDispatch, data) => {
 	try {
-		await withTimeout( postData(authDispatch, 'cells', 'POST', data), AWAIT_TIMEOUT);
+		await postData(authDispatch, 'cells', 'POST', data);
 		getCells(authDispatch, settingsDispatch);
 	} catch (error) {
 		const preparedMessage = handleRequestError(error);
@@ -65,7 +65,7 @@ export const createCell = async (authDispatch, settingsDispatch, data) => {
 
 export const updateCell = async (authDispatch, settingsDispatch, data) => {
 	try {
-		await withTimeout( postData(authDispatch, `cells/${data.itemPN}`, 'PATCH', data), AWAIT_TIMEOUT);
+		await postData(authDispatch, `cells/${data.itemPN}`, 'PATCH', data);
 		getCells(authDispatch, settingsDispatch);
 	} catch (error) {
 		const preparedMessage = handleRequestError(error);
@@ -75,7 +75,7 @@ export const updateCell = async (authDispatch, settingsDispatch, data) => {
 
 export const deleteCell = async (authDispatch, settingsDispatch, itemPN) => {
 	try {
-		await withTimeout( postData(authDispatch, `cells/${itemPN}`, 'DELETE'), AWAIT_TIMEOUT);
+		await postData(authDispatch, `cells/${itemPN}`, 'DELETE');
 		getCells(authDispatch, settingsDispatch);
 	} catch (error) {
 		const preparedMessage = handleRequestError(error);
@@ -85,7 +85,7 @@ export const deleteCell = async (authDispatch, settingsDispatch, itemPN) => {
 
 export const deleteMachine = async (authDispatch, settingsDispatch, machineMac) => {
 	try {
-		const res = await withTimeout( postData2(authDispatch, `machines/${machineMac}`, 'DELETE'), AWAIT_TIMEOUT);
+		const res = await postData2(authDispatch, `machines/${machineMac}`, 'DELETE');
 		if(res?.error) {
 			authDispatch(setNotification({message: res.error,}));
 			return;

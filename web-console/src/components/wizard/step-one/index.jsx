@@ -33,7 +33,7 @@ export default function StepOne(props) {
 	const testRoutinesDispatch = useTestRoutinesDispatch();
 
 	const [isError, setIsError] = useState(false);
-
+	
 	useEffect(() => {
 		initialTestRoutine.current = testData;
 	}, []);
@@ -66,6 +66,7 @@ export default function StepOne(props) {
 	}, [testData?.cellPN, testData?.noCellParallel,]);
 
 	const handleNextClick = () => {
+		//console.log("==> handleNextClick");
 		const resultMandatory = configurationsMandatoryRef.current.doValidation();
 
 		if (!resultMandatory) {

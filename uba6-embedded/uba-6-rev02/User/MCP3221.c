@@ -4,6 +4,7 @@
  *  Created on: Sep 30, 2024
  *      Author: ORA
  */
+#define UART_LOG_DISABLE
 
 #include "MCP3221.h"
 #include "uart_log.h"

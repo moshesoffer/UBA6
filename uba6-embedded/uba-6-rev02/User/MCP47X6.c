@@ -4,6 +4,7 @@
  *  Created on: Aug 26, 2024
  *      Author: ORA
  */
+#define UART_LOG_DISABLE
 
 #include "MCP47X6.h"
 #include "UBA_util.h"

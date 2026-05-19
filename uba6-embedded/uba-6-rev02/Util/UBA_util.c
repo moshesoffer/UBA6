@@ -86,10 +86,25 @@ char* get_RTC_date_time_str(void) {
 	return get_rtc_date_time_str(date_time_str, MAX_LENGTH_DATETIME_STR, &sDate, &sTime, UBA_RTC_STR_FORMAT_LOG);
 }
 
+uint32_t RTC_datetime2flat_timestamp(RTC_DateTypeDef *sDate, RTC_TimeTypeDef *sTime) {
+	struct tm t;
+
+	t.tm_year = 0;  
+	t.tm_mon  = 0;   
+	t.tm_mday = 0;  
+
+	t.tm_hour = 0;
+	t.tm_min = 0;
+	t.tm_sec = sTime->Seconds;
+
+	t.tm_isdst = -1; // Not using daylight saving
+
+	return mktime(&t);
+}
+
 uint32_t RTC_datetime2unix_timestamp(RTC_DateTypeDef *sDate, RTC_TimeTypeDef *sTime) {
 	struct tm t;
 
-	// STM32 RTC years are offset from 2000, Unix starts at 1900
 	t.tm_year = sDate->Year + 100;   // Year since 1900
 	t.tm_mon = sDate->Month - 1;    // Month 0–11
 	t.tm_mday = sDate->Date;         // Day 1–31

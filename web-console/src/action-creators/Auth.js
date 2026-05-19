@@ -26,7 +26,7 @@ function withTimeout(promise, ms) {
 
 export const login = async (dispatch, payload) => {
 	try {
-		const result = await withTimeout(postData(dispatch, 'login', 'POST', payload), AWAIT_TIMEOUT);
+		const result = await postData(dispatch, 'login', 'POST', payload);
 		dispatch(setAuthCondition(result.name));
 		setItem('displayName', result.name);
 	} catch (error) {
@@ -37,7 +37,7 @@ export const login = async (dispatch, payload) => {
 
 export const logout = async dispatch => {
 	try {
-		await withTimeout(postData(dispatch, 'logout', 'POST'), AWAIT_TIMEOUT);
+		await postData(dispatch, 'logout', 'POST');
 	} catch (error) {
 		const preparedMessage = handleRequestError(error);
 		dispatch(setNotification({message: preparedMessage,}));

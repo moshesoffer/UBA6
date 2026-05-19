@@ -12,7 +12,7 @@
 
 /* Struct definitions */
 typedef struct _UBA_PROTO_CALIBRATION_liniar_calibration_message {
-    float slop;
+    float slope;
     float y_intercept;
 } UBA_PROTO_CALIBRATION_liniar_calibration_message;
 
@@ -65,7 +65,7 @@ extern "C" {
 
 /* Struct field encoding specification for nanopb */
 #define UBA_PROTO_CALIBRATION_liniar_calibration_message_FIELDLIST(X, a) \
-X(a, STATIC,   SINGULAR, FLOAT,    slop,              1) \
+X(a, STATIC,   SINGULAR, FLOAT,    slope,             1) \
 X(a, STATIC,   SINGULAR, FLOAT,    y_intercept,       2)
 #define UBA_PROTO_CALIBRATION_liniar_calibration_message_CALLBACK NULL
 #define UBA_PROTO_CALIBRATION_liniar_calibration_message_DEFAULT NULL

@@ -27,8 +27,9 @@ const FINISHED= 0x0008;
 const SAVED= 0x0010;
 const RUNNING= 0x0020;
 const PAUSED= 0x0040;
+const NEXTSTEP= 0x0200
 const PENDING= 0x0100;
-const IS_TEST_RUNNING = PENDING|RUNNING|PAUSED;
+const IS_TEST_RUNNING = PENDING|RUNNING|NEXTSTEP|PAUSED;
 
 const status = {
 	STANDBY: STANDBY,
@@ -38,10 +39,12 @@ const status = {
 	SAVED: SAVED,
 	RUNNING: RUNNING,
 	PAUSED: PAUSED,
+	NEXTSTEP: NEXTSTEP,
 	PENDING: PENDING,
 	PENDING_STANDBY: PENDING|STANDBY,
 	PENDING_STOP: PENDING|STOPPED,
 	PENDING_RUNNING: PENDING|RUNNING,
+	PENDING_NEXTSTEP: PENDING|NEXTSTEP,
 	PENDING_SAVE: PENDING|SAVED,
 	PENDING_PAUSE: PENDING|PAUSED,
 	IS_TEST_RUNNING: PENDING|RUNNING|PAUSED,
@@ -68,11 +71,13 @@ const APIS = {
 	get startTestApi() { return this.apiInitials + '/running-test' },
 	get changeRunningTestStatusApi() { return this.apiInitials + '/change-running-test-status' },
 	get getAllPendingRunningTestsApi() { return this.apiInitials + '/pending-tests' },
+	get getLatestInstantTestResultsApi() { return this.apiInitials + '/latest-instant-test-results' },
 	get createReportApi() { return this.apiInitials + '/reports' },
 	get getReportsApi() { return this.apiInitials + '/reports/search' },
 	get updateReportApi() { return this.apiInitials + '/reports' },
 	get reportsGraphApi() { return this.apiInitials + '/test-results/search' },
 	get pendingTasksApi() { return this.apiInitials + '/pending-tasks' },
+	get latestInstantTestResults() { return this.apiInitials + '/latest-instant-test-results' },
 	get queryUbaDevicesApi() { return this.apiInitials + '/query-uba-devices' }
 };
 

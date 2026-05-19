@@ -54,6 +54,7 @@ export const initialTestRoutines = {
 };
 
 const setPlan = (plan, testType) => {
+	console.log('==> setPlan');
 	const chargeLimitUnit = getUnit('tree');
 	const dischargeLimitUnit = getUnit('tree');
 	const chargeCurrentUnit = getUnit('two');
@@ -95,6 +96,7 @@ const setPlan = (plan, testType) => {
 };
 
 const changePlan = (plan, data) => {
+	console.log('==> changePlan');
 	let newPlan = plan.map(testType => {
 		if (testType.id === data.previousId) {
 			return {
@@ -115,6 +117,7 @@ const changePlan = (plan, data) => {
 };
 
 const foldPlan = (plan, testTypeId) => plan.map(testType => {
+	console.log('==> foldPlan');
 	if (testType.id === testTypeId) {
 		return {
 			...testType,
@@ -136,6 +139,7 @@ const deletePlan = (plan, testTypeId) => {
 }
 
 const testTypeData = (plan, testTypeId, dataKey, dataValue) => plan.map(testType => {
+	//console.log('==> testTypeData');
 	if (testType.id === testTypeId) {
 		return {
 			...testType,
@@ -147,6 +151,7 @@ const testTypeData = (plan, testTypeId, dataKey, dataValue) => plan.map(testType
 });
 
 export default function TestRoutinesReducer(state, action) {
+
 	switch (action.type) {
 		case START_SAVE_ACTION: {
 			return {
@@ -206,9 +211,9 @@ export default function TestRoutinesReducer(state, action) {
 			const existingTest = {
 				...state.existingTest,
 			};
-			if (!action.payload.isExclude) {
-				existingTest.isChanged = true;
-			}
+//Moshe
+//			if (!action.payload.isExclude) {
+//			}
 
 			return {
 				...state,
@@ -220,9 +225,9 @@ export default function TestRoutinesReducer(state, action) {
 			const existingTest = {
 				...state.existingTest,
 			};
-			if (!excludedTestData.includes(action.payload.dataKey)) {
-				existingTest.isChanged = true;
-			}
+//Moshe
+//			if (!excludedTestData.includes(action.payload.dataKey)) {
+//			}
 
 			return {
 				...state,

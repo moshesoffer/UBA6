@@ -63,6 +63,7 @@ export default function WizardZero(props) {
 	//console.log('dddd',sameUbaButWithDifferentChannel, isAnotherChannelFree);
 	
 	dataFiltered = dataFiltered.filter(test => {
+		//console.log('==> A_OR_B filter');
 		if (test.channel === UBA_CHANNEL_LIST.A_OR_B) {
 			// 'A-or-B' test.
 			return true;
@@ -79,19 +80,19 @@ export default function WizardZero(props) {
 
 	useEffect(() => {
 		//Moshe
-		console.log('==> useEffect.getTestRoutines,getCells');
+		//console.log('==> useEffect.getTestRoutines,getCells');
 		getTestRoutines(authDispatch, testRoutinesDispatch);
 		getCells(authDispatch, settingsDispatch);
 	}, []);
 
 	const handleButtonClick = () => {
 		//Moshe
-		console.log('==> handleButtonClick.fillTestRoutine');
+		//console.log('==> handleButtonClick.fillTestRoutine');
 		fillTestRoutine(selectedTest, false, currentUba?.channel, testRoutinesDispatch);
 
 		if (validateObject(currentUba, true)) {
 		//Moshe
-		console.log('==> ubaDevicesDispatch WIZARD_ONE');
+		//console.log('==> ubaDevicesDispatch WIZARD_ONE');
 			ubaDevicesDispatch(setState(pageStateList.WIZARD_ONE));
 			return;
 		}
@@ -102,6 +103,7 @@ export default function WizardZero(props) {
 	}
 
 	const handleCancelClick = () => {
+		console.log('==> handleCancelClick');
 		resetTestParameters(testRoutinesDispatch);
 		//ubaDevicesDispatch(setCurrentUba({}));//not sure if this is needed
     	//ubaDevicesDispatch(setSelectedDevices([]));//not sure if this is needed

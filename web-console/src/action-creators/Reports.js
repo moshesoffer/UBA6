@@ -30,7 +30,7 @@ function withTimeout(promise, ms) {
 export const getReports = async (authDispatch, reportsDispatch, settingsDispatch, metadata) => {
 	try {
 		getMachines(authDispatch, settingsDispatch);
-		const response = await withTimeout(postData(authDispatch, 'reports/search', 'POST', metadata), AWAIT_TIMEOUT);
+		const response = await postData(authDispatch, 'reports/search', 'POST', metadata);
 		if (!validateArray(response?.rows, false)) {
 			throw new Error('Invalid response. reports is missing.');
 		}
@@ -44,9 +44,9 @@ export const getReports = async (authDispatch, reportsDispatch, settingsDispatch
 
 export const updateReport = async (authDispatch, reportsDispatch, settingsDispatch, metadata, report) => {
 	try {
-		await withTimeout( postData(authDispatch, `reports/${report.id}`, 'PATCH', {
+		await postData(authDispatch, `reports/${report.id}`, 'PATCH', {
 			...report,
-		}), AWAIT_TIMEOUT);
+		});
 		getReports(authDispatch, reportsDispatch, settingsDispatch, metadata);
 	} catch (error) {
 		const preparedMessage = handleRequestError(error);
@@ -56,7 +56,7 @@ export const updateReport = async (authDispatch, reportsDispatch, settingsDispat
 
 export const getReportData = async (authDispatch, reportsDispatch, ids) => {
 	try {
-		const response = await withTimeout( postData(authDispatch, 'test-results/search', 'POST', ids), AWAIT_TIMEOUT);
+		const response = await postData(authDispatch, 'test-results/search', 'POST', ids);
 		if (!validateArray(response, false)) {
 			throw new Error('Invalid response. Graph Data is missing.');
 		}

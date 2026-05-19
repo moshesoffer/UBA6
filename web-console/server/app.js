@@ -53,8 +53,8 @@ app.use(express.urlencoded({ limit: '200mb', extended: true }));
 app.get('/health', async (req, res) => {
   let connection;
   try {
-    connection = await withTimeout(pool.getConnection(), AWAIT_TIMEOUT);
-    await withTimeout(connection.ping(), AWAIT_TIMEOUT);
+    connection = await pool.getConnection();
+    await connection.ping();
     res.status(200).json({ status: 'ok', db: 'up' });
   } catch (err) {
     res.status(500).json({ status: 'error', db: 'down' });

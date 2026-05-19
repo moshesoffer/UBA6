@@ -118,4 +118,5 @@ message status_message{
 	STEP_TYPE step_type = 5;
 	uint32 total_steps = 6 [(nanopb).int_size = IS_8]; 
 	UBA_PROTO_CHANNEL.status channel_status = 7 [(nanopb).proto3_singular_msgs = true];
+	uint32 run_time= 8;
 }

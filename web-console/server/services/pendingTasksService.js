@@ -12,9 +12,9 @@ const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 const getPendingTasks = async (machineMac) => {
     try {
         const pendingTasks = {pendingConnectionUbaDevices: [], pendingRunningTests: [], pendingReports: []};
-        const pendingRunningTests = await withTimeout(getPendingRunningTests(machineMac), AWAIT_TIMEOUT);
+        const pendingRunningTests = await getPendingRunningTests(machineMac);
         pendingTasks.pendingRunningTests = pendingRunningTests;
-        const pendingReports = await withTimeout(getPendingReports(machineMac), AWAIT_TIMEOUT);
+        const pendingReports = await getPendingReports(machineMac);
         pendingTasks.pendingReports = pendingReports;
 
         for (const pendingRunningTest of pendingRunningTests) {
@@ -48,6 +48,8 @@ const getPendingTasks = async (machineMac) => {
 
 //this is being called by the uba service
 const pendingTasksExecuted = async (pendingTask) => {
+    //Moshe
+    //logger.info(`==> pendingTasksExecuted ${pendingTask.pendingUbaDevice}`);
     if(pendingTask.pendingUbaDevice) {
         const { machineMac, address, comPort, ubaSN, ubaChannel, actionResult, action, fwVersion, hwVersion } = pendingTask.pendingUbaDevice;
         if (!machineMac || !address || !comPort || !action || !actionResult) {
@@ -91,31 +93,39 @@ const pendingTasksExecuted = async (pendingTask) => {
              if(!fwVersion || !hwVersion) {
                 throw new Error(`Missing versions required parameters.`);
             }
-            const ubaDevice = await withTimeout(getUbaDeviceByUbaSN(ubaSN), AWAIT_TIMEOUT);
+
+            const ubaDevice = await getUbaDeviceByUbaSN(ubaSN);
             if(waiter.body.uiFlow === UI_FLOWS.QUERY_ADD_UBA_DEVICE) {
                 if(ubaDevice) {
                     logger.info(`ubaSN already exists, releasing waiter for pending task ${PENDING_TASKS_TYPES.CONNECTION_UBA_DEVICE} for machine ${machineMac} with key ${key}`);
                     waiter.releaseFn( { errMsg: "ubaSN already exists. Should not add a new device with the same ubaSN" } );
                     return;
                 }
+
             } else if(waiter.body.uiFlow === UI_FLOWS.QUERY_EDIT_UBA_DEVICE) {
                 if(!ubaDevice) {
                     logger.warn(`THIS IS NOT EXPECTED!!! ubaSN does not exist, releasing waiter for pending task ${PENDING_TASKS_TYPES.CONNECTION_UBA_DEVICE} for machine ${machineMac} with key ${key}`);
                     waiter.releaseFn({ errMsg: "ubaSN does not exist. Should not edit a device that is not in the system" });
                     return;
                 }
+
             } else {
                 logger.warn(`THIS IS NOT EXPECTED!!! uiFlow is not recognized, releasing waiter for pending task ${PENDING_TASKS_TYPES.CONNECTION_UBA_DEVICE} for machine ${machineMac} with key ${key}`);
                 waiter.releaseFn({ errMsg: "uiFlow is not recognized" });
                 return;
             }
+
+logger.info(`==> requestStartTime ${waiter.body.requestStartTime}`);
             const timePassed = Date.now() - waiter.body.requestStartTime;
             logger.info(`Releasing waiter for query pending task ${PENDING_TASKS_TYPES.CONNECTION_UBA_DEVICE} for machine ${machineMac} with key ${key} pendingTask was created ${timePassed} ms ago`);
             waiter.releaseFn(pendingTask.pendingUbaDevice);
+        
         } else if (waiter.body.action === UBA_DEVICE_ACTIONS.ADD_TO_WATCH_LIST || waiter.body.action === UBA_DEVICE_ACTIONS.REMOVE_FROM_WATCH_LIST) {
+logger.info(`==> requestStartTime ${waiter.body.requestStartTime}`);
             const timePassed = Date.now() - waiter.body.requestStartTime;
             logger.info(`Releasing waiter for pending task ${PENDING_TASKS_TYPES.CONNECTION_UBA_DEVICE} for machine ${machineMac} with key ${key} with action ${waiter.body.action} pendingTask was created ${timePassed} ms ago`);
             waiter.releaseFn(pendingTask.pendingUbaDevice);
+        
         } else {
             logger.warn(`THIS IS NOT EXPECTED!!! action is not recognized, releasing waiter for pending task ${PENDING_TASKS_TYPES.CONNECTION_UBA_DEVICE} for machine ${machineMac} with key ${key}`);
             waiter.releaseFn({ errMsg: "action is not recognized" });
@@ -130,28 +140,28 @@ const queryUbaDevice = async (pendingUbaDevice) => {
 		throw new Error(`Missing parameters.`);
 	}
 	
-    const machine = await withTimeout(getMachine(machineMac), AWAIT_TIMEOUT);
+    const machine = await getMachine(machineMac);
     if(!machine) {
         throw new Error(`Machine with mac ${machineMac} does not exist.`);
     }
-	const ubaDeviceByConstraint = await withTimeout(getUbaDeviceByConstraint(machineMac, address, comPort), AWAIT_TIMEOUT);
+	const ubaDeviceByConstraint = await getUbaDeviceByConstraint(machineMac, address, comPort);
 
 	if(!ubaSN) {
 		//this is add pending uba device
 		if (ubaDeviceByConstraint) {
 			throw new Error(`ubaDeviceByConstraint already exists.`);
 		}
-		return await withTimeout(sendConnectionPendingTaskToUba( machineMac, address, comPort, undefined, undefined, undefined, UBA_DEVICE_ACTIONS.QUERY, UI_FLOWS.QUERY_ADD_UBA_DEVICE ), AWAIT_TIMEOUT);
+		return await sendConnectionPendingTaskToUba( machineMac, address, comPort, undefined, undefined, undefined, UBA_DEVICE_ACTIONS.QUERY, UI_FLOWS.QUERY_ADD_UBA_DEVICE );
 	} else {
 		//this is edit pending uba device
-		const ubaDeviceBySN = await withTimeout(getUbaDeviceByUbaSN(ubaSN), AWAIT_TIMEOUT);
+		const ubaDeviceBySN = await getUbaDeviceByUbaSN(ubaSN);
 		if (!ubaDeviceBySN) {
 			throw new Error(`ubaSN does not exist.`);
 		}
 		if(ubaDeviceByConstraint && ubaDeviceByConstraint.ubaSN !== ubaSN) {
 			throw new Error(`ubaSN already exists.`);
 		}
-		return await withTimeout(sendConnectionPendingTaskToUba( machineMac, address, comPort, ubaSN, ubaChannel, undefined, UBA_DEVICE_ACTIONS.QUERY, UI_FLOWS.QUERY_EDIT_UBA_DEVICE ), AWAIT_TIMEOUT);
+		return await sendConnectionPendingTaskToUba( machineMac, address, comPort, ubaSN, ubaChannel, undefined, UBA_DEVICE_ACTIONS.QUERY, UI_FLOWS.QUERY_EDIT_UBA_DEVICE );
 	}
 };
 

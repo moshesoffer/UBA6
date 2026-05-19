@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Ports;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using UBA_MSG;
 using UBA_PROTO_BPT;
 using UBA_PROTO_CALIBRATION;
@@ -24,8 +25,8 @@ namespace UBA6Library {
         private int messageSize = 0;
         public event EventHandler<ProtoMessageEventArg>? MessageReceived;
         public Channel A { get; set; } = new Channel(UBA_PROTO_CHANNEL.ID.A);
-        public Channel B = new Channel(UBA_PROTO_CHANNEL.ID.B);
-        public Channel AB = new Channel(UBA_PROTO_CHANNEL.ID.Ab);
+        public Channel B { get; set; } = new Channel(UBA_PROTO_CHANNEL.ID.B);
+        public Channel AB { get; set; } = new Channel(UBA_PROTO_CHANNEL.ID.Ab);
         public int VPS = 0;
         
         public LineCalibrationData CalDataLineA = new LineCalibrationData();
@@ -60,6 +61,7 @@ namespace UBA6Library {
 
         public async Task UpdatedTime() {
             DateTime localTime = DateTime.Now;
+            _logger.LogInformation($"==> UpdatedTime: {localTime}");    
             TimeSpan offset = TimeZoneInfo.Local.GetUtcOffset(localTime);
             UInt32 newtime = (uint)new DateTimeOffset(localTime + offset).ToUnixTimeSeconds();
             UBA_PROTO_UBA6.command cmd = ProtoHelper.CreateDeviceCommand(UBA_PROTO_UBA6.CMD_ID.Time, newtime);
@@ -68,10 +70,12 @@ namespace UBA6Library {
         
         public void SentMessage(Message msg, MessagePriority priority = MessagePriority.DEFUALT) {
             msg.Head.TargetAddress = this.Address;
+            //_logger.LogInformation($"==> SentMessage: {msg}");    
             UBA_Interface.EnqueueMessage(msg, priority);
         }
         public async Task SentMessageAsync(Message msg, MessagePriority priority = MessagePriority.DEFUALT) {
             msg.Head.TargetAddress = this.Address;
+            //_logger.LogInformation($"==> SentMessageAsync: {msg}");    
             await UBA_Interface.EnqueueMessageAndWaitForResponseAsync(msg, priority);
         }
         public void DisableCalibration(UBA_PROTO_LINE.ID line_id){ 
@@ -88,12 +92,17 @@ namespace UBA6Library {
                 ProtoHelper.CreateBPTCommand(UBA_PROTO_BPT.CMD_ID.Stop, ch)), MessagePriority.BPT_STOP);
         }
         public void StartBPT(UBA_PROTO_CHANNEL.ID ch,UInt32 index) {
+            _logger.LogInformation($"==> StartBPT");    
             SentMessage(UBA_Message_Factory.CreateMessage(this.Address,
                 ProtoHelper.CreateBPTCommand(UBA_PROTO_BPT.CMD_ID.Select, ch,index)), MessagePriority.BPT_START);
         }
         public void PasueBPT(UBA_PROTO_CHANNEL.ID ch) {
             SentMessage(UBA_Message_Factory.CreateMessage(this.Address,
                 ProtoHelper.CreateBPTCommand(UBA_PROTO_BPT.CMD_ID.Paused, ch)), MessagePriority.BPT_PAUSE);
+        }
+        public void StepBPT(UBA_PROTO_CHANNEL.ID ch) {
+            SentMessage(UBA_Message_Factory.CreateMessage(this.Address,
+                ProtoHelper.CreateBPTCommand(UBA_PROTO_BPT.CMD_ID.Step, ch)), MessagePriority.BPT_STEP);
         }
         public void ClearBPT(UBA_PROTO_CHANNEL.ID ch) {
             SentMessage(UBA_Message_Factory.CreateMessage(this.Address,
@@ -117,8 +126,8 @@ namespace UBA6Library {
             uint? totlaSize = uint.MaxValue;
 
             do {
-////_logger.LogInformation("==> get message 10");
-                m = await UBA_Interface.GetMessage(UBA_Message_Factory.CreateMessage(Address, ProtoHelper.CreateFileCommand(UBA_PROTO_FM.CMD_ID.ChunkRequest, filename, index)),1000);
+//_logger.LogInformation("==> get message 10");
+                m = await UBA_Interface.GetMessage(UBA_Message_Factory.CreateMessage(Address, ProtoHelper.CreateFileCommand(UBA_PROTO_FM.CMD_ID.ChunkRequest, filename, index)), 5000);
                 if (m?.File?.Data.Length > 0) {
                     _logger.LogDebug($"Received file chunk {index} with size {m.File.Data.Length} bytes.");
                     fileData.AddRange(m.File.Data.ToByteArray());
@@ -127,15 +136,25 @@ namespace UBA6Library {
                     retry = 5;
                     totlaSize = m?.File.TotalSize;
                 } else if (m == null) {
-                    _logger.LogWarning($"didnt Received a chunk {index} message.");
                     if (retry-- <= 0) {
                         done = true;
                     } else {
                         done = false;
-                    }                        
+                        continue;
+                    }
+                    if (( done == false) && (retry == 0)) {                        
+                        _logger.LogWarning($"didnt Received a chunk {index} message.");
+                    }
                 } else {
-                    _logger.LogWarning($"Received empty file chunk {index}.");
-                    done = true;
+                    if (retry-- <= 0) {
+                        done = true;
+                    } else {
+                        done = false;
+                        continue;
+                    }                        
+                    if (( done == false) && (retry == 0)) {                        
+                        _logger.LogWarning($"Received empty file chunk {index}.");                    
+                    }
                 }
                 if (totlaSize.HasValue && fileData.Count >= totlaSize) {
                     done = true;
@@ -150,8 +169,7 @@ namespace UBA6Library {
             List<string> files = new List<string>();
             Message? message;
             do {
-////_logger.LogInformation("==> get message 11");
-                 message = await UBA_Interface.GetMessage(UBA_Message_Factory.CreateMessage(Address, ProtoHelper.CreateFileCommand(UBA_PROTO_FM.CMD_ID.FileListRequest, string.Empty, (uint)files.Count)));
+                message = await UBA_Interface.GetMessage(UBA_Message_Factory.CreateMessage(Address, ProtoHelper.CreateFileCommand(UBA_PROTO_FM.CMD_ID.FileListRequest, string.Empty, (uint)files.Count)));
                 if (message?.FmList == null) {
                     throw RaiseException(new Exception("Failed to fetch file list."));
                 }
@@ -165,7 +183,6 @@ namespace UBA6Library {
 
         public async Task<string> GetRunningTestFileName(UBA_PROTO_CHANNEL.ID testOnChannel) { 
             string filename = string.Empty;
-////_logger.LogInformation("==> get message 12");
             Message? message = await UBA_Interface.GetMessage(UBA_Message_Factory.CreateMessage(Address, ProtoHelper.CreateFileCommand(UBA_PROTO_FM.CMD_ID.BptFile, string.Empty, (uint)testOnChannel)));
             if(message?.FmList != null) {
                 if (message.FmList.Filenames.Count == 1) {
@@ -188,7 +205,6 @@ namespace UBA6Library {
             }
             RECIPIENT Recipient = (RECIPIENT)(Convert.ToUInt32(Type) & Convert.ToUInt32(MeasurementType.RECIPIENT));
             MeasurementType MType = (MeasurementType)(Convert.ToUInt32(Type) & Convert.ToUInt32(MeasurementType.Type));
-////_logger.LogInformation("==> get message 13");
             Message m = await GetMessage(Recipient);
             NotSupportedException ex = null;
             switch (MType) {

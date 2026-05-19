@@ -24,7 +24,7 @@ export default function CustomTableRow(props) {
 	};
 
 	const handleDeleteClick = () => {
-		let choice = confirm('Do you want to delete this Cell P/N?');
+		let choice = confirm('Confirm Delete Cell P/N?');
 		if(choice === true) {
 			deleteCell(authDispatch, settingsDispatch, row?.itemPN);
 			return true;
@@ -41,7 +41,7 @@ export default function CustomTableRow(props) {
 
 			<TableCell>
 				{row?.manufacturer}
-			</TableCell>
+			</TableCell> 
 
 			<TableCell>
 				{row?.itemPN}

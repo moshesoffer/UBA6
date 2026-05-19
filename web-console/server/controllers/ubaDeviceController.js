@@ -14,13 +14,14 @@ const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 exports.getUbaDevices = async (req, res) => {
 	try {
 		//Moshe
-		logger.debug(`uba-devices going to call all promises`);
+		//logger.debug(`uba-devices going to call all promises`);
 		//TODO getRunningAmount might be not needed because calling getUbaDevices already returns running tests and then can see what is running
-		//TODO also getAllLatestInstantTestResults instead of calling db, go over all getUbaDevices running tests and get info from memory and if its not in memory then fetch from db and put in memory that way also next time it will be called we wont need to call db.
-		const [running, ubaDevices, latestInstantTestResults] = await withTimeout(Promise.all([getRunningAmount(), getUbaDevices(), getAllLatestInstantTestResults()]), AWAIT_TIMEOUT);
+		//TODO also getAllLatestInstantTestResults instead of calling db, go over all getUbaDevices running tests and get info from memory and 
+		//     if its not in memory then fetch from db and put in memory that way also next time it will be called we wont need to call db.
+		const [running, ubaDevices, latestInstantTestResults] = await Promise.all([getRunningAmount(), getUbaDevices(), getAllLatestInstantTestResults()]);
 		const ubaDevicesUniqueSN = [...new Map(ubaDevices.map(item => [item.ubaSN, item.ubaSN])).values()];
 		//Moshe
-		logger.debug(`uba-devices going to enrichUbaDevices`);
+		//logger.debug(`uba-devices going to enrichUbaDevices`);
 		const ubaEnriched = enrichUbaDevices(ubaDevices, latestInstantTestResults);
 		result = {
 			ubaDevices: ubaEnriched,
@@ -56,7 +57,7 @@ const enrichUbaDevices = (ubaDevices, latestInstantTestResults) => ubaDevices.ma
 			const lastInstantFromMem = getLastInstantTestResult(result.runningTestID);
 			if (lastInstantFromMem && lastInstantFromMem.timestamp.getTime() >= result.timestamp.getTime()) {
 				//Moshe
-				//logger.debug(`Using last instant test result from memory for runningTestID ${lastInstantFromMem.memCreatedTime}`);
+				//logger.debug(`==> Using last instant test result from memory for runningTestID ${lastInstantFromMem.memCreatedTime}`);
 				mostLatestObj = lastInstantFromMem;
 			}
 			({
@@ -70,6 +71,7 @@ const enrichUbaDevices = (ubaDevices, latestInstantTestResults) => ubaDevices.ma
 				timestamp,
 				memCreatedTime,
 			} = mostLatestObj);
+			//logger.debug(`==> timestamp ${timestamp}`);
 
 			break;
 		}
@@ -86,6 +88,7 @@ const enrichUbaDevices = (ubaDevices, latestInstantTestResults) => ubaDevices.ma
 		error,
 		lastInstantResultsTimestamp: timestamp,
 		ubaDeviceConnectedTimeAgoMs: memCreatedTime ? now - memCreatedTime.getTime() : null,
+//		ubaDeviceConnectedTimeAgoMs: memCreatedTime ? now - timestamp : null,
 	};
 });
 
@@ -95,7 +98,7 @@ exports.createUbaAndTest = async (req, res) => {
 			throw new Error(`Invalid value ${req.body.ubaChannel} of the ubaChannel parameter.`);
 		}
 		logger.info(`uba-devices going to createUbaDevice`);
-		const ids = await withTimeout(createUbaAndTest(req.body), AWAIT_TIMEOUT);
+		const ids = await createUbaAndTest(req.body);
 		logger.info(`uba-devices finished to createUbaAndTest`);
 		res.status(201).json(ids);
 	} catch (error) {
@@ -106,7 +109,7 @@ exports.createUbaAndTest = async (req, res) => {
 
 exports.updateUbaDevice = async (req, res) => {
 	try {
-		await withTimeout(updateUbaDevice(req.params?.serial, req.body), AWAIT_TIMEOUT);
+		await updateUbaDevice(req.params?.serial, req.body);
 		res.end();
 	} catch (error) {
 		logger.error('updateUbaDevice', error);
@@ -116,7 +119,7 @@ exports.updateUbaDevice = async (req, res) => {
 
 exports.deleteUbaDeviceAndTest = async (req, res) => {
 	try {
-		await withTimeout(deleteUbaDeviceAndTest(req.params?.serial), AWAIT_TIMEOUT);
+		await deleteUbaDeviceAndTest(req.params?.serial);
 		res.status(204).end();
 	} catch (error) {
 		logger.error('deleteUbaDeviceAndTest', error);

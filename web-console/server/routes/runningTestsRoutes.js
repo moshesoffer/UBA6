@@ -80,6 +80,26 @@ router.get('/pending-tests', runningTestsController.getAllPendingRunningTests);
 
 /**
  * @swagger
+ * /pending-tests:
+ *   get:
+ *     summary: Get all pending running tests (currently not in use)
+ *     tags: [RunningTests]
+ *     responses:
+ *       200:
+ *         description: List of all pending running tests
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *       500:
+ *         description: Server error
+ */
+router.get('/pending-tests', runningTestsController.getLatestInstantTestResults);
+
+/**
+ * @swagger
  * /running-test:
  *   post:
  *     summary: Start a running test (this is being called today from web ui)

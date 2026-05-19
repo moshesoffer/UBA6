@@ -53,6 +53,7 @@ export default function LowerPart(props) {
 
 	const {currentUba,} = useUbaDevices();
 	const {testData, saveIsRun,} = useTestRoutines();
+	const {existingTest,} = useTestRoutines();
 
 	useEffect(() => {
 		if (!saveIsRun) {
@@ -86,12 +87,14 @@ export default function LowerPart(props) {
 		const maxTime = dataValue.trim();
 		validateMaxTime(isMaxTime, maxTime, setMaxTimeError);
 		handleInputChange(testRoutinesDispatch, id, 'maxTime', maxTime);
+		existingTest.isChanged = true;
 	};
 
 	const handleMaxTempChange = dataValue => {
 		const maxTemp = dataValue.trim();
 		const validateMaxTempResult = validateMaxTemp(isMaxTemp, maxTemp, setMaxTempError);
 		handleInputChange(testRoutinesDispatch, id, 'maxTemp', maxTemp);
+		existingTest.isChanged = true;
 
 		if (validateMaxTempResult) {
 			const numberMaxTemp = Number(maxTemp?.toString());
@@ -110,6 +113,7 @@ export default function LowerPart(props) {
 		const dataPart = dataValue.trim();
 		const parts = dischargeLimit.split(':');
 		let dischargeLimitResult;
+		existingTest.isChanged = true;
 
 		switch (part) {
 			case chargeLimitParts.DATA_VALUE: {
@@ -132,6 +136,7 @@ export default function LowerPart(props) {
 		const cutOffVoltage = dataValue.trim();
 		validateCutOffVoltage(isCutOffVoltage, cutOffVoltage, setCutOffVoltageError, parseFloat(minVoltage?.toString()));
 		handleInputChange(testRoutinesDispatch, id, 'cutOffVoltage', cutOffVoltage);
+		existingTest.isChanged = true;
 	};
 
 	return (

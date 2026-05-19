@@ -47,21 +47,21 @@ describe('TestRoutines API Tests', () => {
     };
 
     beforeAll(async () => {
-        await withTimeout( runSchema(), AWAIT_TIMEOUT);
-        connection = await withTimeout( mysql.createConnection(global.__MYSQL_CONFIG__), AWAIT_TIMEOUT);
-        let response = await withTimeout( request(global.__SERVER__)
+        await  runSchema();
+        connection = await  mysql.createConnection(global.__MYSQL_CONFIG__);
+        let response = await  request(global.__SERVER__)
             .post(APIS.cellsApi)
-            .send(cellToAdd), AWAIT_TIMEOUT);
+            .send(cellToAdd);
         expect(response.status).toBe(201);
 
-        response = await withTimeout( request(global.__SERVER__)
+        response = await  request(global.__SERVER__)
             .post(APIS.testRoutinesApi)
-            .send(testRoutineToAdd), AWAIT_TIMEOUT);
+            .send(testRoutineToAdd);
         expect(response.status).toBe(201);
-        const [rows] = await withTimeout( connection.query(`SELECT * FROM \`${testRoutineModel.tableName}\`;`), AWAIT_TIMEOUT);
+        const [rows] = await  connection.query(`SELECT * FROM \`${testRoutineModel.tableName}\`;`);
         expect(rows.length).toBe(1);
 
-        response = await withTimeout( request(global.__SERVER__).get(APIS.testRoutinesApi), AWAIT_TIMEOUT);
+        response = await  request(global.__SERVER__).get(APIS.testRoutinesApi);
         expect(response.status).toBe(200);
         expect(response.body.length).toBe(1);
         expect(response.body[0]).not.toHaveProperty('ignoredParam');
@@ -72,25 +72,25 @@ describe('TestRoutines API Tests', () => {
 
     afterAll(async () => {
         console.log('TestRoutines Test suite finished');
-        if(connection) await withTimeout( connection.end(), AWAIT_TIMEOUT);
+        if(connection) await  connection.end();
         //delay - waiting for winston server logs to finish
         //await new Promise(resolve => setTimeout(resolve, 500));
     });
     afterEach(async () => {
-        await withTimeout( clearMemInServer(), AWAIT_TIMEOUT);
+        await  clearMemInServer();
     });
 
     test('add a new TestRoutine - fail', async () => {
         const { batterySN, ...trWithoutBatterySN } = testRoutineToAdd;
-        const response = await withTimeout( request(global.__SERVER__)
+        const response = await  request(global.__SERVER__)
             .post(APIS.testRoutinesApi)
-            .send(trWithoutBatterySN), AWAIT_TIMEOUT);
+            .send(trWithoutBatterySN);
         expect(response.status).toBe(500);//missing batterySN
         //TODO! unique test name and fk cellPN
     });
 
     test('update a TestRoutine - happy flow', async () => {
-        let response = await withTimeout( request(global.__SERVER__).get(APIS.testRoutinesApi), AWAIT_TIMEOUT);
+        let response = await  request(global.__SERVER__).get(APIS.testRoutinesApi);
         const id = response.body[0].id;
         const newObj = {
             testName: 'new',
@@ -113,11 +113,11 @@ describe('TestRoutines API Tests', () => {
             //plan: [{"id": 0, "type": "charge", "cRate": 0.74, "source": "internal", "maxTemp": 60, "maxTime": "01:01:01", "minTemp": -201, "goToStep": null, "waitTemp": null, "delayTime": null, "isMaxTemp": true, "isMaxTime": true, "isMinTemp": true, "repeatStep": null, "chargeLimit": "666:absoluteMah", "isCollapsed": false, "chargeCurrent": "3000:absoluteMa", "chargePerCell": 4, "cutOffCurrent": "50:absoluteMa", "cutOffVoltage": null, "isChargeLimit": true, "dischargeLimit": ":absoluteMah", "isCutOffCurrent": true, "isCutOffVoltage": true, "dischargeCurrent": ":absoluteMa", "isDischargeLimit": true}, {"id": 1, "type": "discharge", "source": "internal", "maxTemp": 60, "maxTime": "01:01:01", "minTemp": -20, "goToStep": null, "waitTemp": null, "delayTime": null, "isMaxTemp": true, "isMaxTime": true, "isMinTemp": true, "repeatStep": null, "chargeLimit": ":absoluteMah", "isCollapsed": false, "chargeCurrent": ":absoluteMa", "chargePerCell": 0, "cutOffCurrent": ":absoluteMa", "cutOffVoltage": 2.5, "isChargeLimit": true, "dischargeLimit": "7:absoluteMah", "isCutOffCurrent": true, "isCutOffVoltage": true, "dischargeCurrent": "3:absoluteMa", "isDischargeLimit": true}, {"id": 2, "type": "delay", "source": "internal", "maxTemp": null, "maxTime": null, "minTemp": null, "goToStep": null, "waitTemp": 7, "delayTime": "01:01:01", "isMaxTemp": true, "isMaxTime": true, "isMinTemp": true, "repeatStep": null, "chargeLimit": ":absoluteMah", "isCollapsed": false, "chargeCurrent": ":absoluteMa", "chargePerCell": 0, "cutOffCurrent": ":absoluteMa", "cutOffVoltage": null, "isChargeLimit": true, "dischargeLimit": ":absoluteMah", "isCutOffCurrent": true, "isCutOffVoltage": true, "dischargeCurrent": ":absoluteMa", "isDischargeLimit": true}, {"id": 3, "type": "loop", "source": "internal", "maxTemp": null, "maxTime": null, "minTemp": null, "goToStep": 0, "waitTemp": null, "delayTime": null, "isMaxTemp": true, "isMaxTime": true, "isMinTemp": true, "repeatStep": 4, "chargeLimit": ":absoluteMah", "isCollapsed": false, "chargeCurrent": ":absoluteMa", "chargePerCell": 0, "cutOffCurrent": ":absoluteMa", "cutOffVoltage": null, "isChargeLimit": true, "dischargeLimit": ":absoluteMah", "isCutOffCurrent": true, "isCutOffVoltage": true, "dischargeCurrent": ":absoluteMa", "isDischargeLimit": true}],
             ignoredParam: 'something',
         };
-        response = await withTimeout( request(global.__SERVER__)
+        response = await  request(global.__SERVER__)
             .patch(APIS.testRoutinesApi + "/" + id)
-            .send(newObj), AWAIT_TIMEOUT);
+            .send(newObj);
         expect(response.status).toBe(200);
-        response = await withTimeout( request(global.__SERVER__).get(APIS.testRoutinesApi), AWAIT_TIMEOUT);
+        response = await  request(global.__SERVER__).get(APIS.testRoutinesApi);
         
         newObj.id = id;
         newObj.cellPN = cellToAdd.itemPN;
@@ -139,43 +139,43 @@ describe('TestRoutines API Tests', () => {
     });
 
     test('update a TestRoutine - fail', async () => {
-        let response = await withTimeout( request(global.__SERVER__).get(APIS.testRoutinesApi), AWAIT_TIMEOUT);
+        let response = await  request(global.__SERVER__).get(APIS.testRoutinesApi);
         const id = response.body[0].id;
-        response = await withTimeout( request(global.__SERVER__)
+        response = await  request(global.__SERVER__)
             .patch(APIS.testRoutinesApi + "/" + id)
             .send({
                 notExist: 'notExist',
-            }), AWAIT_TIMEOUT);
+            });
         expect(response.status).toBe(500);//nothing to update
         
-        response = await withTimeout( request(global.__SERVER__)
+        response = await  request(global.__SERVER__)
             .patch(APIS.testRoutinesApi + "/" + 'notexist')
             .send({
                 cellBatch: 'something',
-            }), AWAIT_TIMEOUT);
+            });
         expect(response.status).toBe(500);//TestRoutine not exists
 
         //cRate is not a number
         const newObj = {
             plan: [{"id": 0, "type": "charge", "cRate": "asd", "source": "internal", "maxTemp": 60, "maxTime": "01:01:01", "minTemp": -201, "goToStep": null, "waitTemp": null, "delayTime": null, "isMaxTemp": true, "isMaxTime": true, "isMinTemp": true, "repeatStep": null, "chargeLimit": "666:absoluteMah", "isCollapsed": false, "chargeCurrent": "3000:absoluteMa", "chargePerCell": 4, "cutOffCurrent": "50:absoluteMa", "cutOffVoltage": null, "isChargeLimit": true, "dischargeLimit": ":absoluteMah", "isCutOffCurrent": true, "isCutOffVoltage": true, "dischargeCurrent": ":absoluteMa", "isDischargeLimit": true}, {"id": 1, "type": "discharge", "source": "internal", "maxTemp": 60, "maxTime": "01:01:01", "minTemp": -20, "goToStep": null, "waitTemp": null, "delayTime": null, "isMaxTemp": true, "isMaxTime": true, "isMinTemp": true, "repeatStep": null, "chargeLimit": ":absoluteMah", "isCollapsed": false, "chargeCurrent": ":absoluteMa", "chargePerCell": 0, "cutOffCurrent": ":absoluteMa", "cutOffVoltage": 2.5, "isChargeLimit": true, "dischargeLimit": "7:absoluteMah", "isCutOffCurrent": true, "isCutOffVoltage": true, "dischargeCurrent": "3:absoluteMa", "isDischargeLimit": true}, {"id": 2, "type": "delay", "source": "internal", "maxTemp": null, "maxTime": null, "minTemp": null, "goToStep": null, "waitTemp": 7, "delayTime": "01:01:01", "isMaxTemp": true, "isMaxTime": true, "isMinTemp": true, "repeatStep": null, "chargeLimit": ":absoluteMah", "isCollapsed": false, "chargeCurrent": ":absoluteMa", "chargePerCell": 0, "cutOffCurrent": ":absoluteMa", "cutOffVoltage": null, "isChargeLimit": true, "dischargeLimit": ":absoluteMah", "isCutOffCurrent": true, "isCutOffVoltage": true, "dischargeCurrent": ":absoluteMa", "isDischargeLimit": true}, {"id": 3, "type": "loop", "source": "internal", "maxTemp": null, "maxTime": null, "minTemp": null, "goToStep": 0, "waitTemp": null, "delayTime": null, "isMaxTemp": true, "isMaxTime": true, "isMinTemp": true, "repeatStep": 4, "chargeLimit": ":absoluteMah", "isCollapsed": false, "chargeCurrent": ":absoluteMa", "chargePerCell": 0, "cutOffCurrent": ":absoluteMa", "cutOffVoltage": null, "isChargeLimit": true, "dischargeLimit": ":absoluteMah", "isCutOffCurrent": true, "isCutOffVoltage": true, "dischargeCurrent": ":absoluteMa", "isDischargeLimit": true}],
         };
-        response = await withTimeout( request(global.__SERVER__)
+        response = await  request(global.__SERVER__)
             .patch(APIS.testRoutinesApi + "/" + id)
-            .send(newObj), AWAIT_TIMEOUT);
+            .send(newObj);
         expect(response.status).toBe(500);
     });
 
     test('delete a TestRoutine - happy flow', async () => {
-        let response = await withTimeout( request(global.__SERVER__).get(APIS.testRoutinesApi), AWAIT_TIMEOUT);
+        let response = await  request(global.__SERVER__).get(APIS.testRoutinesApi);
         const id = response.body[0].id;
-        response = await withTimeout( request(global.__SERVER__).delete(APIS.testRoutinesApi + "/" + id), AWAIT_TIMEOUT);
+        response = await  request(global.__SERVER__).delete(APIS.testRoutinesApi + "/" + id);
         expect(response.status).toBe(204);
-        response = await withTimeout( request(global.__SERVER__).get(APIS.testRoutinesApi), AWAIT_TIMEOUT);
+        response = await  request(global.__SERVER__).get(APIS.testRoutinesApi);
         expect(response.body.length).toBe(0);
     });
 
     test('delete a TestRoutine - fail', async () => {
-        let response = await withTimeout( request(global.__SERVER__).delete(APIS.testRoutinesApi + "/" + 'notexist'), AWAIT_TIMEOUT);
+        let response = await  request(global.__SERVER__).delete(APIS.testRoutinesApi + "/" + 'notexist');
         expect(response.status).toBe(500);//TestRoutine not exists
     });
 
@@ -183,9 +183,9 @@ describe('TestRoutines API Tests', () => {
     test('co-pilot-not-null-constraint', async () => {
         const trCopy = { ...testRoutineToAdd };
         delete trCopy['testName'];
-        const response = await withTimeout( request(global.__SERVER__)
+        const response = await  request(global.__SERVER__)
             .post(APIS.testRoutinesApi)
-            .send(trCopy), AWAIT_TIMEOUT);
+            .send(trCopy);
         expect(response.status).toBe(500);
     });
 
@@ -193,48 +193,48 @@ describe('TestRoutines API Tests', () => {
     test('co-pilot-varchar-max-length', async () => {
         const longString = 'x'.repeat(300);
         const tooLong = { ...testRoutineToAdd, testName: longString, batteryPN: longString, batterySN: longString };
-        const response = await withTimeout( request(global.__SERVER__)
+        const response = await  request(global.__SERVER__)
             .post(APIS.testRoutinesApi)
-            .send(tooLong), AWAIT_TIMEOUT);
+            .send(tooLong);
         expect(response.status).toBe(500);
     });
 
     // co-pilot-unique-constraint
     test('co-pilot-unique-constraint', async () => {
-        await withTimeout( request(global.__SERVER__).post(APIS.testRoutinesApi).send(testRoutineToAdd), AWAIT_TIMEOUT);
-        const response = await withTimeout( request(global.__SERVER__).post(APIS.testRoutinesApi).send(testRoutineToAdd), AWAIT_TIMEOUT);
+        await  request(global.__SERVER__).post(APIS.testRoutinesApi).send(testRoutineToAdd);
+        const response = await  request(global.__SERVER__).post(APIS.testRoutinesApi).send(testRoutineToAdd);
         expect([409, 500]).toContain(response.status);
     });
 
     // co-pilot-invalid-data-types
     test('co-pilot-invalid-data-types', async () => {
         const invalidTR = { ...testRoutineToAdd, noCellSerial: 'not-a-number', noCellParallel: 'not-a-number' };
-        const response = await withTimeout( request(global.__SERVER__)
+        const response = await  request(global.__SERVER__)
             .post(APIS.testRoutinesApi)
-            .send(invalidTR), AWAIT_TIMEOUT);
+            .send(invalidTR);
         expect(response.status).toBe(500);
     });
 
     // co-pilot-foreign-key-constraint
     test('co-pilot-foreign-key-constraint', async () => {
         const invalidTR = { ...testRoutineToAdd, cellPN: 'notexist' };
-        const response = await withTimeout( request(global.__SERVER__)
+        const response = await  request(global.__SERVER__)
             .post(APIS.testRoutinesApi)
-            .send(invalidTR), AWAIT_TIMEOUT);
+            .send(invalidTR);
         expect([409, 500]).toContain(response.status);
     });
 
     // co-pilot-empty-payload
     test('co-pilot-empty-payload', async () => {
-        const response = await withTimeout( request(global.__SERVER__)
+        const response = await  request(global.__SERVER__)
             .post(APIS.testRoutinesApi)
-            .send({}), AWAIT_TIMEOUT);
+            .send({});
         expect(response.status).toBe(500);
     });
 
     // co-pilot-get-nonexistent-testRoutine
     test('co-pilot-get-nonexistent-testRoutine', async () => {
-        const response = await withTimeout( request(global.__SERVER__).get(APIS.testRoutinesApi + '/notexists'), AWAIT_TIMEOUT);
+        const response = await  request(global.__SERVER__).get(APIS.testRoutinesApi + '/notexists');
         expect([301, 404, 500]).toContain(response.status);
     });
 });

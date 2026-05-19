@@ -783,7 +783,7 @@ static bool checkreturn decode_callback_field(pb_istream_t *stream, pb_wire_type
          * which in turn allows to use same callback for packed and
          * not-packed fields. */
         pb_istream_t substream;
-        pb_byte_t buffer[10];
+        pb_byte_t buffer[32];
         size_t size = sizeof(buffer);
         
         if (!read_raw_value(stream, wire_type, buffer, &size))

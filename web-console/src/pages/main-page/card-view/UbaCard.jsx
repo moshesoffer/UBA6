@@ -9,18 +9,33 @@ import Chip from '@mui/material/Chip';
 import {useAuthDispatch,} from 'src/store/AuthProvider';
 import {useUbaDevicesDispatch,} from 'src/store/UbaDevicesProvider';
 import {ubaChannel, statusCodes, getKeyByValue, getErrorMessage} from 'src/constants/unsystematic';
-import {getVoltage, getChargeCurrent, getTemperature, } from '../utils';
+import {getVoltage, getChargeCurrent, getTemperature, getCapacity, getTestRoutineName,} from '../utils';
 import {getActions} from '../Actions';
 import { useTestRoutinesDispatch, } from 'src/store/TestRoutinesProvider';
 import {getText, getDate} from 'src/services/string-definitions';
 import Tooltip from '@mui/material/Tooltip';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import {getTestRuntime} from '../utils';
+import {useTestRoutines,} from 'src/store/TestRoutinesProvider';
+import {useEffect, useRef,} from 'react';
+import {getUbaDevices,} from 'src/action-creators/UbaDevices';
 
 export default function UbaCard({row}) {
 
 	const authDispatch = useAuthDispatch();
 	const ubaDevicesDispatch = useUbaDevicesDispatch();
 	const testRoutinesDispatch = useTestRoutinesDispatch();
+	const {testData,} = useTestRoutines();
+
+	useEffect(() => {
+	console.log (`==> testData.noCellSerial: ${testData?.noCellSerial?.toString()}`);
+	}, [testData?.testName,]);
+
+	useEffect(() => {
+		//console.log('MainPage useEffect');
+		getUbaDevices(authDispatch, ubaDevicesDispatch);
+		//return () => console.log('MainPage unmount useEffect');
+	}, []);
 
 	const getStep = channel => {
 		if (row?.[channel]?.status===statusCodes.RUNNING) {
@@ -30,68 +45,152 @@ export default function UbaCard({row}) {
 		}
 	}
 
+	const formatTime = (seconds) => {
+	  if (!seconds) return "00:00:00";
+
+	  const h = Math.floor(seconds / 3600);
+	  const m = Math.floor((seconds % 3600) / 60);
+	  const s = Math.floor(seconds % 60);
+
+	  return [h, m, s]
+	    .map(v => String(v).padStart(2, '0'))
+	    .join(':');
+	};
+
 	const printCard = (channelIndex, size) => {
-		let sx = {borderRight: theme => `solid 1px ${theme.palette.divider}`,};
+		let sx = {borderRight: 'solid',
+				  borderRightWidth: '1px',
+				  borderColor: 'solid',
+				 };
 		if (channelIndex) {
 			sx = {};
 		}
+
+		let rowStatus = row?.[channelIndex]?.status & ~statusCodes.PENDING;
+
 		return (
 			<Grid item lg={size} sx={sx} title={row?.[channelIndex]?.lastInstantResultsTimestamp ? getDate(row?.[channelIndex]?.lastInstantResultsTimestamp) : undefined}>
-				 <Stack direction="row" spacing={2} justifyContent="space-between">
-					<Box>
-						Ch-{row?.[channelIndex]?.parallelRun ? getText('common.AB') : row?.[channelIndex]?.channel}
-					</Box>
-					<Box sx={{ color: !row?.[channelIndex]?.ubaDeviceConnectedTimeAgoMs || row?.[channelIndex]?.ubaDeviceConnectedTimeAgoMs > 120000 ? 'red' : (row?.[channelIndex]?.ubaDeviceConnectedTimeAgoMs > 60000 ? 'orange' : 'green'), }}>
-						{getVoltage(row?.[channelIndex]?.voltage)}
-					</Box>
-				 </Stack>
-				
-				 <Stack direction="row" spacing={2} justifyContent="space-between" sx={{ color: !row?.[channelIndex]?.ubaDeviceConnectedTimeAgoMs || row?.[channelIndex]?.ubaDeviceConnectedTimeAgoMs > 120000 ? 'red' : (row?.[channelIndex]?.ubaDeviceConnectedTimeAgoMs > 60000 ? 'orange' : 'green'), }}>
-				 	<Box>
-						{getChargeCurrent(row?.[channelIndex]?.current)}
-					</Box>
+				<Stack direction="row" spacing={2} justifyContent="space-between">
+					<Box
+					  	sx={{
+					    	display: 'flex',
+					    	flexDirection: 'column',
+					    	width: '140px',
+					    	height: '180px',
+					    	color:
+					    	  	!row?.[channelIndex]?.ubaDeviceConnectedTimeAgoMs ||
+					    	  	row?.[channelIndex]?.ubaDeviceConnectedTimeAgoMs > 120000
+					    	    	? 'green'
+					    	    	: row?.[channelIndex]?.ubaDeviceConnectedTimeAgoMs > 60000
+					    	    	? 'orange'
+					    	    	: 'green',
+					  	}}>
 
-					<Box>
-						{getTemperature(row?.[channelIndex]?.temp)}
-					</Box>
+						<Stack direction="row" alignItems="center" justifyContent="space-between">
+							<span style={{ fontSize: '18px', fontFamily: 'monospace', whiteSpace: 'pre' }}>
+								<b>
+									CH-{row?.[channelIndex]?.parallelRun ? getText('common.AB') : row?.[channelIndex]?.channel}
+								</b>
+							</span>
+
+			  				<Stack 
+								direction="row" 
+								justifyContent=""
+								style={{ position: 'relative', top: '-1px' }}
+							>
+								<Chip 
+									label={`${getKeyByValue(statusCodes, rowStatus)}`}
+									sx={{
+											backgroundColor: rowStatus === statusCodes.RUNNING ? '#92D051' :
+														 	 rowStatus === statusCodes.FINISHED ? '#92D051' :
+														 	 rowStatus === statusCodes.STOPPED ? '#FFA500' :
+														 	 rowStatus === statusCodes.PAUSED ? '#FFFF00' :
+														 	 rowStatus === statusCodes.STANDBY ? '#FFFFFF' :
+														 	 rowStatus === statusCodes.ABORTED ? '#FF0000' :
+														 	 'gray', // Default color if no match
+										color: rowStatus === statusCodes.RUNNING || rowStatus === statusCodes.PAUSED || rowStatus === statusCodes.FINISHED ? 'black' : 'black', // Ensuring text is visible against background
+										border: '1px solid black',
+										fontSize: '2px',
+										}}
+								/>
+								{row?.[channelIndex].error > 0 ? <Tooltip title={getErrorMessage(row?.[channelIndex].error)}><ErrorOutlineIcon color="error" sx={{ width: 20, height: 20, marginTop:0.2, paddingLeft: 0 }} /></Tooltip> : null}
+							</Stack>
+						</Stack>
+
+						<span style={{ display: 'block', textAlign: 'center', fontSize: '4px' }}>
+							.
+						</span>
+
+						<span style={{ display: 'block', textAlign: 'center', fontSize: '13px' }}>
+							<b>
+								{String(getTestRoutineName(row?.[channelIndex]))
+									.slice(0, 16)}
+							</b>
+						</span>
+						<span style={{ display: 'block', textAlign: 'center', fontSize: '4px' }}>
+							.
+						</span>
+
+						<span style={{ textAlign: 'center', fontSize: '12px' }}>
+						  	{row?.[channelIndex]?.status !== statusCodes.STANDBY ? (
+						  	  	<b>{formatTime(getTestRuntime(row?.[channelIndex]))}</b>
+						  	) : (
+						  	    <b>00:00:00</b>
+						  	)}
+						</span>
+						<span style={{ display: 'block', textAlign: 'center', fontSize: '4px' }}>
+							.
+						</span>
+
+					    <span style={{ fontFamily: 'monospace', whiteSpace: 'pre' }}>
+							{String('voltage:').padEnd(8, ' ')} <b>{getVoltage(row?.[channelIndex]?.voltage).slice(0, 8)}</b>
+						</span>
+
+					    <span style={{ fontFamily: 'monospace', whiteSpace: 'pre' }}>
+							{String('current:').padEnd(9, ' ')} 
+						  	  	<b>{getChargeCurrent(row?.[channelIndex]?.current).slice(0, 10)}</b>
+						</span>
+
+					    <span style={{ fontFamily: 'monospace', whiteSpace: 'pre' }}>
+						  	{String('capacity:').padEnd(9, ' ')}
+						  		<b>{String(getCapacity(row?.[channelIndex]?.capacity)).slice(0, 10)}</b>
+						</span>
+
+					    <span style={{ fontFamily: 'monospace', whiteSpace: 'pre' }}>
+							{String('temp:').padEnd(8, ' ')} <b>{String(getTemperature(row?.[channelIndex]?.temp)).slice(0, 8)}</b>
+						</span> 
+
+						<span style={{ fontFamily: 'monospace', whiteSpace: 'pre' }}>
+						  	{String('step:').padEnd(9, ' ')}
+
+						  	{row?.[channelIndex]?.status !== statusCodes.STANDBY && (
+						  	  	<b>{row?.[channelIndex]?.testCurrentStep + 1} of {row?.[channelIndex]?.totalStagesAmount}</b>
+						  	)}
+						</span>
+					</Box>	
 				</Stack>
 
-				<Stack direction="row" justifyContent="space-around">
-					<Chip 
-						label={`${getKeyByValue(statusCodes, row?.[channelIndex]?.status)} ${getStep(channelIndex)}`}
-						sx={{
-							backgroundColor: row?.[channelIndex]?.status === statusCodes.RUNNING ? '#FFFF00' :
-												row?.[channelIndex]?.status === statusCodes.FINISHED ? '#92D051' :
-												row?.[channelIndex]?.status === statusCodes.STOPPED ? '#FFA500' :
-												row?.[channelIndex]?.status === statusCodes.PAUSED ? '#D0CECE' :
-												row?.[channelIndex]?.status === statusCodes.STANDBY ? '#8FAADC' :
-												row?.[channelIndex]?.status === statusCodes.ABORTED ? '#FF0000' :
-												'gray', // Default color if no match
-							color: row?.[channelIndex]?.status === statusCodes.RUNNING || row?.[channelIndex]?.status === statusCodes.PAUSED || row?.[channelIndex]?.status === statusCodes.FINISHED ? 'black' : 'white', // Ensuring text is visible against background
-							border: '1px solid black',
-							fontWeight: 'bold',
-							}}
-					/>
-					{row?.[channelIndex].error > 0 ? <Tooltip title={getErrorMessage(row?.[channelIndex].error)}><ErrorOutlineIcon color="error" sx={{ width: 20, height: 20, marginTop:0.2, paddingLeft: 0 }} /></Tooltip> : null}
-				</Stack>
-				<Stack direction="row" justifyContent="space-around">
+				<Stack direction="row" justifyContent="space-around" >
 					{getActions(row?.[channelIndex], authDispatch, ubaDevicesDispatch, testRoutinesDispatch)}
 				</Stack>
+				<span style={{ display: 'block', textAlign: 'center', fontSize: '4px' }}>
+					.
+				</span>
 			</Grid>
 		);
 	}
 
 	return (
 		<Grid item >
-			<Card sx={{border: (row?.[0]?.status === statusCodes.ABORTED && row?.[0]?.error > 0) || (row?.[1]?.status === statusCodes.ABORTED && row?.[1]?.error > 0) ? '2px double #d64161' : '1px solid gray',}}>
-				<CardHeader title={`${row?.[0]?.name} / ${row?.[0]?.machineName}`} titleTypographyProps={{textAlign: 'center',}} />
+			<Card sx={{border: (row?.[0]?.status === statusCodes.ABORTED && row?.[0]?.error > 0) || (row?.[1]?.status === statusCodes.ABORTED && row?.[1]?.error > 0) ? '3px double #d64161' : '1px solid gray',}}>
+				<CardHeader title={`${String(row?.[0]?.machineName).slice(0, 16)}`} titleTypographyProps={{textAlign: 'center',}} />
 
-				<Divider inset="none"/>
+				<Divider sx={{ width: 300, borderColor: 'black', width: '300px' }} />
 
 				<CardContent>
 					<Grid container spacing={0}>
 						{row?.[0]?.parallelRun ? (
-							printCard(0, 12)
+							printCard(1, 12)
 						 ) : <>
 						 	{row?.[0]?.channel === ubaChannel.A ? (
 								printCard(0, 6) 

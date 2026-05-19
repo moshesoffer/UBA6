@@ -22,17 +22,18 @@ const addInstantTestResults = async (instantTestResults) => {
 		for (const item of instantTestResults) {
 			if(item.isLogData === 1) {
 				instantTestResultsExistsMap.set(item.runningTestID, true);
+				//logger.info(`addInstantTestResults inserting second item with isLogData false ${item.runningTestID}`);
 				insertArr.push(item);
 			} else {
 				//Moshe
-				//logger.info(`addInstantTestResults item with isLogData false ${item.runningTestID}`);
+				logger.info(`addInstantTestResults item with isLogData false ${item.runningTestID}`);
 				if(instantTestResultsExistsMap.get(item.runningTestID) !== true) {
-					const amount = await withTimeout(getInstantTestResultsAmount(item.runningTestID), AWAIT_TIMEOUT);
+					const amount = await getInstantTestResultsAmount(item.runningTestID);
 					//Moshe
 					//logger.info(`addInstantTestResults amount for runningTestID ${item.runningTestID} is ${amount}`);
 					if(amount === 0) {
 						//Moshe
-						//logger.info(`addInstantTestResults inserting first item with isLogData false ${item.runningTestID}`);
+						logger.info(`addInstantTestResults inserting first item with isLogData false ${item.runningTestID}`);
 						insertArr.push(item);
 					}
 					instantTestResultsExistsMap.set(item.runningTestID, true);
@@ -46,25 +47,22 @@ const addInstantTestResults = async (instantTestResults) => {
 		}
 
 //Moshe
-logger.info(`await connection 10`);
-        connection = await withTimeout(pool.getConnection(), AWAIT_TIMEOUT);
-        await withTimeout(connection.beginTransaction(), AWAIT_TIMEOUT);
+//logger.info(`await connection 10`);
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
 		//Moshe
 		//logger.info(`addInstantTestResults going to insert [${insertArr.length}] instant test results`);
 		for (const item of insertArr) {
 			//Moshe
 			//logger.info("runningTestID being inserted:", item.runningTestID);
-
-
-
-			await withTimeout(createModel(instantTestResultsModel, item, connection), AWAIT_TIMEOUT);
+			await createModel(instantTestResultsModel, item, connection);
 		}
 		//Moshe
 		//logger.info(`addInstantTestResults finished to add`);
         
-        await withTimeout(connection.commit(), AWAIT_TIMEOUT);
+        await connection.commit();
     } catch (error) {
-        if (connection) await withTimeout(connection.rollback(), AWAIT_TIMEOUT); // Rollback on error
+        if (connection) await connection.rollback(); // Rollback on error
         logger.error('addInstantTestResults Transaction error:', error);
         throw error;
     } finally {
@@ -74,7 +72,7 @@ logger.info(`await connection 10`);
 
 //this returns the latest test results for each running test
 const getAllLatestInstantTestResults = async () => {
-	return await withTimeout(selectQuery(instantTestResultsModel.tableName, instantTestResultsModel.selectAllQuery), AWAIT_TIMEOUT);
+	return await selectQuery(instantTestResultsModel.tableName, instantTestResultsModel.selectAllQuery);
 };
 
 const getInstantTestResultsAmount = async runningTestID => {
@@ -83,7 +81,7 @@ const getInstantTestResultsAmount = async runningTestID => {
 		FROM \`${instantTestResultsModel.tableName}\`
 		WHERE \`runningTestID\` = ?;
 	`;
-	const rows = await withTimeout(selectQuery(instantTestResultsModel.tableName, query, [runningTestID]), AWAIT_TIMEOUT);
+	const rows = await selectQuery(instantTestResultsModel.tableName, query, [runningTestID]);
 	return rows[0]?.amount;
 }
 
@@ -94,7 +92,7 @@ const getLatestInstantTestResults = async runningTestID => {
 	FROM \`${instantTestResultsModel.tableName}\` AS i
 	WHERE i.\`runningTestID\` = ? ORDER BY \`timestamp\` DESC LIMIT 1;
 	`;
-	return await withTimeout(selectQuery(instantTestResultsModel.tableName, query, [runningTestID]), AWAIT_TIMEOUT);
+	return await selectQuery(instantTestResultsModel.tableName, query, [runningTestID]);
 };
 
 const getInstantTestResults = async runningTestID => {
@@ -103,7 +101,7 @@ const getInstantTestResults = async runningTestID => {
 	FROM \`${instantTestResultsModel.tableName}\` AS i
 	WHERE i.\`runningTestID\` = ?;
 	`;
-	return await withTimeout(selectQuery(instantTestResultsModel.tableName, query, [runningTestID]), AWAIT_TIMEOUT);
+	return await selectQuery(instantTestResultsModel.tableName, query, [runningTestID]);
 };
 
 //Moshe
@@ -138,10 +136,10 @@ const getPendingRunningTests = async (machineMac) => {
 	`;
 	if(machineMac){
 		query += ` AND ud.\`machineMac\` = ?;`;
-		return await withTimeout(selectQuery(runningTestsModel.tableName, query, [machineMac]), AWAIT_TIMEOUT);
+		return await selectQuery(runningTestsModel.tableName, query, [machineMac]);
 	} else {
 		query += `;`;
-		return await withTimeout(selectQuery(runningTestsModel.tableName, query), AWAIT_TIMEOUT);
+		return await selectQuery(runningTestsModel.tableName, query);
 	}
 };
 
@@ -151,7 +149,7 @@ const getRunningAmount = async () => {
 		FROM \`${runningTestsModel.tableName}\`
 		WHERE (\`status\` & (${status.IS_TEST_RUNNING})) != 0;
 	`;
-	const rows = await withTimeout(selectQuery(runningTestsModel.tableName, query), AWAIT_TIMEOUT);
+	const rows = await selectQuery(runningTestsModel.tableName, query);
 	return rows[0]?.running;
 }
 
@@ -163,7 +161,9 @@ const createRunningTest = async (connection, ubaSNs, data, status) => {
 	let values = [];
 	let updateValuesCompleted = [];
 
+//logger.info(`==> createRunningTest`);
 	try {
+		logger.info(`==> checkRunningTestKeys`);
 		checkRunningTestKeys(ubaSNs);
 
 		/*
@@ -201,17 +201,24 @@ const createRunningTest = async (connection, ubaSNs, data, status) => {
 				updateValues.push(TEST_ROUTINE_CHANNELS.A_OR_B);
 			}
 		}
+		
+		logger.info(`==> Generate a UUID`);
 		const ids = [];
-		ubaSNs.forEach(item => {
-			const id = uuidv4(); // Generate a UUID
-			ids.push(id);
-			if(updatePlaceholders.length > 0) {
-				values.push(`('${id}', ?, '${item.channel}', CURRENT_TIMESTAMP(), '${status}', ${updatePlaceholders.join(', ')})`);
-			} else {
-				values.push(`('${id}', ?, '${item.channel}', CURRENT_TIMESTAMP(), '${status}')`);
-			}
+		ubaSNs.forEach((item, index) => {
+		  	const id = uuidv4(); // Generate a UUID
+		  	ids.push(id);
+			logger.info(`==> createRunningTest id [${id}]`);
+
+		  	// attach the ID to the item itself
+		  	item.runningTestID = id;
 			
-			updateValuesCompleted = updateValuesCompleted.concat(item.ubaSN, updateValues);
+		  	if (updatePlaceholders.length > 0) {
+		  	  	values.push(`('${id}', ?, '${item.channel}', CURRENT_TIMESTAMP(), '${status}', ${updatePlaceholders.join(', ')})`);
+		  	} else {
+		  	  	values.push(`('${id}', ?, '${item.channel}', CURRENT_TIMESTAMP(), '${status}')`);
+		  	}
+		  
+		  	updateValuesCompleted = updateValuesCompleted.concat(item.ubaSN, updateValues);
 		});
 
 		if(updateFields.length > 0) {
@@ -224,10 +231,9 @@ const createRunningTest = async (connection, ubaSNs, data, status) => {
 			(\`id\`, \`ubaSN\`, \`channel\`, \`timestampStart\`, \`status\`) VALUES ${values.join(', ')};`;
 		}
 		
-
 		//Moshe
 		//logger.info(`createRunningTest Executing query: [${query}] [${updateValuesCompleted}]`);
-		const [result,] = await withTimeout(connection.execute(query, updateValuesCompleted), AWAIT_TIMEOUT);
+		const [result,] = await connection.execute(query, updateValuesCompleted);
 		if (result?.affectedRows < 1) {
 			throw new Error(`Error creating RunningTests.`);
 		}
@@ -239,7 +245,7 @@ const createRunningTest = async (connection, ubaSNs, data, status) => {
 }
 
 const changeTestStatus = async (runningTestID, newStatus, openedConnection) => {
-    await withTimeout(updateModel(runningTestsModel, runningTestID, {status: newStatus}, openedConnection), AWAIT_TIMEOUT);
+    await updateModel(runningTestsModel, runningTestID, {status: newStatus}, openedConnection);
 }
 
 const deleteRunningTest = async (connection, ubaSNs) => {
@@ -261,7 +267,7 @@ const deleteRunningTest = async (connection, ubaSNs) => {
 				(\`ubaSN\`, \`channel\`) IN (${updatePlaceholders.join(', ')});
 			`;
 		logger.info(`SELECT RunningTests`);
-		const [selectResult,] = await withTimeout(connection.execute(selectQuery, updateValues), AWAIT_TIMEOUT);
+		const [selectResult,] = await connection.execute(selectQuery, updateValues);
 		let resultArray = Object.keys(selectResult).map(key => selectResult[key]);
 		logger.info(`resultArray.length ${resultArray.length}`);
 		const runningTests = resultArray.filter(item => { return isTestRunning(item.status); });
@@ -279,7 +285,7 @@ const deleteRunningTest = async (connection, ubaSNs) => {
 
 		//Moshe
 		//logger.info(`deleteRunningTest Executing query: [${query}] [${updateValues}]`);
-		const [result,] = await withTimeout(connection.execute(query, updateValues), AWAIT_TIMEOUT);
+		const [result,] = await connection.execute(query, updateValues);
 		logger.info(`result?.affectedRows ${result?.affectedRows} ${resultArray.length}`)
 		if (result?.affectedRows !== resultArray.length) {
 			throw new Error(`Error deleteRunningTest.`);
@@ -297,7 +303,7 @@ const getRunningTestsByUbaSN = async (ubaSN, connection) => {
 	FROM \`${runningTestsModel.tableName}\` AS rt
 	WHERE rt.\`ubaSN\` = ?;
 	`;
-    const rows = await withTimeout(selectQuery(runningTestsModel.tableName, query, [ubaSN,], connection), AWAIT_TIMEOUT);
+    const rows = await selectQuery(runningTestsModel.tableName, query, [ubaSN,], connection);
     if(rows.length > 2) {
         throw new Error(`Error getRunningTestsByUbaSN cant be more than 2 channels for same ubaSN.`);
     }
@@ -313,7 +319,7 @@ const getRunningTestByIdWithJoins = async (runningTestID, connection) => {
 	JOIN \`${cellModel.tableName}\` AS cm ON rt.\`cellPN\` = cm.\`itemPN\`
 	WHERE rt.\`id\` = ?;
 	`;
-	const rows = await withTimeout(selectQuery(runningTestsModel.tableName, query, [runningTestID], connection), AWAIT_TIMEOUT);
+	const rows = await selectQuery(runningTestsModel.tableName, query, [runningTestID], connection);
 	if(rows.length !== 1) {
 		throw new Error(`Error getRunningTestByIdWithJoins cant be more than 1 running test for same id.`);
 	}

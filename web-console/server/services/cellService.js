@@ -4,19 +4,19 @@ const { selectQuery, createModel, updateModel, deleteModel } = require('../db/ge
 const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 
 const getCells = async () => {
-    return await withTimeout( selectQuery(cellModel.tableName, cellModel.selectAllQuery), AWAIT_TIMEOUT);
+    return await  selectQuery(cellModel.tableName, cellModel.selectAllQuery);
 };
 
 const createCell = async (cell) => {
-    await withTimeout( createModel(cellModel, cell), AWAIT_TIMEOUT);
+    await  createModel(cellModel, cell);
 };
 
 const updateCell = async (itemPN, cell) => {
-    await withTimeout( updateModel(cellModel, itemPN, cell), AWAIT_TIMEOUT);
+    await  updateModel(cellModel, itemPN, cell);
 };
 
 const deleteCell = async (itemPN) => {
-    await withTimeout( deleteModel(cellModel, itemPN), AWAIT_TIMEOUT);
+    await  deleteModel(cellModel, itemPN);
 };
 
 

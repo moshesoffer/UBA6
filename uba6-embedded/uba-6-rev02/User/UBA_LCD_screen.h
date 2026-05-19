@@ -46,6 +46,17 @@ typedef enum UBA_LCD_SCREEN_DISPLAY_STATE {
 
 } UBA_LCD_SCREEN_DISPLAY_STATE;
 
+typedef enum UBA_LCD_SCREEN_DISPLAY_EVENT {
+    UBA_LCD_SCREEN_DISPLAY_EVENT_TEST   = UBA_PROTO_BPT_CMD_ID_TEST,
+    UBA_LCD_SCREEN_DISPLAY_EVENT_SELECT = UBA_PROTO_BPT_CMD_ID_SELECT, /* start BPT */
+    UBA_LCD_SCREEN_DISPLAY_EVENT_STOP   = UBA_PROTO_BPT_CMD_ID_STOP,   /* stop bpt */
+    UBA_LCD_SCREEN_DISPLAY_EVENT_PAUSE  = UBA_PROTO_BPT_CMD_ID_PAUSED, /* pause bpt */
+    UBA_LCD_SCREEN_DISPLAY_EVENT_CLEAR  = UBA_PROTO_BPT_CMD_ID_CLEAR,  /* Clear the BPT reset errro and set to STANDBY */
+    UBA_LCD_SCREEN_DISPLAY_EVENT_STEP   = UBA_PROTO_BPT_CMD_ID_STEP,   /* next-step bpt */
+    UBA_LCD_SCREEN_DISPLAY_EVENT_NONE
+	
+} UBA_LCD_SCREEN_DISPLAY_EVENT;
+
 typedef struct UBA_LCD_channel_shadow
 {
 	float volt_vlaue;
@@ -212,7 +223,23 @@ typedef struct UBA_LCD_screen_shadow {
 		char text[11];
 	} btn_pause_start;
 #endif
+	struct {
+		UBA_button *btn_up_p;
+		UBA_button *btn_down_p;
+		UBA_button *btn_select_p;
+	} main_buttons;
+	struct {
+		UBA_button *btn_up_p;
+		UBA_button *btn_down_p;
+		UBA_button *btn_select_p;
+	} secondery_buttons;
+	UBA_GFX btn_back_stop;
+	UBA_GFX btn_pause_start;
+	UBA_GFX btn_next;
+
 	UBA_CHANNLE_ID ch_control;
+	TR_Test_Routine *tr;
+	uint8_t tr_list_select_index;
 } UBA_LCD_screen_shadow;
 
 typedef struct UBA_LCD_screen {
@@ -222,6 +249,7 @@ typedef struct UBA_LCD_screen {
 		UBA_LCD_SCREEN_DISPLAY_STATE current;
 		UBA_LCD_SCREEN_DISPLAY_STATE next;
 	} state;
+	UBA_LCD_SCREEN_DISPLAY_EVENT event;
 	uint32_t start_tick;
 	struct {
 		UBA_LCD_page_channel channel;
@@ -244,6 +272,8 @@ typedef struct UBA_LCD_screen {
 	UBA_CHANNLE_ID ch_control; // the control id of the screen
 	uint8_t tr_list_select_index;
 	uint8_t tr_step_display_index;
+	bool refresh_msg;
+	bool btn_active;
 
 	UBA_LCD_screen_shadow shadow;
 } UBA_LCD_screen;
@@ -323,8 +353,11 @@ typedef struct UBA_LCD_STATIC_PAGE {
 
 // @formatter:on
 void UBA_LCD_screen_run(UBA_LCD_screen *screen);
-void UBA_LCD_screen_event(UBA_LCD_screen *screen, UBA_LCD_SCREEN_DISPLAY_STATE next_state);
+void UBA_LCD_screen_event(UBA_LCD_screen *screen, UBA_LCD_SCREEN_DISPLAY_STATE next_state, UBA_LCD_SCREEN_DISPLAY_EVENT event);
 void UBA_LCD_screen_update(UBA_LCD_screen *screen);
+
+bool UBA_LCD_screen_isLastStep(UBA_LCD_screen *screen);
+void UBA_LCD_screen_getRunTime(UBA_BPT *bpt, RTC_TimeTypeDef *time);
 
 #endif /* UBA_LCD_SCREEN_H_ */
 

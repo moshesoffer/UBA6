@@ -4,6 +4,7 @@
  *  Created on: Aug 29, 2024
  *      Author: ORA
  */
+#define UART_LOG_DISABLE
 
 #include <UBA_channel.h>
 #include "uart_log.h"
@@ -13,6 +14,8 @@
 #include "stdbool.h"
 #include "file_logger.h"
 #include "UBA_Message.pb.h"
+#include "UBA_6.h"
+#include "UBA_battery_performance_test.h"
 
 UBA_channel UBA_CH_A;
 UBA_channel UBA_CH_B;
@@ -36,6 +39,8 @@ UBA_channel UBA_CH_AB;
 #define UBA_CHANNEL_DISCHARGE_HYSTERESIS (1) /*5mA HYSTERESIS*/
 #define HOURS2MILISEC (3600000) /*1000*60*60*/
 #define UBA_channel_MIN_BAT_VOLTAGE (2000)
+
+UBA_BPT* UBA_channel_select_bpt(UBA_CHANNLE_ID ch_id);
 
 void UBA_channel_init_enter(UBA_channel *ch);
 void UBA_channel_init(UBA_channel *ch);
@@ -91,9 +96,9 @@ static const struct UBACSMA_rule rule_g[UBA_CHANNEL_STATE_MAX] ={
 //=================================================private functions========================================================//
 void UBA_channel_update_state(UBA_channel *ch) {
 	if (ch->state.current < UBA_CHANNEL_STATE_MAX && ch->state.next < UBA_CHANNEL_STATE_MAX) {
-		UART_LOG_INFO(ch->name, "update state %s ---> %s", rule_g[ch->state.current].name, rule_g[ch->state.next].name);
+		UART_LOG(ch->name, "(channel)update state %s ---> %s", rule_g[ch->state.current].name, rule_g[ch->state.next].name);
 	} else {
-		UART_LOG_INFO(ch->name, "update state %u ---> %u", ch->state.current, ch->state.next);
+		UART_LOG(ch->name, "(channel)update state %u ---> %u", ch->state.current, ch->state.next);
 	}
 	ch->state.pre = ch->state.current;
 	ch->state.current = ch->state.next;
@@ -125,10 +130,11 @@ bool is_lines_in_state(UBA_channel *ch, UBA_LINE_STATE line_state) {
 	return ret;
 }
 bool UBA_channel_lines_updated_state(UBA_channel *ch, UBA_LINE_STATE line_state) {
-	UBA_PROTO_UBA6_ERROR lien_err = UBA_PROTO_UBA6_ERROR_NO_ERROR;
+	UBA_PROTO_UBA6_ERROR line_err = UBA_PROTO_UBA6_ERROR_NO_ERROR;
 	for (int index = 0; index < ch->line_size; index++) {
-		lien_err = UBA_line_set_next_state(ch->lines_p[index], line_state);
-		if (lien_err != UBA_PROTO_UBA6_ERROR_NO_ERROR) {
+		line_err = UBA_line_set_next_state(ch->lines_p[index], line_state);
+		if (line_err != UBA_PROTO_UBA6_ERROR_NO_ERROR) {
+			UART_LOG("Line %d update state, err 0x%x", index, line_err);
 			return false;
 		}
 	}
@@ -136,11 +142,29 @@ bool UBA_channel_lines_updated_state(UBA_channel *ch, UBA_LINE_STATE line_state)
 }
 
 UBA_PROTO_UBA6_ERROR UBA_channel_get_lines_errors(UBA_channel *ch) {
-	UBA_PROTO_UBA6_ERROR lien_err = UBA_PROTO_UBA6_ERROR_NO_ERROR;
+	UBA_PROTO_UBA6_ERROR line_err = UBA_PROTO_UBA6_ERROR_NO_ERROR;
 	for (int index = 0; index < ch->line_size; index++) {
-		lien_err |= ch->lines_p[index]->error;
+		line_err |= ch->lines_p[index]->error;
 	}
-	return lien_err;
+	return line_err;
+}
+
+bool UBA_channel_are_lines_connected(UBA_channel *ch) {
+	bool lines_connected = true;
+	for (int index = 0; index < ch->line_size; index++) {
+		lines_connected = (lines_connected && ch->lines_p[index]->isBattery_connected) ? true : false;
+	}
+	return lines_connected;
+}
+
+void UBA_channel_get_lines_connected(UBA_channel *ch, bool *line_connected) {
+	for (int index = 0; index < 2; index++) {
+		if (index < ch->line_size) {
+			line_connected[index] = ch->lines_p[index]->isBattery_connected;
+		} else {
+			line_connected[index] = false;
+		}
+	}
 }
 
 void UBA_channel_save_data(UBA_channel *ch) {
@@ -231,10 +255,12 @@ void UBA_channel_delay_exit(UBA_channel *ch) {
 void UBA_channel_charging_enter(UBA_channel *ch) {
 	uint8_t index;
 	UBA_channel_update_state(ch);
+
 	for (index = 0; index < ch->line_size; index++) {
 		ch->lines_p[index]->target.current = (ch->target.current / ch->line_size);
 		ch->lines_p[index]->target.voltage = ch->target.voltage;
 	}
+
 	if (UBA_channel_lines_updated_state(ch, UBA_LINE_STATE_PRE_CHARGING) == false) {
 		UBA_channel_post_error(ch, UBA_PROTO_UBA6_ERROR_LINE_BUSY);
 	}
@@ -306,7 +332,7 @@ void UBA_channel_discharging(UBA_channel *ch) {
 		UBA_channel_post_error(ch, UBA_PROTO_UBA6_ERROR_INTRENAL_LINE_ERROR);
 		ch->state.next = UBA_CHANNEL_STATE_OFF;
 	}else if (ch->target.current != target_current) {
-		UART_LOG_CRITICAL(ch->name, "Changing discharge current target Voltage from %05lu to %05lu", ch->target.current, target_current);
+		UART_LOG_INFO(ch->name, "Changing discharge current target Voltage from %05lu to %05lu", ch->target.current, target_current);
 		ch->target.current = target_current;
 		UBA_channel_set_line_cuurent(ch, target_current);
 	}
@@ -337,16 +363,16 @@ void UBA_channel_dead_exit(UBA_channel *ch) {
 uint32_t UBA_channel_get_voltage(UBA_channel *ch) {
 	uint32_t voltage = 0;
 	uint8_t index = 0;
-	if (ch->line_size > 0) {
-		voltage += ch->lines_p[index++]->data.voltage;
-		for (; index < ch->line_size; index++) {
+	//if (ch->line_size > 0) {
+	//	voltage += ch->lines_p[index++]->data.voltage;
+		for (index = 0; index < ch->line_size; index++) {
 			voltage += ch->lines_p[index]->data.voltage;
 		}
-		voltage /= ch->line_size;
+	//	voltage /= ch->line_size;
 		UART_LOG_CHANNEL_DEBUG(ch->name, "Voltage:%u", voltage);
-	} else {
-		UART_LOG_ERROR(ch->name, "line size is zero ");
-	}
+	//} else {
+	//	UART_LOG_ERROR(ch->name, "line size is zero");
+	//}
 	return voltage;
 }
 
@@ -384,9 +410,9 @@ int32_t UBA_channel_get_current(UBA_channel *ch) {
 	int32_t current = 0;
 	for (uint8_t index = 0; index < ch->line_size; index++) {
 		if (ch->state.current == UBA_CHANNEL_STATE_DISCHARGE) {
-			current -= ch->lines_p[index]->data.discharge_current;
-		} else if (UBA_channel_isCharging(ch)) {
-			current += ch->lines_p[index]->data.charge_current;
+			current -= UBA_channel_get_discharge_current(ch);
+		} else if (ch->state.current == UBA_CHANNEL_STATE_CHARGE) {
+			current += UBA_channel_get_charge_current(ch);
 		} else {
 			// keep it zero
 		}
@@ -418,35 +444,89 @@ float UBA_channel_get_capacity(UBA_channel *ch) {
 }
 
 UBA_PROTO_UBA6_ERROR UBA_channel_set_discharge_param(UBA_channel *ch, UBA_PROTO_BPT_discharge_current *discharge_current) {
-	ch->target.discharge_current.type = discharge_current->type;
-	ch->target.discharge_current.value = discharge_current->value;
+	if (ch->id == UBA_CHANNLE_ID_AB) {
+		UBA_channel *ch;
+		ch = &UBA_CH_A;
+		ch->target.discharge_current.type = discharge_current->type;
+		ch->target.discharge_current.value = discharge_current->value;
+		ch = &UBA_CH_B;
+		ch->target.discharge_current.type = discharge_current->type;
+		ch->target.discharge_current.value = discharge_current->value;
+
+	} else {
+		ch->target.discharge_current.type = discharge_current->type;
+		ch->target.discharge_current.value = discharge_current->value;
+	}
 	return UBA_PROTO_UBA6_ERROR_NO_ERROR;
 }
 
 UBA_PROTO_UBA6_ERROR UBA_channel_set_charge_param(UBA_channel *ch, int32_t charge_current, int32_t charge_voltage) {
-	ch->target.current = charge_current;
-	ch->target.voltage = charge_voltage;
+	if (ch->id == UBA_CHANNLE_ID_AB) {
+		UBA_channel *ch;
+		ch = &UBA_CH_A;
+
+		//update target voltage
+		UBA_BPT *bpt = UBA_channel_select_bpt(UBA_CHANNLE_ID_AB);
+		if(bpt != NULL){
+			charge_voltage *= ((TR_Test_Routine *)bpt->tr)->battery.num_cells_in_serial;
+		}
+
+		ch->target.current = charge_current;
+		ch->target.voltage = charge_voltage;
+
+		ch = &UBA_CH_B;
+		ch->target.current = charge_current;
+		ch->target.voltage = charge_voltage;
+
+	} else {
+		//update target voltage
+		UBA_BPT *bpt = UBA_channel_select_bpt(ch->id);
+		if(bpt != NULL){
+			charge_voltage *= ((TR_Test_Routine *)bpt->tr)->battery.num_cells_in_serial;
+		}
+
+		ch->target.current = charge_current;
+		ch->target.voltage = charge_voltage;
+	}
 	return UBA_PROTO_UBA6_ERROR_NO_ERROR;
 }
 
 uint32_t UBA_channel_set_next_state(UBA_channel *ch, UBA_CHANNEL_STATE next_state) {
-	ch->state.next = next_state;
+	if (ch->id == UBA_CHANNLE_ID_AB) {
+		UBA_channel *ch;
+		ch = &UBA_CH_A;
+		ch->state.next = next_state;
+		ch = &UBA_CH_B;
+		ch->state.next = next_state;
+
+	} else {
+		ch->state.next = next_state;
+	}
 	return 0;
 }
 
 void UBA_channel_run(UBA_channel *ch) {
-	if (ch->state.next == UBA_CHANNEL_STATE_INVALID) { // if there the next state is not define , then run this state function
-		if (rule_g[ch->state.current].run) {
-			rule_g[ch->state.current].run(ch); // run the main function of the state
-		}
+	if (ch->id == UBA_CHANNLE_ID_AB) {
+		UBA_channel *ch;
+		ch = &UBA_CH_A;
+		UBA_channel_run (ch);
+		ch = &UBA_CH_B;
+		UBA_channel_run (ch);
+
 	} else {
-		if (ch->state.current < UBA_CHANNEL_STATE_MAX) {
-			if (rule_g[ch->state.current].exit) {
-				rule_g[ch->state.current].exit(ch); // run the status exit function
+		if (ch->state.next == UBA_CHANNEL_STATE_INVALID) { // if there the next state is not define , then run this state function
+			if (rule_g[ch->state.current].run) {
+				rule_g[ch->state.current].run(ch); // run the main function of the state
 			}
-		}
-		if (rule_g[ch->state.next].enter) {
-			rule_g[ch->state.next].enter(ch); // run the next state enter function
+		} else {
+			if (ch->state.current < UBA_CHANNEL_STATE_MAX) {
+				if (rule_g[ch->state.current].exit) {
+					rule_g[ch->state.current].exit(ch); // run the status exit function
+				}
+			}
+			if (rule_g[ch->state.next].enter) {
+				rule_g[ch->state.next].enter(ch); // run the next state enter function
+			}
 		}
 	}
 }
@@ -516,6 +596,12 @@ void UBA_channel_update_message(UBA_channel *ch, UBA_PROTO_CHANNEL_status *msg) 
 	msg->data.current = UBA_channel_get_current(ch);
 	msg->data.capacity = UBA_channel_get_capacity(ch);
 
+	//UART_LOG(ch->name, "==> chnl id %d, volt: %05d crnt :%d temp: %f cap :%f", 
+	//		msg->id, msg->data.voltage, msg->data.current, msg->data.temperature, msg->data.capacity);
+	//UART_LOG("line 0", "==>             voltage %d, discharge_current %d, charge_current %d, temperature %f, capacity %f",
+	//				 ch->lines_p[0]->data.voltage, ch->lines_p[0]->data.charge_current, ch->lines_p[0]->data.discharge_current, ch->lines_p[0]->data.bat_temperature, ch->lines_p[0]->data.capacity);
+	//UART_LOG("line 1", "==>             voltage %d, discharge_current %d, charge_current %d, temperature %f, capacity %f",
+	//				 ch->lines_p[1]->data.voltage, ch->lines_p[1]->data.charge_current, ch->lines_p[1]->data.discharge_current, ch->lines_p[1]->data.bat_temperature, ch->lines_p[1]->data.capacity);
 
 	for (int index = 0; index < ch->line_size; index++) {
 		msg->line_status[index].has_adc_data = true; //rerive the adc data also
@@ -533,5 +619,22 @@ void UBA_channel_command_execute(UBA_channel *ch, UBA_PROTO_CHANNEL_command *cmd
 
 	}
 
+}
+
+UBA_BPT* UBA_channel_select_bpt(UBA_CHANNLE_ID ch_id) {
+	switch (ch_id) {
+		case UBA_CHANNLE_ID_A:
+			return &UBA_6_device_g.BPT_A;
+			break;
+		case UBA_CHANNLE_ID_B:
+			return &UBA_6_device_g.BPT_B;
+			break;
+		case UBA_CHANNLE_ID_AB:
+			return &UBA_6_device_g.BPT_AB;
+			break;
+		default:
+			UART_LOG_ERROR(UBA_COMP, "The Selected Channel is not define");
+			return NULL;
+	}
 }
 

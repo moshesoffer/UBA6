@@ -4,6 +4,8 @@
  *  Created on: Aug 19, 2024
  *      Author: ORA
  */
+#undef UART_LOG_DISABLE
+
 #include <UBA_buzzer.h>
 #include "tim.h"
 #include "uart_log.h"

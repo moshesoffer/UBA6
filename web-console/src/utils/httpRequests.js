@@ -39,7 +39,7 @@ const createRequestOptions = (method, data) => {
 
 const prepareResponse = async response => {
 	if (response.ok) {
-		const dataString = await withTimeout(response.text(), AWAIT_TIMEOUT);
+		const dataString = await response.text();
 		if (validateString(dataString)) {
 			try {
 				return JSON.parse(dataString);
@@ -57,7 +57,7 @@ const prepareResponse = async response => {
 
 	let text = '';
 	try {
-		text = await withTimeout( response.text(), AWAIT_TIMEOUT);
+		text = await response.text();
 	} catch (error) {
 		// eslint-disable-next-line no-console
 		console.info(error);
@@ -82,8 +82,8 @@ export const postData = async (authDispatch, pathname, method, data) => {
 		authDispatch(setAjaxLoader(true));
 	}
 	try {
-		const response = await withTimeout( fetch(url, options), AWAIT_TIMEOUT);
-		return await withTimeout( prepareResponse(response), AWAIT_TIMEOUT);
+		const response = await fetch(url, options);
+		return await prepareResponse(response);
 	} finally {
 		if (validateFunction(authDispatch)) {
 			authDispatch(setAjaxLoader(false));
@@ -100,15 +100,15 @@ export const postData2 = async (authDispatch, pathname, method, data) => {
 		authDispatch(setAjaxLoader(true));
 	}
 	try {
-		response = await withTimeout( fetch(url, options), AWAIT_TIMEOUT);
+		response = await fetch(url, options);
 		if (response.status === 204) {
 			responseBody = { success: true };
 		} else {
-			responseBody = await withTimeout( response.json(), AWAIT_TIMEOUT);
+			responseBody = await response.json();
 		}
 		return responseBody;
 	} catch (error) {
-		if(response && !responseBody) responseBody = await withTimeout( response.text(), AWAIT_TIMEOUT);
+		if(response && !responseBody) responseBody = await response.text();
 	} finally {
 		if (validateFunction(authDispatch)) {
 			authDispatch(setAjaxLoader(false));

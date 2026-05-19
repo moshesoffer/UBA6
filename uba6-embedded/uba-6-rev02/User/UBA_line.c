@@ -4,6 +4,7 @@
  *  Created on: Oct 8, 2024
  *      Author: ORA
  */
+#define UART_LOG_DISABLE
 
 #include "UBA_line.h"
 #include <UBA_line_ADC.h>
@@ -128,7 +129,7 @@ typedef enum UBA_LINE_CHARGE_DELTA {
 
 #define UBA_LINE_COPY_LINEAR(le, lec) \
     do { \
-        (le)->slop = (lec)->slop; \
+        (le)->slope = (lec)->slope; \
         (le)->y_intercept = (lec)->y_intercept; \
     } while(0)
 
@@ -212,6 +213,7 @@ void UBA_line_print_reading(UBA_line *line);
 bool UBA_line_BIST(UBA_line *line) {
 	bool ret = false;
 	UBA_line_enable_charge(line, CHARGE_DISABLE);
+	HAL_Delay(100);
 	UBA_line_get_line_data(line);
 	if (UBA_line_isBattery_connected(line)) {
 		UART_LOG_LINE_ERROR("Cannot Perform BIST Battery is connected");
@@ -224,8 +226,10 @@ bool UBA_line_BIST(UBA_line *line) {
 		UBA_DCDC_run(&line->buck_boost);
 	}
 	UBA_line_enable_charge(line, CHARGE_ENABLE);
-	HAL_Delay(20);
+	HAL_Delay(100);
 	UBA_line_get_line_data(line);
+	HAL_Delay(100);
+UART_LOG_LINE_DEBUG("==> Moshe BIST: error: 0x%x", line->error);
 	UBA_line_print_reading(line);
 	if (UBA_IN_RANGE_HYST(line->data.gen_voltage,line->data.voltage ,500) == false) {
 		UART_LOG_LINE_ERROR("Vgen:%04d is not on Bat Line:%04d", line->data.gen_voltage, line->data.voltage);
@@ -238,13 +242,14 @@ bool UBA_line_BIST(UBA_line *line) {
 		ret = true;
 	}
 	UBA_line_enable_charge(line, CHARGE_DISABLE);
+	HAL_Delay(100);
 	return ret;
 }
 
 void UBA_line_enable_charge(UBA_line *line, bool isEnable) {
 	bool pin_state = HAL_GPIO_ReadPin(line->charge_enable.GPIOx, line->charge_enable.GPIO_Pin) == GPIO_PIN_SET ? CHARGE_ENABLE : CHARGE_DISABLE;
 	if (pin_state ^ isEnable) {
-		UART_LOG_LINE_WARN("==================================CHRAGE %s!!!======================================", isEnable ? "ENABLE" : "DISABLE");
+		UART_LOG_LINE_WARN("==================================CHARGE %s!!!======================================", isEnable ? "ENABLE" : "DISABLE");
 		HAL_GPIO_WritePin(line->charge_enable.GPIOx, line->charge_enable.GPIO_Pin, isEnable ? GPIO_PIN_SET : GPIO_PIN_RESET);
 	}
 }
@@ -252,7 +257,7 @@ void UBA_line_enable_discharge(UBA_line *line, bool isEnable) {
 	bool pin_state =
 			HAL_GPIO_ReadPin(line->discharge_enable.GPIOx, line->discharge_enable.GPIO_Pin) == GPIO_PIN_SET ? DISCHARGE_ENABLE : DISCHARGE_DISABLE;
 	if (pin_state ^ isEnable) {
-		UART_LOG_LINE_WARN("=================================DISCHRAGE %s!!!====================================", isEnable ? "ENABLE" : "DISABLE");
+		UART_LOG_LINE_WARN("=================================DISCHARGE %s!!!====================================", isEnable ? "ENABLE" : "DISABLE");
 		HAL_GPIO_WritePin(line->discharge_enable.GPIOx, line->discharge_enable.GPIO_Pin, isEnable ? GPIO_PIN_SET : GPIO_PIN_RESET);/*disable the charge in pre charge*/
 	}
 }
@@ -261,12 +266,15 @@ bool UBA_line_isBattery_connected(UBA_line *line) {
 	if (UBA_line_isCharging(line)) {
 		if ((line->data.charge_current > 10) && (line->data.voltage > UBA_LINE_VOLTAGE_BAT_MIN)) {
 			return true;
+
 		} else {
 			// charge current is to low must disconnected charge and test again
 			UBA_line_enable_charge(line, CHARGE_DISABLE);
-			HAL_Delay(20);
+			HAL_Delay(100);
+
 			UBA_line_set_voltage(line, UBA_line_ADC_get_bat_voltage(line, UBA_LINE_ADC_RANGE60V)); //get the voltage and set it to the channel use DMA
 			UBA_line_enable_charge(line, CHARGE_ENABLE);
+			HAL_Delay(100);
 		}
 	}
 	return line->data.voltage > UBA_LINE_VOLTAGE_BAT_MIN;
@@ -274,9 +282,9 @@ bool UBA_line_isBattery_connected(UBA_line *line) {
 
 void UBA_line_update_state(UBA_line *line) {
 	if (line->state.current < UBA_LINE_STATE_MAX && line->state.next < UBA_LINE_STATE_MAX) {
-		UART_LOG_INFO(line->name, "update state %s ---> %s", rule_g[line->state.current].name, rule_g[line->state.next].name);
+		UART_LOG(line->name, "(line)update state %s ---> %s", rule_g[line->state.current].name, rule_g[line->state.next].name);
 	} else {
-		UART_LOG_INFO(line->name, "update state %u ---> %u", line->state.current, line->state.next);
+		UART_LOG(line->name, "(line)update state %u ---> %u", line->state.current, line->state.next);
 	}
 	line->state.pre = line->state.current;
 	line->state.current = line->state.next;
@@ -285,17 +293,28 @@ void UBA_line_update_state(UBA_line *line) {
 }
 
 void UBA_line_print_reading(UBA_line *line) {
-	UART_LOG_LINE_INFO("VIN:%05d mV VBat:%05dmV VGen:%05dmV CC:%04dmA DC:%04dmA BAT Temp:%+07.2fC ABN Temp:%+07.2fC",
-			line->data.vps,
-			line->data.voltage,
-			line->data.gen_voltage,
-			line->data.charge_current,
-			line->data.discharge_current,
-			line->data.bat_temperature,
-			line->data.amb_temperature
-			);
+//	UART_LOG("LINE", "VIN:%05d mV VBat:%05d mV VGen:%05dmV CC:%04d mA DC:%04d mA BAT Temp:%+07.2f C AMB Temp:%+07.2f C",
+//			line->data.vps,
+//			line->data.voltage,
+//			line->data.gen_voltage,
+//			line->data.charge_current,
+//			line->data.discharge_current,
+//			line->data.bat_temperature,
+//			line->data.amb_temperature
+//			);
+
+//	UART_LOG(line->name, "VIN:%05d mV VBat:%05d mV VGen:%05dmV CC:%04d mA DC:%04d mA BAT Temp:%+07.2f C AMB Temp:%+07.2f C",
+//			line->data.vps,
+//			line->data.voltage,
+//			line->data.gen_voltage,
+//			line->data.charge_current,
+//			line->data.discharge_current,
+//			line->data.bat_temperature,
+//			line->data.amb_temperature
+//			);
+
 	#ifdef PRINT_A2D
-	UART_LOG_LINE_DEBUG("VIN:%04d     VBat:%04u    VGen:%04u  CC:%04u    DC:%04u    BAT Temp:%04u    ABN Temp:%04u",
+	UART_LOG_LINE_DEBUG("VIN:%04d     VBat:%04u    VGen:%04u  CC:%04u    DC:%04u    BAT Temp:%04u    AMB Temp:%04u",
 			line->ADC_raw_data[ADC_CHNNEL_VPS], line->ADC_raw_data[ADC_CHNNEL_VBAT], line->ADC_raw_data[ADC_CHNNEL_VGEN], line->EX_ADC_raw_data,
 			line->ADC_raw_data[ADC_CHNNEL_DSCH_CURR], line->ADC_raw_data[ADC_CHNNEL_NTC_BAT], line->ADC_raw_data[ADC_CHNNEL_AMB_TEMP]
 	);
@@ -318,31 +337,39 @@ void UBA_line_set_voltage(UBA_line *line, int32_t voltage) {
 		}
 		line->data.voltage = 0; // value of the voltage is N/A
 		return;
+
 	} else if (line->error & UBA_PROTO_UBA6_ERROR_LINE_REVERSE_POLARITY) {
 		UBA_line_clear_error(line, UBA_PROTO_UBA6_ERROR_LINE_REVERSE_POLARITY);
+
 	}
+
 	if (voltage > UBA_LINE_VOLTAGE_MAX) {
 		if (UBA_line_post_error(line, UBA_PROTO_UBA6_ERROR_LINE_BAT_HIGH_VOLTAGE)) {
 			UART_LOG_LINE_ERROR("Battery High Voltage");
 		}
 		line->isBattery_connected = true;
+
 	} else if (voltage < UBA_LINE_VOLTAGE_BAT_MIN) {
 		if (line->data.voltage > UBA_LINE_VOLTAGE_BAT_MIN) {
 			UART_LOG_LINE_INFO("Battery disconnected : %d --> %d", line->data.voltage, voltage);
 			line->isBattery_connected = false;
 		}
+
 		if (line->error & UBA_PROTO_UBA6_ERROR_LINE_BAT_HIGH_VOLTAGE) {
 			UBA_line_clear_error(line, UBA_PROTO_UBA6_ERROR_LINE_BAT_HIGH_VOLTAGE);
 		}
+
 	} else {
 		if (line->data.voltage < UBA_LINE_VOLTAGE_BAT_MIN) {
 			line->isBattery_connected = true;
 			UART_LOG_LINE_INFO("Battery connected : %d --> %d", line->data.voltage, voltage);
 		}
+
 		if (line->error & UBA_PROTO_UBA6_ERROR_LINE_BAT_HIGH_VOLTAGE) {
 			UBA_line_clear_error(line, UBA_PROTO_UBA6_ERROR_LINE_BAT_HIGH_VOLTAGE);
 		}
 	}
+	
 	/*if (HAL_GPIO_ReadPin(line->charge_enable.GPIOx, line->charge_enable.GPIO_Pin) == GPIO_PIN_SET) {
 	 if ((voltage > line->target.voltage) && (line->target.voltage > 0)) {
 	 if (UBA_line_post_error(line, UBA_LINE_ERROR_OVER_VOLTAGE)) {
@@ -444,6 +471,7 @@ void UBA_line_set_bat_temp(UBA_line *line, float temp) {
 	 }
 	 }
 	 }*/
+//UART_LOG_LINE_INFO("battery temp: %s %f", line->name, temp);
 	line->data.bat_temperature = temp;
 }
 
@@ -457,6 +485,7 @@ void UBA_line_set_amb_temp(UBA_line *line, float temp) {
 		UBA_line_clear_error(line, UBA_PROTO_UBA6_ERROR_LINE_AMB_HIGH_TEMP);
 	}
 
+//UART_LOG_LINE_INFO("amb temp: %s %f", line->name, temp);
 	line->data.amb_temperature = temp;
 }
 
@@ -487,7 +516,7 @@ void UBA_line_get_line_data(UBA_line *line) {
 		sum += line->EX_ADC_raw_data;
 	}
 	line->EX_ADC_raw_data = sum / 16;
-	HAL_Delay(10);
+	HAL_Delay(30);
 	UBA_line_ADC_print_reading(line);
 	UBA_line_set_voltage(line, UBA_line_ADC_get_bat_voltage(line, UBA_LINE_ADC_RANGE60V)); //get the voltage and set it to the channel
 	UBA_line_set_gen_voltage(line, UBA_line_ADC_get_gen_voltage(line)); //get the voltage and set it to the channel
@@ -496,6 +525,9 @@ void UBA_line_get_line_data(UBA_line *line) {
 	UBA_line_set_bat_temp(line, UBA_line_ADC_get_battery_temperature(line));
 	UBA_line_set_amb_temp(line, UBA_line_ADC_get_ambient_temperature(line));
 	UBA_line_set_input_voltage(line, UBA_line_ADC_get_V_IN(line));
+
+//UART_LOG(line->name, "==> voltage %d, discharge_current %d, charge_current %d, bat_temperature %f, amb_temperature %f, capacity %d",
+//		line->data.voltage, line->data.discharge_current, line->data.charge_current, line->data.bat_temperature, line->data.amb_temperature, line->data.capacity);
 
 	if (HAL_GetTick() - (line->data_log_print_tick) > UBA_LINE_PRINT_DATA_READ_TIME_MS) {
 		line->data_log_print_tick = HAL_GetTick();
@@ -506,14 +538,17 @@ void UBA_line_get_line_data(UBA_line *line) {
 }
 void UBA_line_discharge_current_control(UBA_line *line) {
 	if (UBA_IN_RANGE_HYST(line->data.discharge_current,line->target.current ,UBA_LINE_DSCH_CURRENT_HYST_MA) == false) {
-		UART_LOG_LINE_INFO("Current(%d) not on Target(%d)", line->data.discharge_current, line->target.current);
+		UART_LOG_LINE_INFO(line->name, "Current(%d) not on Target(%d)", line->data.discharge_current, line->target.current);
 		int32_t diff = line->target.current - line->data.discharge_current;
 		uint16_t dac = UBA_LINE_DSCH_DAC_MA2DAC(abs(diff));
 		if (diff < 0) {
+			UART_LOG_LINE_INFO(line->name, "decrease current: %d", dac);
 			UBA_line_decrease_discharge_current(line, dac);
 		} else if (diff > 0) {
+			UART_LOG_LINE_INFO(line->name, "increase current: %d", dac);
 			UBA_line_increase_discharge_current(line, dac);
 		}
+
 		HAL_DAC_SetValue(line->dac_handle, line->dac_channel, DAC_ALIGN_12B_R, line->data_write.dac_cc);
 	}
 }
@@ -521,40 +556,48 @@ void UBA_line_discharge_current_control(UBA_line *line) {
 void UBA_line_external_chrage_control(UBA_line *line, bool currnt_control) {
 	MCP47X6_StatusTypeDef status_dac;
 	int32_t diff = 0;
-	int32_t targate_current = currnt_control ? line->target.current : 0;
+	int32_t target_current = currnt_control ? line->target.current : 0;
 	uint16_t dac = 0;
-	if ((targate_current * line->data.voltage) > UBA_LINE_CHARGE_MAX_POWER) {
-		int32_t targate_current_new = (line->data.voltage > 0) ? (UBA_LINE_CHARGE_MAX_POWER / line->data.voltage) : 0;
-		UART_LOG_WARNNING(line->name, "Current %d mA with voltage %d mV (power %d) exceeds allowed power %lu, reducing to %d mA", targate_current,
-				line->data.voltage, (targate_current * line->data.voltage), UBA_LINE_CHARGE_MAX_POWER, targate_current_new);
-		targate_current = targate_current_new;
+	if ((target_current * line->data.voltage) > UBA_LINE_CHARGE_MAX_POWER) {
+		int32_t target_current_new = (line->data.voltage > 0) ? (UBA_LINE_CHARGE_MAX_POWER / line->data.voltage) : 0;
+		UART_LOG_LINE_WARN(line->name, "Current %d mA with voltage %d mV (power %d) exceeds allowed power %lu, reducing to %d mA", target_current,
+				line->data.voltage, (target_current * line->data.voltage), UBA_LINE_CHARGE_MAX_POWER, target_current_new);
+		target_current = target_current_new;
 	}
-	UART_LOG_INFO(line->name, "External Charge - current:%04d/%04d DAC:%04d", line->data.charge_current, targate_current, line->data_write.dac_ex);
+
+	UART_LOG_LINE_INFO(line->name, "External Charge (cc=%d) - current:%04d/%04d (%04d) DAC:%04d", currnt_control, line->data.charge_current, target_current, line->target.current, line->data_write.dac_ex);
 	if (currnt_control) {
 
-		if (UBA_IN_RANGE_HYST(line->data.charge_current,targate_current ,UBA_LINE_CHARGE_CURRENT_HYST_MA_FACTOR) == false) {
-			diff = targate_current - line->data.charge_current;
+		if (UBA_IN_RANGE_HYST(line->data.charge_current,target_current ,UBA_LINE_CHARGE_CURRENT_HYST_MA_FACTOR) == false) {
+			diff = target_current - line->data.charge_current;
 			dac = UBA_LINE_CHARGE_DAC_MA2DAC(abs(diff)); // get the difference in dac value
-			UART_LOG_LINE_INFO("Current(%d mA) not on Target(%d mA) Difference:%d mA ,DAC diff : %d", line->data.charge_current, targate_current,
+			UART_LOG_LINE_INFO(line->name, "Current(%d mA) not on Target(%d mA) Difference:%d mA ,DAC diff : %d", line->data.charge_current, target_current,
 					diff,
 					dac);
+
 			if (UBA_IN_RANGE_HYST((line->EX_ADC_raw_data & 0xfff),line->data_write.dac_ex ,UBA_LINE_CHARGE_CURRENT_HYST_RAW) == false) {
-				UART_LOG_ERROR(line->name, "ADC-DAC Not Stable External ADC:%u External DAC:%u mismatch", (line->EX_ADC_raw_data & 0xfff),
+				UART_LOG_LINE_INFO(line->name, "ADC-DAC Not Stable External ADC:%u External DAC:%u mismatch", (line->EX_ADC_raw_data & 0xfff),
 						line->data_write.dac_ex);
+
 			} else {
 				if (diff < 0) {
+					UART_LOG_LINE_INFO(line->name, "decrease current: %d", (dac / UBA_LINE_CHARGE_CURRENT_HYST_DIV) - 1);
 					UBA_line_decrease_charge_current(line, (dac / UBA_LINE_CHARGE_CURRENT_HYST_DIV) - 1);
+
 				} else if (diff > 0) {
+					UART_LOG_LINE_INFO(line->name, "increase current: %d", (dac / UBA_LINE_CHARGE_CURRENT_HYST_DIV) + 1);
 					UBA_line_increase_charge_current(line, (dac / UBA_LINE_CHARGE_CURRENT_HYST_DIV) + 1);
+
 				} else {
 					return;
 				}
 			}
 		}
 	}
+
 	status_dac = MCP47X6_write_DAC_reg_value(&line->EX_DAC, line->data_write.dac_ex);
 	if (status_dac != MCP47X6_STATUS_OK) {
-		UART_LOG_CRITICAL(line->name, "External DAC Failed %u", status_dac);
+		UART_LOG_LINE_CRITICAL(line->name, "External DAC Failed %u", status_dac);
 	}
 
 }
@@ -565,32 +608,49 @@ void UBA_line_external_chrage_control(UBA_line *line, bool currnt_control) {
  * @param line
  * @return
  */
-UBA_LINE_CHARGE_DELTA UBA_line_control_v_gen(UBA_line *line) {
+UBA_LINE_CHARGE_DELTA UBA_line_control_v_gen(UBA_line *line, int32_t ref_voltage) {
 	UBA_LINE_CHARGE_DELTA ret = UBA_LINE_CHARGE_DELTA_INVALID;
 	int delta = 0, target_delta = 0;
-	delta = (line->data.gen_voltage - line->data.voltage);
+
+	delta = (line->data.gen_voltage - ref_voltage);
+	UART_LOG_LINE_INFO(line->name, "==> control_v_gen: delta %d, gen_voltage %d voltage %d trg_voltage %d\n\
+                        |==> (target c %d v %d)\n\
+                        |==> current c %d d %d", 
+		delta, line->data.gen_voltage, line->data.voltage, line->target.voltage,
+		line->data.charge_current, line->data.discharge_current,
+		line->target.current, line->target.voltage);
+
 	if (delta <= 0) {
+		UART_LOG_LINE_INFO(line->name, "increase voltage, delta %d < 0 (gen_voltage %d voltage/measure %d)", delta, line->data.gen_voltage, line->data.voltage);
 		UBA_line_increase_charge_voltage(line, delta); // to low
 		ret = UBA_LINE_CHARGE_DELTA_LOW;
+
 	} else if (delta < UBA_LINE_CHARGE_GAP_MIN) {
+		UART_LOG_LINE_INFO(line->name, "increase charge, delta %d < %d", delta, UBA_LINE_CHARGE_GAP_MIN);
 		UBA_line_increase_charge_voltage(line, delta);
 		ret = UBA_LINE_CHARGE_DELTA_LOW;
+
 	} else if (delta > UBA_LINE_CHARGE_GAP_MAX) {
+		UART_LOG_LINE_INFO(line->name, "decrease charge, delta %d > %d", delta, UBA_LINE_CHARGE_GAP_MAX);
 		UBA_line_decrease_charge_voltage(line);
 		ret = UBA_LINE_CHARGE_DELTA_HIGH;
-	} else { //  500<delta <1000
+
+	} else { // ON_GAP:  500<delta <1000
 		/* 0<Vbat < Vgen< vbat+1  */
 		target_delta = (line->target.voltage - line->data.voltage); // get bat taragte voltage gap
-		UART_LOG_LINE_INFO("Vgen:%04d (delta:%d) is in Charge gap Target delta: %d", line->data.gen_voltage, delta, target_delta);
+		UART_LOG_LINE_INFO(line->name, "Vgen:%04d (delta:%d) is in Charge gap Target delta: %d", line->data.gen_voltage, delta, target_delta);
+
 		if (target_delta < -20) {
 			// bat id higher then target ==> lower current
 			ret = UBA_LINE_CHARGE_DELTA_CV;
+
 		} else {
 			// vbat didnt reatch the target voltage
 			ret = UBA_LINE_CHARGE_DELTA_ON_TARGET;
 			UART_LOG_LINE_WARN("Delta on Target: %05d/%05d", line->data.voltage, line->target.voltage);
 		}
 	}
+
 	UBA_DCDC_run(&line->buck_boost);
 	UART_LOG_LINE_DEBUG("CHARGE_DELTA :%02X", ret);
 	return ret;
@@ -608,13 +668,13 @@ bool UBA_line_load_cal_from_file(UBA_line *line) {
 			return true;
 			// Successfully decoded!
 		} else {
-			UART_LOG_ERROR(line->name, "File %s -  Decoding failed: %s", line->calibration.file_name, PB_GET_ERROR(&stream));
+			UART_LOG_LINE_ERROR(line->name, "File %s -  Decoding failed: %s", line->calibration.file_name, PB_GET_ERROR(&stream));
 			UBA_util_print_buffer(buffer_stream, bytesRead);
 			return false;
 			// Error
 		}
 	} else {
-		UART_LOG_ERROR(line->name, "Failed To Read File :  %s", line->calibration.file_name);
+		UART_LOG_LINE_ERROR(line->name, "Failed To Read File :  %s", line->calibration.file_name);
 		return false;
 	}
 }
@@ -641,7 +701,7 @@ void UBA_line_init_enter(UBA_line *line) {
 		UBA_line_post_error(line, UBA_PROTO_UBA6_ERROR_LINE_I2C_PERIPHERAL);
 		UART_LOG_LINE_CRITICAL("MCP47X6 Failed to INIT");
 	}
-	HAL_Delay(10);
+	HAL_Delay(30);
 	if (UBA_line_load_cal_from_file(line)) {
 		line->calibration.isCalibrated = true;
 	} else {
@@ -675,15 +735,20 @@ void UBA_line_idle_enter(UBA_line *line) {
 	UART_LOG_LINE_DEBUG("enter Idle");
 	line->init_retry = UBA_LINE_MAX_RETRY;
 	UBA_line_enable_charge(line, CHARGE_DISABLE); /*disable the charge When enter Idle*/
-	HAL_Delay(10);
+	HAL_Delay(100);
+
 	UBA_line_enable_discharge(line, DISCHARGE_DISABLE); /*disable the Discharge When enter Idle*/
+	HAL_Delay(100);
+
 	HAL_DAC_Start(line->dac_handle, line->dac_channel);
 
 }
 void UBA_line_idle(UBA_line *line) {
 	if (HAL_GetTick() - (line->data_refresh_tick) > UBA_LINE_DATA_READ_TIME_MS) {
 		line->data_refresh_tick = HAL_GetTick();
+UART_LOG_LINE_DEBUG("==> Moshe: error: 0x%x", line->error);
 		UBA_line_get_line_data(line);
+UART_LOG_LINE_DEBUG("==> Moshe after get line: error: 0x%x", line->error);
 	}
 
 }
@@ -699,12 +764,16 @@ void UBA_line_pre_charging_enter(UBA_line *line) {
 	UART_LOG_LINE_DEBUG("enter pre-Charge");
 	UBA_line_update_state(line);
 	UBA_line_enable_discharge(line, DISCHARGE_DISABLE);/*Safety*/
-	HAL_Delay(10);
+	HAL_Delay(100);
+
 	UBA_line_enable_charge(line, CHARGE_DISABLE);/*disable the charge in pre charge*/
+	HAL_Delay(100);
+
 	line->data_write.dac_ex = 50;
 	if (MCP47X6_write_DAC_reg_value(&line->EX_DAC, line->data_write.dac_ex) != MCP47X6_STATUS_OK) {
-		UART_LOG_ERROR(line->name, "External DAC  Failed");
+		UART_LOG_LINE_ERROR(line->name, "External DAC  Failed");
 	}
+
 	line->data.capacity = 0; //reset the capacity for the start of the charge
 	UBA_line_get_line_data(line);
 }
@@ -719,11 +788,12 @@ void UBA_line_pre_charging(UBA_line *line) {
 		UBA_line_get_line_data(line);
 		if ((line->error & UBA_LINE_ERROR_DEAD)) {
 			UBA_line_set_next_state(line, UBA_LINE_STATE_DEAD);
+
 		} else if (line->error & UBA_LINE_ERROR_IDLE_ONLY) {
 			UBA_line_set_next_state(line, UBA_LINE_STATE_IDLE);
 		}
 
-		if ((UBA_line_control_v_gen(line) & UBA_LINE_CHARGE_DELTA_ON_GAP) == UBA_LINE_CHARGE_DELTA_ON_GAP) {
+		if ((UBA_line_control_v_gen(line, line->target.voltage) & UBA_LINE_CHARGE_DELTA_ON_GAP) == UBA_LINE_CHARGE_DELTA_ON_GAP) {
 			UBA_line_set_next_state(line, UBA_LINE_STATE_CHARGING_CC);
 		}
 	}
@@ -737,6 +807,7 @@ void UBA_line_charging_cc_enter(UBA_line *line) {
 	UART_LOG_LINE_INFO("=========================================Enter Charge Constant Current=========================================");
 	UBA_line_update_state(line);
 	UBA_line_enable_charge(line, CHARGE_ENABLE);
+	HAL_Delay(100);
 }
 
 void UBA_line_charging_cc(UBA_line *line) {
@@ -745,13 +816,17 @@ void UBA_line_charging_cc(UBA_line *line) {
 		line->data.capacity += line->data.charge_current
 				* d_time; // accumulate the last current nA*mSec
 		line->data_refresh_tick = HAL_GetTick();
+
 		UBA_line_get_line_data(line);
 		if ((line->error & UBA_LINE_ERROR_DEAD)) {
 			UBA_line_set_next_state(line, UBA_LINE_STATE_DEAD);
+
 		} else if (line->error & UBA_LINE_ERROR_IDLE_ONLY) {
 			UBA_line_set_next_state(line, UBA_LINE_STATE_IDLE);
-		} else if ((UBA_line_control_v_gen(line) & UBA_LINE_CHARGE_DELTA_CV) == UBA_LINE_CHARGE_DELTA_CV) {
+
+		} else if ((UBA_line_control_v_gen(line, line->target.voltage) & UBA_LINE_CHARGE_DELTA_CV) == UBA_LINE_CHARGE_DELTA_CV) {
 			UBA_line_set_next_state(line, UBA_LINE_STATE_CHARGING_CV);
+
 		}
 		UBA_line_external_chrage_control(line, true); //Stabilize the charge current
 
@@ -772,20 +847,25 @@ void UBA_line_charging_cv(UBA_line *line) {
 	if (d_time > UBA_LINE_DATA_READ_TIME_MS) {
 		line->data_refresh_tick = HAL_GetTick();
 		UBA_line_get_line_data(line);
+
 		if ((line->error & UBA_LINE_ERROR_DEAD)) {
 			UBA_line_set_next_state(line, UBA_LINE_STATE_DEAD);
+
 		} else if (line->error & UBA_LINE_ERROR_IDLE_ONLY) {
 			UBA_line_set_next_state(line, UBA_LINE_STATE_IDLE);
 		}
-		delta = UBA_line_control_v_gen(line);
+
+		delta = UBA_line_control_v_gen(line, line->target.voltage);
 		if ((delta & UBA_LINE_CHARGE_DELTA_CV) == UBA_LINE_CHARGE_DELTA_CV) {
 			if (line->data_write.dac_ex > UBA_LINE_DSCH_DAC_MIN_VALUE) {
 				line->data_write.dac_ex--;
 			}
+
 		} else if ((delta & UBA_LINE_CHARGE_DELTA_LOW)
 				== UBA_LINE_CHARGE_DELTA_LOW) {
 			UBA_line_set_next_state(line, UBA_LINE_STATE_CHARGING_CC);
 		}
+
 		line->data.capacity += (line->data.charge_current * d_time);
 	}
 	UBA_line_external_chrage_control(line, false); //Stabilize the charge current
@@ -800,16 +880,21 @@ void UBA_line_discharging_enter(UBA_line *line) {
 	UBA_line_update_state(line);
 	UART_LOG_LINE_DEBUG("enter discharge");
 	UBA_line_enable_charge(line, CHARGE_DISABLE); // Safety disable charge line when discharging
-	HAL_Delay(10);
+	HAL_Delay(100);
+
 	UBA_line_enable_discharge(line, DISCHARGE_ENABLE); /*Enable line for discharging*/
+	HAL_Delay(100);
+
 	new_dac_cc = UBA_LINE_DSCH_DAC_MA2DAC(line->target.current);
 	UART_LOG_LINE_WARN("Set Discharge DAC: %u [enter]", new_dac_cc);
 	line->data_write.dac_cc = new_dac_cc > UBA_LINE_DSCH_DAC_MAX_VALUE ? UBA_LINE_DSCH_DAC_MAX_VALUE : new_dac_cc;
 	HAL_DAC_Start(line->dac_handle, line->dac_channel);
-	HAL_Delay(10);
+	HAL_Delay(30);
+
 	HAL_DAC_SetValue(line->dac_handle, line->dac_channel, DAC_ALIGN_12B_R, line->data_write.dac_cc);
 	UBA_line_get_line_data(line);
-	HAL_Delay(10);
+	HAL_Delay(30);
+
 	UART_LOG_LINE_DEBUG("DAC Set Value:%d mV", UBA_LINE_DAC_MV2ADC(line->data_write.dac_cc));
 	line->data.capacity = 0; //reset the capacity for the start discarge
 	if (line->isBattery_connected == false) {
@@ -822,7 +907,9 @@ void UBA_line_discharging(UBA_line *line) {
 	uint32_t d_time = HAL_GetTick() - line->data_refresh_tick;
 	if (d_time > UBA_LINE_DATA_READ_TIME_MS) {
 		line->data_refresh_tick = HAL_GetTick();
+UART_LOG_LINE_DEBUG("==> Moshe: error: 0x%x", line->error);
 		UBA_line_get_line_data(line);
+UART_LOG_LINE_DEBUG("==> Moshe after get line: error: 0x%x", line->error);
 		if ((line->error & UBA_LINE_ERROR_DEAD)) {
 			UBA_line_set_next_state(line, UBA_LINE_STATE_DEAD);
 		} else if (line->error & UBA_LINE_ERROR_IDLE_ONLY) {
@@ -830,7 +917,7 @@ void UBA_line_discharging(UBA_line *line) {
 		}
 
 		if (UBA_IN_RANGE_HYST((line->ADC_raw_data[ADC_CHNNEL_DSCH_CURR] & 0xfff),line->data_write.dac_cc ,UBA_LINE_CHARGE_CURRENT_HYST_MA) == false) {
-			UART_LOG_ERROR(line->name, "ADC:%u DAC:%u mismatch", (line->ADC_raw_data[ADC_CHNNEL_DSCH_CURR] & 0xfff), line->data_write.dac_cc);
+			UART_LOG_LINE_ERROR(line->name, "ADC:%u DAC:%u mismatch", (line->ADC_raw_data[ADC_CHNNEL_DSCH_CURR] & 0xfff), line->data_write.dac_cc);
 		}else{
 			UBA_line_discharge_current_control(line);
 		}
@@ -841,7 +928,7 @@ void UBA_line_discharging(UBA_line *line) {
 void UBA_line_discharging_exit(UBA_line *line) {
 	line->data_write.dac_cc = 0;
 		HAL_DAC_SetValue(line->dac_handle, line->dac_channel, DAC_ALIGN_12B_R, line->data_write.dac_cc);
-		HAL_Delay(1);
+		HAL_Delay(10);
 	HAL_DAC_Stop(line->dac_handle, line->dac_channel);
 }
 
@@ -851,7 +938,10 @@ void UBA_line_dead_enter(UBA_line *line) {
 	UART_LOG_LINE_CRITICAL("Enter Dead State With Error:0x%X", line->error);
 	line->init_retry = UBA_LINE_MAX_RETRY;
 	UBA_line_enable_charge(line, CHARGE_DISABLE);
+	HAL_Delay(100);
+
 	UBA_line_enable_discharge(line, DISCHARGE_DISABLE);
+	HAL_Delay(100);
 }
 
 void UBA_line_dead(UBA_line *line) {
@@ -948,14 +1038,24 @@ UBA_PROTO_UBA6_ERROR UBA_line_decrease_charge_current(UBA_line *line, uint32_t d
 
 UBA_PROTO_UBA6_ERROR UBA_line_increase_charge_voltage(UBA_line *line, int delta) {
 	uint8_t step_size = 1;
-	if (delta < 500) {
+	if (delta < -1000) {
+		step_size = 40;
+	} else if (delta < -500) {
+		step_size = 20;
+	} else if (delta < 100) {
 		step_size = 10;
+	} else {
+		step_size = 1;
 	}
+	UART_LOG_LINE_INFO(line->name, " .. increase charge, step_size %d (delta %d)", step_size, delta);
+
 	UBA_PROTO_UBA6_ERROR ret = UBA_DCDC_bock_boost_up(&line->buck_boost, step_size);
 	if (ret != UBA_PROTO_UBA6_ERROR_NO_ERROR) {
 		UBA_line_post_error(line, ret);
+
 	} else if ((line->error & ret) == ret) {
 		UBA_line_clear_error(line, ret);
+
 	}
 	return ret;
 }
@@ -1025,27 +1125,33 @@ UBA_PROTO_UBA6_ERROR UBA_line_set_next_state(UBA_line *line, UBA_LINE_STATE next
 		//can always go to dead or init
 		line->state.next = next_state;
 		ret = UBA_PROTO_UBA6_ERROR_NO_ERROR;
+
 	} else if ((line->state.current == UBA_LINE_STATE_INIT) && (next_state != UBA_LINE_STATE_IDLE)) {
 		//from init can go only to idle
 		ret = UBA_PROTO_UBA6_ERROR_LINE_NOT_AVAILABLE;
+
 	} else if ((line->state.current != UBA_LINE_STATE_DEAD) && (next_state == UBA_LINE_STATE_IDLE)) {
 		line->state.next = next_state;
 		ret = UBA_PROTO_UBA6_ERROR_NO_ERROR;
+
 	} else if ((line->state.current == UBA_LINE_STATE_DEAD) || (line->state.current == UBA_LINE_STATE_INIT)) {
 		ret = UBA_PROTO_UBA6_ERROR_LINE_NOT_AVAILABLE;
+
 	} else if ((next_state == UBA_LINE_STATE_IDLE) || (line->state.current == UBA_LINE_STATE_IDLE)) {
 		line->state.next = next_state;
 		ret = UBA_PROTO_UBA6_ERROR_NO_ERROR;
+
 	} else if (((line->state.current >= UBA_LINE_STATE_PRE_CHARGING)
 			&& (line->state.current <= UBA_LINE_STATE_CHARGING_CV))
 			&& ((next_state >= UBA_LINE_STATE_PRE_CHARGING)
 					&& (next_state <= UBA_LINE_STATE_CHARGING_CV))) {
 		line->state.next = next_state;
 		ret = UBA_PROTO_UBA6_ERROR_NO_ERROR;
+
 	} else {
 		ret = UBA_PROTO_UBA6_ERROR_LINE_BUSY;
 	}
-	UART_LOG_LINE_WARN("Set line next state :%s - 0x%02x", rule_g[next_state].name, ret);
+	UART_LOG_LINE_WARN("Set line next state :%s ---> %s - 0x%02x", rule_g[line->state.current].name, rule_g[next_state].name, ret);
 	return ret;
 }
 
@@ -1146,11 +1252,16 @@ void UBA_line_update_message(UBA_line *line, UBA_PROTO_LINE_status *msg) {
 		msg->adc_data.discharge_curr = line->ADC_raw_data[ADC_CHNNEL_DSCH_CURR];
 		msg->adc_data.charge_curr = line->EX_ADC_raw_data;
 	}
+
+	//UART_LOG(line->name, "==> line id %d, volt: %05d temp: %f crnt: c.%f dc.%f cap :%f", 
+	//		msg->id, msg->data.voltage, msg->data.bat_temperature, msg->data.charge_current, msg->data.discharge_current, msg->data.capacity);
+	//UART_LOG(line->name, "==>            voltage %d, discharge_current %d, charge_current %d, bat_temperature %f, amb_temperature %f, capacity %f",
+	//				 line->data.voltage, line->data.discharge_current, line->data.charge_current, line->data.bat_temperature, line->data.amb_temperature, line->data.capacity);
 }
 
 void UBA_line_load_calibration(UBA_line *line, UBA_PROTO_CALIBRATION_line_calibration_message *msg) {
 	UART_LOG_LINE_INFO("Load Calibration into line");
-	UART_LOG_LINE_DEBUG("Vbat(%04.4f,%04.4f)", msg->vbat[0].slop, msg->vbat[0].y_intercept);
+	UART_LOG_LINE_DEBUG("Vbat(%04.4f,%04.4f)", msg->vbat[0].slope, msg->vbat[0].y_intercept);
 	COPY_CALIB_PARAM(vbat[0]);
 	COPY_CALIB_PARAM(vbat[1]);
 	COPY_CALIB_PARAM(vbat[2]);
@@ -1168,23 +1279,31 @@ void UBA_line_command_execute(UBA_line *line, UBA_PROTO_LINE_command *cmd) {
 		case UBA_PROTO_LINE_CMD_ID_TEST:
 			UART_LOG_LINE_INFO("Test Command");
 			break;
+
 		case UBA_PROTO_LINE_CMD_ID_CALIBRATION:
 			line->calibration.isCalibrated = (cmd->state > 0);
 			UART_LOG_LINE_INFO("Is isCalibrated :%u", line->calibration.isCalibrated);
 			break;
+
 		case UBA_PROTO_LINE_CMD_ID_CHARGE_ENABLE:
 			UBA_line_enable_charge(line, (cmd->state > 0));
+			HAL_Delay(100);
 			break;
+
 		case UBA_PROTO_LINE_CMD_ID_DISCHARGE_ENABLE:
 			UBA_line_enable_discharge(line, (cmd->state > 0));
+			HAL_Delay(100);
 			break;
+
 		case UBA_PROTO_LINE_CMD_ID_TARGET:
 			line->target.current = cmd->current;
 			line->target.voltage = cmd->voltage;
 			UBA_line_set_next_state(line, cmd->state);
 			break;
+
 		case UBA_PROTO_LINE_CMD_ID_BIST:
 			UBA_line_BIST(line);
+
 		default:
 
 	}

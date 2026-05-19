@@ -4,7 +4,7 @@ const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 
 exports.getCells = async (req, res) => {
 	try {
-		const result = await withTimeout( getCells(), AWAIT_TIMEOUT);
+		const result = await  getCells();
 		res.json(result);
 	} catch (error) {
 		logger.error('getCells', error);
@@ -14,7 +14,7 @@ exports.getCells = async (req, res) => {
 
 exports.createCell = async (req, res) => {
 	try {
-		await withTimeout( createCell(req.body), AWAIT_TIMEOUT);
+		await  createCell(req.body);
 		res.status(201).json( { success: true } );
 	} catch (error) {
 		logger.error('createCell', error);
@@ -24,7 +24,7 @@ exports.createCell = async (req, res) => {
 
 exports.updateCell = async (req, res) => {
 	try {
-		await withTimeout( updateCell(req.params?.itemPN, req.body), AWAIT_TIMEOUT);
+		await  updateCell(req.params?.itemPN, req.body);
 		res.end();
 	} catch (error) {
 		logger.error('updateCell', error);
@@ -34,7 +34,7 @@ exports.updateCell = async (req, res) => {
 
 exports.deleteCell = async (req, res) => {
 	try {
-		await withTimeout( deleteCell(req.params?.itemPN), AWAIT_TIMEOUT);
+		await  deleteCell(req.params?.itemPN);
 		res.status(204).end();
 	} catch (error) {
 		logger.error('deleteCell', error);

@@ -158,8 +158,8 @@ public class KelDeviceController : AmicellDevice<KelDeviceController>, IDisposab
             DataBits = 8,
             Handshake = Handshake.None,
             NewLine = "\n",
-            ReadTimeout = 1000,
-            WriteTimeout = 1000
+            ReadTimeout = 300,
+            WriteTimeout = 300
         };
         _logger.LogInformation($"Opening port {newValue}");
         SerialPort.Open();

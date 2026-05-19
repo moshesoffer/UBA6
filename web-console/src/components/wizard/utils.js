@@ -18,3 +18,10 @@ export const changePageState = (state, pathname, ubaDevicesDispatch, testRoutine
 		}
 	}
 }
+
+export const actionOption = {
+	SAVE: 'SAVE',
+	RUN: 'RUN',
+	SAVE_RUN: 'SAVE_RUN',
+	CANCEL: 'CANCEL'
+};

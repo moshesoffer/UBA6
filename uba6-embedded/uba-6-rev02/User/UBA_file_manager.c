@@ -4,6 +4,8 @@
  *  Created on: Aug 17, 2025
  *      Author: ORA
  */
+#define UART_LOG_DISABLE
+
 #include "UBA_file_manager.h"
 #include "ff.h"
 #include "diskio.h"
@@ -180,7 +182,7 @@ bool UBA_FM_create_file(char *folder, char *file_name) {
 	return ret;
 }
 
-bool UBA_FM_apppned_data(char *folder, char *file_name, uint8_t *data, uint32_t data_length) {
+bool UBA_FM_apppned_data_OLD(char *folder, char *file_name, uint8_t *data, uint32_t data_length) {
 	bool ret = false;
 	if (UBA_FM_SD_mount()) {
 		if (create_filepath(folder, file_name, filepath, UBA_FM_MAX_FILE_NAMEPATH) && UBA_FM_FF_create_folder(folder)) {
@@ -204,6 +206,41 @@ bool UBA_FM_apppned_data(char *folder, char *file_name, uint8_t *data, uint32_t 
 	}
 	return ret;
 }
+bool UBA_FM_apppned_data(char *folder, char *file_name, uint8_t *data, uint32_t data_length) {
+	bool ret = false;
+	bool created = false;
+
+	res = f_open(&file, (char*) filepath, FA_OPEN_APPEND | FA_WRITE);
+	if (res != FR_OK) {
+		if (UBA_FM_SD_mount()) {
+			if (create_filepath(folder, file_name, filepath, UBA_FM_MAX_FILE_NAMEPATH) && UBA_FM_FF_create_folder(folder)) {
+				res = f_open(&file, (char*) filepath, FA_OPEN_APPEND | FA_WRITE);
+				created = true;
+			}
+		}
+	}
+
+	if (res == FR_OK) {
+		res = f_write(&file, data, data_length, &bw); // Write at the end of the file
+		if (res == FR_OK && bw == data_length) {
+			UART_FM_DEBUG("Successfully Append to file %s Data size : %lu", filepath, data_length);
+		} else {
+			UART_FM_ERROR("Failed to Append to file:%s - 0x%02x", filepath, res);
+		}
+		f_close(&file);
+	} else if (res == FR_NO_PATH) {
+		UART_FM_ERROR("Failed to Append to file:%s - 0x%02x - Path not found", filepath, res);
+	} else {
+		UART_FM_ERROR("Failed to Append to file:%s - 0x%02x", filepath, res);
+		// Handle open error
+	}
+
+	if (created == true) {
+		UBA_FM_SD_unmount();
+	}
+	return ret;
+}
+
 bool UBA_FM_store_data(char *folder, char *file_name, uint8_t *data, uint32_t data_length) {
 	bool ret = false;
 	if (UBA_FM_SD_mount()) {
@@ -225,6 +262,7 @@ bool UBA_FM_store_data(char *folder, char *file_name, uint8_t *data, uint32_t da
 	}
 	return ret;
 }
+
 int UBA_FM_read_data(char *folder, char *file_name, uint8_t *data_out, uint32_t max_data_length) {
 	bw = 0;
 	if (UBA_FM_SD_mount()) {
@@ -247,6 +285,7 @@ int UBA_FM_read_data(char *folder, char *file_name, uint8_t *data_out, uint32_t 
 	}
 	return bw;
 }
+
 int UBA_FM_seek_read_data(char *folder, char *file_name, uint32_t seek, uint8_t *data_out, uint32_t max_data_length) {
 	bw = 0;
 	if (UBA_FM_SD_mount()) {
@@ -274,6 +313,7 @@ int UBA_FM_seek_read_data(char *folder, char *file_name, uint32_t seek, uint8_t 
 	}
 	return bw;
 }
+
 int UBA_FM_read_chunk(char *folder, char *file_name, uint8_t *data, uint32_t chank_size, uint32_t chunk_number) {
 	uint32_t new_seek = chank_size * chunk_number;
 	return UBA_FM_seek_read_data(folder, file_name, new_seek, data, chank_size);

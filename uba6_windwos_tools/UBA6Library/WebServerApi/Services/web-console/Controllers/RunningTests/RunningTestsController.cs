@@ -20,6 +20,7 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests 
             SAVED = 0x0010,
             RUNNING = 0x0020,
             PAUSED = 0x0040,
+            NEXTSTEP = 0x0200,
             PENDING = 0x0100,
             IS_TEST_RUNNING = PENDING | RUNNING | PAUSED,
 
