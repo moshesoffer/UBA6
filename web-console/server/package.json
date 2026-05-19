@@ -7,7 +7,6 @@
 		"migrate": "db-migrate --config ./database.js up",
 		"prestart": "node scripts/create-mysql-schema-if-needed.js",
 		"start": "npm run migrate && node ./bin/www",
-
 		"rm:beforeBuild": "rm -rf dist logs",
 		"rm:all": "rm -rf dist logs node_modules",
 		"dev": "rm -rf logs && PORT=4000 ENABLE_CORS_FOR_LOCALHOST=true npm start",
@@ -20,7 +19,7 @@
 		"express": "^4.19.2",
 		"helmet": "^8.1.0",
 		"joi": "^17.13.3",
-		"mysql2": "^3.11.0",
+		"mysql2": "^3.22.3",
 		"swagger-jsdoc": "^6.2.8",
 		"swagger-ui-express": "^5.0.1",
 		"uuid": "^10.0.0",

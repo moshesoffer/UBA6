@@ -44,10 +44,10 @@ CMakeCache.txt
 *.pid
 *.bak
 *.tmp
-*.csproj
+#*.csproj
 web-console/data/*
-web-console/node_modules/.vite/*
+#web-console/node_modules/.vite/*
 web-console/server/logs/*
-web-console/server/node_modules/*
+#web-console/server/node_modules/*
 
 
