@@ -75,7 +75,9 @@ const downloadReportsGraph = async (req, res) => {
 		//last discharges will be set later on in this function
 		
 		//Test Data:
-		reportSheet.cell(cells.startTime).value(testData.timestampStart);
+		//reportSheet.cell(cells.startTime).value(testData.timestampStart);
+		reportSheet.cell(cells.startTime).value(new Date(testData.timestampStart));
+		reportSheet.cell(cells.startTime).style("numberFormat", "dd/mm/yyyy hh:mm:ss");
 		reportSheet.cell(cells.ubaSN).value(testData.ubaSN);
 		reportSheet.cell(cells.ubaChannel).value(testData.channel);
 		
@@ -106,7 +108,7 @@ const downloadReportsGraph = async (req, res) => {
 			const row = index + 2;
 			dataSheet.cell(`A${row}`).value(testResult.timestamp);
 			dataSheet.cell(`B${row}`).value(planStep.type);
-			dataSheet.cell(`C${row}`).value(testResult.voltage);
+			dataSheet.cell(`C${row}`).value(testResult.voltage / 1000);
 			dataSheet.cell(`D${row}`).value(testResult.current);
 			dataSheet.cell(`E${row}`).value(testResult.temperature);
 			dataSheet.cell(`F${row}`).value(currentStepIndex);
@@ -136,7 +138,7 @@ const downloadReportsGraph = async (req, res) => {
 
 			planByStepIndex[currentStepIndex].timestampArr.push(testResult.timestamp);
 			planByStepIndex[currentStepIndex].currentArr.push(testResult.current);
-			planByStepIndex[currentStepIndex].voltageArr.push(testResult.voltage);
+			planByStepIndex[currentStepIndex].voltageArr.push(testResult.voltage / 1000);
 			planByStepIndex[currentStepIndex].temperatureArr.push(testResult.temperature);
 			const deltaT = testResult.timestamp - previousTimestamp;
 			planByStepIndex[currentStepIndex].capacitySum += (testResult.current * deltaT);
@@ -161,8 +163,8 @@ const downloadReportsGraph = async (req, res) => {
 		});
 		
 		const lastDischarges = getLastDischarges(planByStepIndex);
-		reportSheet.cell(cells.lastDischarges1).value(lastDischarges.lastDischargesCapacity);
-		reportSheet.cell(cells.lastDischarges2).value(lastDischarges.lastDischargesEnergy);
+		reportSheet.cell(cells.lastDischarges1).value(Math.abs(lastDischarges.lastDischargesCapacity));
+		reportSheet.cell(cells.lastDischarges2).value(Math.abs(lastDischarges.lastDischargesEnergy));
 		//add summary
 		addSummary(testData, lastDischarges, maxTemperature, rowNumber, reportSheet);
 		
@@ -339,10 +341,10 @@ const addDischargeStepFromPlan = (stepIndex, planStepWrapper, testData, rowNumbe
 	reportSheet.cell(`E${rowNumber}`).value(splitUnitVariants(planStep.dischargeCurrent).first);
 	reportSheet.cell(`F${rowNumber}`).value(splitUnitVariants(planStep.dischargeCurrent).second);
 	reportSheet.cell(`H${rowNumber}`).value(generalConsts.dischargeCapacity);
-	const chargeCapacity = planStepWrapper.capacitySum / 3600;
+	const chargeCapacity = Math.abs(planStepWrapper.capacitySum / 3600);
 	const chargeCapacityT = chargeCapacity > 1000 ? chargeCapacity / 1000 : chargeCapacity;
-	reportSheet.cell(`I${rowNumber}`).value(chargeCapacityT);
-	reportSheet.cell(`J${rowNumber}`).value(chargeCapacity > 1000 ? 'Ah' : 'mAh');
+	reportSheet.cell(`I${rowNumber}`).value(Math.abs(chargeCapacityT));
+	reportSheet.cell(`J${rowNumber}`).value(Math.abs(chargeCapacity) > 1000 ? 'Ah' : 'mAh');
 
 	rowNumber++;
 	reportSheet.cell(`D${rowNumber}`).value(generalConsts.minTemperature);
