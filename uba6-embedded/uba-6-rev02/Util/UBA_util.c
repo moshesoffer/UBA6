@@ -122,7 +122,8 @@ void unix_timestamp2RTC_datetime(uint32_t timestamp, RTC_DateTypeDef *sDate, RTC
 	struct tm *timeinfo;
 	time_t rawtime = (time_t) timestamp;
 	// Convert timestamp to broken-down time (UTC)
-	timeinfo = gmtime(&rawtime);
+	//timeinfo = gmtime(&rawtime);
+	timeinfo = localtime(&rawtime);
 
 	// Fill date struct (year is offset from 2000)
 	sDate->Year = timeinfo->tm_year - 100;  // tm_year is years since 1900

@@ -74,10 +74,19 @@ const downloadReportsGraph = async (req, res) => {
 		reportSheet.cell(cells.reportName).value(testData.testName);
 		//last discharges will be set later on in this function
 		
-		//Test Data:
-		//reportSheet.cell(cells.startTime).value(testData.timestampStart);
-		reportSheet.cell(cells.startTime).value(new Date(testData.timestampStart));
+		//Test Data:	
+		const d = new Date(testData.timestampStart);
+		const localDate = new Date(
+			d.getUTCFullYear(),
+			d.getUTCMonth(),
+			d.getUTCDate(),
+			d.getUTCHours(),
+			d.getUTCMinutes(),
+			d.getUTCSeconds()
+		);
+		reportSheet.cell(cells.startTime).value(localDate);
 		reportSheet.cell(cells.startTime).style("numberFormat", "dd/mm/yyyy hh:mm:ss");
+
 		reportSheet.cell(cells.ubaSN).value(testData.ubaSN);
 		reportSheet.cell(cells.ubaChannel).value(testData.channel);
 		
