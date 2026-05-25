@@ -147,6 +147,9 @@ void UBA_6_init_enter(UBA_6 *uba) {
 	UBA_TR_unpack(&TR_file.list[0], &uba->BPT_A);
 	UBA_TR_unpack(&TR_file.list[1], &uba->BPT_B);
 	UBA_TR_unpack(&TR_file.list[2], &uba->BPT_AB);
+	uba->BPT_A.TR_selected_index = 0;
+	uba->BPT_B.TR_selected_index = 0;
+	uba->BPT_AB.TR_selected_index = 0;
 	if (uba->settings.buzzer) {
 		buzzer_g.state.next = UBA_BUZZER_STATE_OFF;
 	} else {

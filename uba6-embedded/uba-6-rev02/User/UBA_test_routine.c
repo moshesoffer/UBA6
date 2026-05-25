@@ -21,12 +21,14 @@
 
 #define UBA_COMP "TEST ROUTINE"
 
+#define UBA_LOG_LEVEL_TR UART_LOG_LEVEL_INFO
 #if (UBA_LOG_LEVEL_TR <= UART_LOG_LEVEL_INFO)
 	#define LOG_COMP_INFO(...) UART_LOG_INFO(UBA_COMP,##__VA_ARGS__)
 #else
 	#define LOG_COMP_INFO(...)
 #endif
 
+#define UBA_LOG_LEVEL_TR UART_LOG_LEVEL_DEBUG
 #if UBA_LOG_LEVEL_TR <= UART_LOG_LEVEL_DEBUG
 	#define LOG_COMP_DEBUG(...)  UART_LOG_DEBUG(UBA_COMP,##__VA_ARGS__)
 #else
@@ -57,8 +59,9 @@ int UBA_TR_demo_init(void) {
 	for (int index = 0; index < 10; index++) {
 		UBA_TR_print(&TR_file.list[index]);
 	}
-	UBA_TR_unpack(&TR_file.list[1], &(UBA_6_device_g.BPT_A));
-	UBA_TR_unpack(&TR_file.list[2], &(UBA_6_device_g.BPT_B));
+	//UBA_TR_unpack(&TR_file.list[0], &(UBA_6_device_g.BPT_A));
+	//UBA_TR_unpack(&TR_file.list[1], &(UBA_6_device_g.BPT_B));
+	//UBA_TR_unpack(&TR_file.list[2], &(UBA_6_device_g.BPT_AB));
 	return 0;
 }
 

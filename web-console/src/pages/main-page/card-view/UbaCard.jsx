@@ -99,9 +99,14 @@ export default function UbaCard({row}) {
 								style={{ position: 'relative', top: '-1px' }}
 							>
 								<Chip 
-									label={`${getKeyByValue(statusCodes, rowStatus)}`}
+								  /*label={`${getKeyByValue(statusCodes, rowStatus)}`}*/
+									label =	{rowStatus & (statusCodes.RUNNING | statusCodes.NEXTSTEP)
+												? `${row?.[channelIndex]?.testState}`.toUpperCase()
+												: `${getKeyByValue(statusCodes, rowStatus)}`.toUpperCase()
+											}							
 									sx={{
-											backgroundColor: rowStatus === statusCodes.RUNNING ? '#92D051' :
+											backgroundColor: rowStatus & statusCodes.RUNNING ? '#92D051' :
+													         rowStatus & statusCodes.NEXTSTEP ? '#92D051' :
 														 	 rowStatus === statusCodes.FINISHED ? '#92D051' :
 														 	 rowStatus === statusCodes.STOPPED ? '#FFA500' :
 														 	 rowStatus === statusCodes.PAUSED ? '#FFFF00' :

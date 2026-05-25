@@ -1170,6 +1170,8 @@ bool UBA_LCD_screen_btn_press_select(UBA_LCD_screen *screen) {
 				UBA_LCD_g.screen_ch_A.tr = screen->tr;
 				UBA_LCD_g.screen_ch_A.tr_list_select_index = screen->tr_list_select_index;
 				UBA_TR_unpack(&TR_file.list[UBA_LCD_g.screen_ch_A.tr_list_select_index], UBA_LCD_g.screen_ch_A.bpt);
+				UBA_LCD_g.screen_ch_A.bpt->TR_selected_index = UBA_LCD_g.screen_ch_A.tr_list_select_index;
+				
 				UBA_BPT_start(UBA_LCD_g.screen_ch_A.bpt);
 			} else {
 				screen->bpt->start_date_time.add_pause_seconds = 0;
@@ -1189,11 +1191,14 @@ bool UBA_LCD_screen_btn_press_select(UBA_LCD_screen *screen) {
 				UBA_LCD_g.screen_ch_A.tr = screen->tr;
 				UBA_LCD_g.screen_ch_A.tr_list_select_index = screen->tr_list_select_index;
 				UBA_TR_unpack(&TR_file.list[UBA_LCD_g.screen_ch_A.tr_list_select_index], UBA_LCD_g.screen_ch_A.bpt);
+				UBA_LCD_g.screen_ch_A.bpt->TR_selected_index = UBA_LCD_g.screen_ch_A.tr_list_select_index;
 				UBA_LCD_g.screen_ch_A.refresh_msg = true;
+
 				UBA_BPT_start(UBA_LCD_g.screen_ch_A.bpt);
 			} else {
 				screen->bpt->start_date_time.add_pause_seconds = 0;
 				screen->refresh_msg = true;
+
 				UBA_BPT_start(screen->bpt);
 			}
 		}
@@ -1210,6 +1215,7 @@ bool UBA_LCD_screen_btn_press_select(UBA_LCD_screen *screen) {
 				UBA_LCD_g.screen_ch_A.tr = UBA_LCD_g.screen_ch_A.shadow.tr;
 				UBA_LCD_g.screen_ch_A.tr_list_select_index = UBA_LCD_g.screen_ch_A.shadow.tr_list_select_index;
 				UBA_TR_unpack(&TR_file.list[UBA_LCD_g.screen_ch_A.tr_list_select_index], UBA_LCD_g.screen_ch_A.bpt);
+				UBA_LCD_g.screen_ch_A.bpt->TR_selected_index = UBA_LCD_g.screen_ch_A.tr_list_select_index;
 
 				UBA_BPT_stop(UBA_LCD_g.screen_ch_A.bpt);
 				UBA_LCD_screen_btn_next_invisible(&UBA_LCD_g.screen_ch_A);
@@ -2736,6 +2742,8 @@ void UBA_LCD_screen_display_test_step(UBA_LCD_screen *screen) {
 				//} 
 				////screen->bpt->ch->id = screen->ch_control;
 
+				screen->bpt->TR_selected_index = screen->tr_list_select_index;
+
 				screen->state.next = UBA_LCD_SCREEN_DISPLAY_BPT;
 				screen->tr = NULL;
 				screen->tr_step_display_index = 0;
@@ -2760,6 +2768,8 @@ void UBA_LCD_screen_display_test_step(UBA_LCD_screen *screen) {
 				//	UBA_LCD_g.screen_ch_B.ch_control = UBA_CHANNLE_ID_AB;
 				//} 
 				////screen->bpt->ch->id = screen->ch_control;
+
+				screen->bpt->TR_selected_index = screen->tr_list_select_index;
 
 				screen->state.next = UBA_LCD_SCREEN_DISPLAY_BPT;
 				screen->tr = NULL;

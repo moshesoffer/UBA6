@@ -286,7 +286,7 @@ void UBA_BPT_init_enter(UBA_BPT *bpt) {
 
 	//select TR file
 	UBA_BPT_STATE state = bpt->state.next;
-	bpt->TR_selected_index = 0;
+//	bpt->TR_selected_index = 0;
 	UBA_TR_unpack(&TR_file.list[bpt->TR_selected_index], bpt); // load the test roution
 	bpt->state.next = state;
 

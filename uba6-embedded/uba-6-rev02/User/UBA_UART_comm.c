@@ -267,8 +267,8 @@ int process_message(MSG_Message *message) {
 			break;
 		case MSG_Message_cmd_tag:
 			UART_LOG_COMM_DEBUG("CMD message");
-			//UBA_COMMAND_execute(&message->pyload.cmd);
-			UBA_UART_cmd_pending_post(&message->pyload.cmd);
+			UBA_COMMAND_execute(&message->pyload.cmd);
+			//UBA_UART_cmd_pending_post(&message->pyload.cmd);
 			break;
 		case MSG_Message_tr_tag:
 #if 0//save TR history in TR_file list */
