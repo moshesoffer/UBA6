@@ -434,8 +434,16 @@ void UBA_channel_updated_cap(UBA_channel *ch,uint32_t dt){
 float UBA_channel_get_capacity(UBA_channel *ch) {
 	float capacity = 0;
 	uint8_t index = 0;
-	for (index = 0; index < ch->line_size; index++) {
-		capacity += (ch->lines_p[index]->data.capacity / HOURS2MILISEC);
+
+	UBA_BPT *bpt = UBA_channel_select_bpt(ch->id);
+	if(bpt != NULL){
+		if (UBA_BPT_isRunning(bpt)) {
+			for (index = 0; index < ch->line_size; index++) {
+				capacity += (ch->lines_p[index]->data.capacity / HOURS2MILISEC);
+			}
+		} else {
+			capacity = 0;
+		}
 	}
 
 	UART_LOG_CHANNEL_DEBUG(ch->name, "Capacity:%u", capacity);

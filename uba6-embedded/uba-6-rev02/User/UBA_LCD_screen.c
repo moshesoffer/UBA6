@@ -418,12 +418,13 @@ void UBA_LCD_screen_load_channel(UBA_LCD_channel *lcd_ch, UBA_channel *ch) {
 		data_vaiue = UBA_channel_get_current(ch);
 	}
 	if (data_vaiue != lcd_ch->shadow.current_vlaue) {
-		if (abs(data_vaiue) >= 2000.0f) {
+		//if (abs(data_vaiue) >= 2000.0f) {
 			data_vaiue /= 1000.0f;
-			sprintf(buffer, "%.2f %-3s", data_vaiue, "A");
-		} else {
-			sprintf(buffer, "%.2f %-3s", data_vaiue, "mA");
-		}
+			sprintf(buffer, "%.5f %-3s", data_vaiue, "A");
+		//	sprintf(buffer, "%.2f %-3s", data_vaiue, "A");
+		//} else {
+		//	sprintf(buffer, "%.2f %-3s", data_vaiue, "mA");
+		//}
 		lcd_ch->current.effect = UBA_GFX_EFFECT_SOLID;
 		sprintf(lcd_ch->current.elemnt.text.text, CHANNEL_DISPALY_DATA_PAD, strlen(buffer), buffer);
 
@@ -439,12 +440,12 @@ void UBA_LCD_screen_load_channel(UBA_LCD_channel *lcd_ch, UBA_channel *ch) {
 		data_vaiue = UBA_channel_get_capacity(ch);
 	}
 	if (data_vaiue != lcd_ch->shadow.capacity_vlaue) {
-		if (abs(data_vaiue) >= 1000) {
+		//if (abs(data_vaiue) >= 1000) {
 			data_vaiue /= 1000.0f;
-			sprintf(buffer, "%.2f %-3s", data_vaiue, "Ah");
-		} else {
-			sprintf(buffer, "%.2f %-3s", data_vaiue, "mAh");
-		}
+			sprintf(buffer, "%.5f %-3s", data_vaiue, "Ah");
+		//} else {
+		//	sprintf(buffer, "%.2f %-3s", data_vaiue, "mAh");
+		//}
 		lcd_ch->capacity.effect = UBA_GFX_EFFECT_SOLID;
 		sprintf(lcd_ch->capacity.elemnt.text.text, CHANNEL_DISPALY_DATA_PAD, strlen(buffer), buffer);
 
@@ -839,7 +840,7 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 				if ((screen->bpt->error & UBA_PROTO_UBA6_ERROR_LINE_NOT_CONNECTED) == UBA_PROTO_UBA6_ERROR_LINE_NOT_CONNECTED) {
 					lcd_bpt->EWI_msg.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
 					lcd_bpt->EWI_msg.elemnt.text.color_text = UBA_GFX_COLOR_RED;
-					snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, "Line is Disconnected");
+					snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, "Battery Disconnected");
 				}
 			}
 		}

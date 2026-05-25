@@ -107,7 +107,7 @@ function ConfigurationsMandatory(props, ref) {
 	};
 
 	const handleBatterySNChange = (event, newInputValue) => {
-		console.log('==> handleBatteryPNChange ===================');
+		console.log('==> handleBatterySNChange ===================');
 		//if (newInputValue !== shadowUba.batterySN)
 		//{
 			inputColors.current = getInputColor('batterySN', newInputValue, initialTestRoutine, existingTest, theme.palette.primary.main, inputColors.current);
@@ -223,6 +223,7 @@ function ConfigurationsMandatory(props, ref) {
 		} else {
 			existingTest.isChanged = false;
 		}
+		console.log('==> handleBatteryPNChange ', existingTest.isChanged);
 		return;
 	}
 
@@ -463,8 +464,8 @@ function ConfigurationsMandatory(props, ref) {
 						<Autocomplete
 							freeSolo
 							size="small"
-							value={getInputValue(testData, 'batterySN')}
-							onChange={handleBatterySNChange}
+							value={getInputValue(testData, 'batterySN') || ''}
+							onInputChange={handleBatterySNChange}
 							options={batterySNList}
 							renderInput={params =>
 								<TextField
@@ -477,6 +478,7 @@ function ConfigurationsMandatory(props, ref) {
 							}
 							sx={{input: inputColors.current?.batterySN, width:250}}
 						/>
+
 					</Box>
 
 					<Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: 2 }}>
