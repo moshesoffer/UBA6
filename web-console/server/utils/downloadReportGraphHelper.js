@@ -203,7 +203,9 @@ const downloadReportsGraph = async (req, res) => {
 			//exec('soffice --headless --convert-to pdf ' +  excelOutputFilePath, (error, stdout, stderr) => {
 			//exec('soffice --headless --convert-to pdf --outdir ' + __dirname + ' ' + excelOutputFilePath, (error, stdout, stderr) => {
 			const sofficePath = '"C:\\Program Files\\LibreOffice\\program\\soffice.exe"';
-			exec(`${sofficePath} --headless --convert-to pdf --outdir "${__dirname}" "${excelOutputFilePath}"`, (error, stdout, stderr) => {
+
+			//exec(`${sofficePath} --headless --convert-to pdf --outdir "${__dirname}" "${excelOutputFilePath}"`, (error, stdout, stderr) => {
+			exec(`${sofficePath} --headless --nologo --nofirststartwizard --convert-to pdf:calc_pdf_Export --outdir "${__dirname}" "${excelOutputFilePath}"`, (error, stdout, stderr) => {
 				if (error) {
 					logger.error(`****Error: ${error.message}`);
 					deleteFiles(excelOutputFilePath, pdfPath);

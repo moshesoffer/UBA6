@@ -33,7 +33,8 @@ export const getText = (pathString, ...replacement) => {
 
 export const getDate = rawDate => {
 	const locale = 'he-IL';
-	const timeZone = 'Asia/Jerusalem';
+	//const timeZone = 'Asia/Jerusalem';	
+	const timeZone = 'UTC';
 	const options = {
 		year: '2-digit',
 		month: '2-digit',

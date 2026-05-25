@@ -158,11 +158,23 @@ function GraphDetails() {
 	}
 
 	const prepareLineDataSets = (arr) => {
-		arr.sort((a, b) => a.dateTimeValue - b.dateTimeValue);
-		
-		return arr.map(obj => {//remove timestamp and dateTimeValue from the object
+		const sortedArr = [...arr].sort((a, b) => a.dateTimeValue - b.dateTimeValue);
+
+		if(sortedArr.length === 0) return [];
+
+		const firstTimestamp = sortedArr[0].dateTimeValue;
+
+		return sortedArr.map(obj => {
 			const { timestamp, dateTimeValue, ...rest } = obj;
-			return rest;
+
+			// relative time in seconds
+			const relativeTimeSec =
+				Math.floor((dateTimeValue - firstTimestamp) / 1000);
+
+			return {
+				...rest,
+				relativeTimeSec,
+			};
 		});
 	}
 
@@ -197,7 +209,7 @@ function GraphDetails() {
 			{validateArray(lineDataSets) && validateArray(graphsInfo) && (
 				<Line
 					data={{
-						labels: lineDataSets.map((data) => data.timePart),
+						labels: lineDataSets.map((data) => data.relativeTimeSec),
 						datasets: graphsInfo,
 					}}
 					options={options}
