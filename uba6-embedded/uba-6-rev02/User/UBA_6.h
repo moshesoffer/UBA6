@@ -89,5 +89,6 @@ UBA_6_ERROR  UBA_6_high_voltage_enable(UBA_6 * uba,UBA_6_HV_CONSUMER c);
 UBA_6_ERROR  UBA_6_high_voltage_disable(UBA_6 * uba,UBA_6_HV_CONSUMER c);
 void UBA_6_update_message(UBA_6 * uba,UBA_PROTO_UBA6_status * msg);
 void UBA_6_command_execute(UBA_6 *uba, UBA_PROTO_UBA6_command *cmd);
+void UBA_6_fan_on(UBA_6 *uba, bool fan_on);
 
 

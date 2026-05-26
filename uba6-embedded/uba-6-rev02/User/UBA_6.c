@@ -125,6 +125,17 @@ void UBA_6_fan_control(UBA_6 *uba) {
 	}
 }
 
+void UBA_6_fan_on(UBA_6 *uba, bool fan_on) {
+	if (fan_on == false) {
+		HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_RESET);
+		UART_LOG_WARNNING(UBA_COMP, "==== FAN Off ====");
+	}
+	if (fan_on == true) {
+		HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_SET);
+		UART_LOG_WARNNING(UBA_COMP, "==== FAN Off ====");
+	}
+}
+
 //========================state machine functions ==========================================
 void UBA_6_update_state(UBA_6 *uba) {
 	UART_LOG_INFO(UBA_COMP, "update state %u ---> %u", uba->state.current, uba->state.next);
@@ -164,6 +175,7 @@ void UBA_6_init_enter(UBA_6 *uba) {
 		uba->settings.address = UBA_DEFUALT_ADRESS;
 	}
 
+	uba->isFan_on = false;
 }
 void UBA_6_init(UBA_6 *uba) {
 	UBA_6_set_next_state(uba, UBA_6_STATE_SINGLE_CHANNELS);
@@ -189,8 +201,7 @@ void UBA_6_single_channels(UBA_6 *uba) {
 	} else {
 		UART_LOG_CRITICAL(UBA_COMP, "B Test is not single channel");
 	}
-	UBA_6_fan_control(uba);
-
+//	UBA_6_fan_control(uba);
 }
 
 void UBA_6_single_channels_exit(UBA_6 *uba) {
@@ -208,7 +219,7 @@ void UBA_6_dual_channel(UBA_6 *uba) {
 	} else {
 		UART_LOG_CRITICAL(UBA_COMP, "AB Test is not dual channel");
 	}
-	UBA_6_fan_control(uba);
+//	UBA_6_fan_control(uba);
 }
 
 void UBA_6_dual_channel_exit(UBA_6 *uba) {

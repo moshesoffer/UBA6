@@ -1181,7 +1181,7 @@ bool UBA_LCD_screen_btn_press_select(UBA_LCD_screen *screen) {
 	if (screen->pages.screen_bpt.btn_pause_start.state == UBA_GFX_STATE_SELECTED) {
 		if (UBA_BPT_isPause(screen->bpt)) {
 			if (is_dual_channel) {
-				UBA_LCD_g.screen_ch_A.bpt->start_date_time.add_pause_seconds = 0;
+				//UBA_LCD_g.screen_ch_A.bpt->start_date_time.add_pause_seconds = 0;
 				UBA_LCD_g.screen_ch_A.tr = screen->tr;
 				UBA_LCD_g.screen_ch_A.tr_list_select_index = screen->tr_list_select_index;
 				UBA_TR_unpack(&TR_file.list[UBA_LCD_g.screen_ch_A.tr_list_select_index], UBA_LCD_g.screen_ch_A.bpt);
@@ -1189,7 +1189,7 @@ bool UBA_LCD_screen_btn_press_select(UBA_LCD_screen *screen) {
 				
 				UBA_BPT_start(UBA_LCD_g.screen_ch_A.bpt);
 			} else {
-				screen->bpt->start_date_time.add_pause_seconds = 0;
+				//screen->bpt->start_date_time.add_pause_seconds = 0;
 				UBA_BPT_start(screen->bpt);
 			}
 

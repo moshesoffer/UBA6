@@ -108,12 +108,15 @@ bool UBA_BPT_isChannel_error_critical(UBA_BPT *bpt) {
 }
 
 void UBA_BPT_test_result_filename(UBA_BPT *bpt) {
+	RTC_DateTypeDef date;
+	RTC_TimeTypeDef time;
+
 	char datetime_str[16];
-	HAL_RTC_GetDate(&hrtc, &bpt->start_date_time.date, RTC_FORMAT_BIN);
-	HAL_RTC_GetTime(&hrtc, &bpt->start_date_time.time, RTC_FORMAT_BIN);
+	HAL_RTC_GetDate(&hrtc, &date, RTC_FORMAT_BIN);
+	HAL_RTC_GetTime(&hrtc, &time, RTC_FORMAT_BIN);
 	int n = snprintf((char*) bpt->filename, sizeof(bpt->filename), "%s_%s_%s.pb",
 			(char*) bpt->ch->name,
-			(char*) get_rtc_date_time_str((char*) datetime_str, sizeof(datetime_str), &(bpt->start_date_time.date), &(bpt->start_date_time.time),
+			(char*) get_rtc_date_time_str((char*) datetime_str, sizeof(datetime_str), &(date), &(time),
 					UBA_RTC_STR_FORMAT_FILE),
 			(char*) ((TR_Test_Routine *)bpt->tr)->name);
 	if (n >= UBA_BPT_FILENAME_MAX_SIZE) {
@@ -329,6 +332,8 @@ void UBA_BPT_standby_exit(UBA_BPT *bpt) {
 void UBA_BPT_pause_enter(UBA_BPT *bpt) {	
 	UBA_BPT_update_state(bpt);
 	UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_STANDBY);
+
+	UBA_6_fan_on(&UBA_6_device_g, false);
 }
 
 void UBA_BPT_pause(UBA_BPT *bpt) {
@@ -352,6 +357,8 @@ void UBA_BPT_pause_exit(UBA_BPT *bpt) {
 		default:
 			UART_LOG_ERROR(UBA_COMP, "Step Type id is unknown:%u", bpt->current_step->type_id);
 	}
+
+	UBA_6_fan_on(&UBA_6_device_g, true);
 }
 
 void UBA_BPT_run_step_enter(UBA_BPT *bpt) {
@@ -574,6 +581,8 @@ bool UBA_BPT_stop(UBA_BPT *bpt) {
 		bpt->state.next = UBA_BPT_STATE_STANDBY;//UBA_BPT_STATE_STEP_COMPLETE
 		bpt->current_step = bpt->head_step;
 
+		UBA_6_fan_on(&UBA_6_device_g, false);
+
 		if (bpt->wr_from > 0) {
 UART_LOG(UBA_COMP, "last step complete exit: bpt->wr_from %d [%s]", bpt->wr_from, bpt->filename);
 			UBA_FM_apppned_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
@@ -661,6 +670,9 @@ bool UBA_BPT_start(UBA_BPT *bpt) {
 
 		} 
 		bpt->error &= ~UBA_PROTO_UBA6_ERROR_USER_ABORT;
+
+		UBA_6_fan_on(&UBA_6_device_g, true);
+
 		return true;
 
 	} else {
@@ -904,8 +916,12 @@ bool UBA_BPT_save_data_log(UBA_BPT *bpt) {
 	size_t index;
 	bool status;
 	UBA_PROTO_DATA_LOG_data_log msg = UBA_PROTO_DATA_LOG_data_log_init_zero;
+	RTC_DateTypeDef date;
+	RTC_TimeTypeDef time;
 
-	msg.time = get_RTC_unix_timestamp() - RTC_datetime2unix_timestamp(&bpt->start_date_time.date, &bpt->start_date_time.time); // store only the time from start of the test
+	HAL_RTC_GetDate(&hrtc, &date, RTC_FORMAT_BIN);
+	HAL_RTC_GetTime(&hrtc, &time, RTC_FORMAT_BIN);
+	msg.time = get_RTC_unix_timestamp() - RTC_datetime2unix_timestamp(&date, &time); // store only the time from start of the test
 	msg.step_index = bpt->current_step->step_index;
 	msg.plan_index = bpt->current_step->plan_index;
 	msg.current = UBA_channel_get_current(bpt->ch);
