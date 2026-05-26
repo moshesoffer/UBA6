@@ -33,10 +33,10 @@
 #define UBA_GFX_COLOR_GRAYBLUE    0x5458
 
 
-#define UBA_GFX_COLOR_INIT		   	0xFFFF
-#define UBA_GFX_COLOR_RUN		  	0x966a
+#define UBA_GFX_COLOR_INIT		   	0xFFFF //no color
+#define UBA_GFX_COLOR_RUN		  	0x966a //green
 #define UBA_GFX_COLOR_DELAY		   	0x057d
-#define UBA_GFX_COLOR_STANDBY		0xffff
+#define UBA_GFX_COLOR_STANDBY		0xffff //no color
 #define UBA_GFX_COLOR_OFF 			0xf9e7
 
 #define UBA_GFX_COLOR_INFO 			0xffff

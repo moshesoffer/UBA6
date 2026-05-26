@@ -56,5 +56,5 @@ message Test_Routine_Message{
 }
 
 message Test_Routine_File{
-	repeated Test_Routine list = 1 [(nanopb).max_count = 10,(nanopb).fixed_count = true];
+	repeated Test_Routine list = 1 [(nanopb).max_count = 32,(nanopb).fixed_count = true];
 }

@@ -346,6 +346,7 @@ void UBA_LCD_screen_load_channel(UBA_LCD_channel *lcd_ch, UBA_channel *ch) {
 		//update shadoe
 		ch->shadow.ch_name_changed = true;
 	}
+
 	if (ch->state.current != ch->shadow.state) {
 		switch (ch->state.current) {
 			case UBA_CHANNEL_STATE_INIT:
@@ -702,7 +703,8 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 		if (strlen(channel_test_name)) {
 			if (strcmp(lcd_bpt->test_name.elemnt.text.text, channel_test_name/*lcd_bpt_shadow->test_name*/) != 0) {
 				sprintf(lcd_bpt->test_name.elemnt.text.text, "%s", channel_test_name);
-				lcd_bpt->test_name.elemnt.text.text[10] = '\0'; //limit test name to 10 chars
+				//lcd_bpt->test_name.elemnt.text.text[10] = '\0'; //limit test name to 10 chars
+				lcd_bpt->test_name.elemnt.text.size = 1;
 				lcd_bpt->test_name.effect = UBA_GFX_EFFECT_SOLID;
 				//update shadow
 				test_name_changed = true;
@@ -868,7 +870,7 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 		switch (screen->bpt->state.current) {
 			case UBA_BPT_STATE_PAUSE:
 				sprintf(lcd_bpt->channel.status.elemnt.status.text, "PAUSE");
-				lcd_bpt->channel.status.elemnt.status.color_fill = UBA_GFX_COLOR_WHITE;
+				lcd_bpt->channel.status.elemnt.status.color_fill = UBA_GFX_COLOR_YELLOW;
 				lcd_bpt->channel.status.effect = UBA_GFX_EFFECT_BLINK_SLOW;
 				ch->shadow.state = UBA_CHANNEL_STATE_INIT;
 				break;
@@ -882,6 +884,19 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 				}
 				lcd_bpt->channel.status.elemnt.status.color_fill = UBA_GFX_COLOR_RED;
 				break;
+
+			case UBA_BPT_STATE_INIT:
+			case UBA_BPT_STATE_STANDBY:
+			case UBA_BPT_STATE_TEST_COMPLETE:
+				lcd_bpt->channel.status.effect = UBA_GFX_EFFECT_SOLID;
+				lcd_bpt->channel.status.elemnt.status.color_fill = UBA_GFX_COLOR_INIT;
+				break;
+			case UBA_BPT_STATE_RUN_STEP:
+			case UBA_BPT_STATE_STEP_COMPLETE:
+				lcd_bpt->channel.status.effect = UBA_GFX_EFFECT_SOLID;
+				lcd_bpt->channel.status.elemnt.status.color_fill = UBA_GFX_COLOR_RUN;
+				break;
+
 			default:
 				break;
 
@@ -1633,7 +1648,7 @@ bool UBA_LCD_screen_bpt_update_position(UBA_LCD_screen *screen) {
 	}
 
 	if (is_change = true) {
-		screen->pages.screen_bpt.test_name.pos.x = position->start_x + ((position->width - (2 * BORDER_PADDING)) / 2); /*center*/
+		screen->pages.screen_bpt.test_name.pos.x = position->start_x + ((position->width - (2 * BORDER_PADDING)) / 2) + 4; /*center*/
 
 		screen->pages.screen_bpt.time.pos.x = position->start_x + ((position->width - (2 * BORDER_PADDING)) / 2); /*center*/
 
@@ -1680,8 +1695,8 @@ void UBA_LCD_screen_display_bpt_enter(UBA_LCD_screen *screen) {
 	screen->pages.screen_bpt.frame.elemnt.frame.color_border = UBA_GFX_COLOR_BLACK;
 
 	screen->pages.screen_bpt.test_name.id = UBA_GFX_ELEMNET_TEXT;
-	screen->pages.screen_bpt.test_name.pos.x = position->start_x + ((position->width - (2 * BORDER_PADDING)) / 2); /*center*/
-	screen->pages.screen_bpt.test_name.pos.y = LINE(LINE_TEST_NAME) - 2;
+	screen->pages.screen_bpt.test_name.pos.x = position->start_x + ((position->width - (2 * BORDER_PADDING)) / 2) + 4; /*center*/
+	screen->pages.screen_bpt.test_name.pos.y = LINE(LINE_TEST_NAME) + 4;
 	screen->pages.screen_bpt.test_name.effect = UBA_GFX_EFFECT_SOLID;
 	screen->pages.screen_bpt.test_name.elemnt.text.text [0] = '\0';
 	screen->pages.screen_bpt.test_name.elemnt.text.size = LINE_TEST_NAME_FONT_SIZE;
@@ -2227,14 +2242,16 @@ void UBA_LCD_screen_display_test_info_enter(UBA_LCD_screen *screen) {
 
 	screen->pages.test_info.title.id = UBA_GFX_ELEMNET_TEXT;
 	screen->pages.test_info.title.pos.x = position->width / 2 + position->start_x;
-	screen->pages.test_info.title.pos.y = LINE(1);
+	screen->pages.test_info.title.pos.y = LINE(1) + 4;
 	screen->pages.test_info.title.effect = UBA_GFX_EFFECT_SOLID;
 	screen->pages.test_info.title.elemnt.text.size = 2;
 	screen->pages.test_info.title.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
 	screen->pages.test_info.title.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
+	screen->pages.test_info.title.elemnt.text.size = 1;
 	if ((screen->tr) != NULL) {
-		sprintf(screen->pages.test_info.title.elemnt.text.text, "%.*s",
-				UBA_LCD_screen_line_max_str_length(screen, screen->pages.test_info.title.elemnt.text.size), (screen->tr)->name);
+		//sprintf(screen->pages.test_info.title.elemnt.text.text, "%.*s",
+		//		UBA_LCD_screen_line_max_str_length(screen, screen->pages.test_info.title.elemnt.text.size), (screen->tr)->name);
+		sprintf(screen->pages.test_info.title.elemnt.text.text, "%s", (screen->tr)->name);
 	}
 
 	for (i = 0; i < 11; i++) {

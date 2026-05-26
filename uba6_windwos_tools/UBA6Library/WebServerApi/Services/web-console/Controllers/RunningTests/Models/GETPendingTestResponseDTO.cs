@@ -424,7 +424,8 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
               _ => throw new ArgumentException("Invalid test routine channels")
             };
           //msg.Name = pn.TestName.Substring(0, pn.TestName.Length > 10 ? 10: pn.TestName.Length-1);
-            msg.Name = pn.TestName?.Substring(0, Math.Min(12-1, pn.TestName.Length));
+          //msg.Name = pn.TestName?.Substring(0, Math.Min(12-1, pn.TestName.Length));
+            msg.Name = pn.TestName?.Substring(0, Math.Min(32-1, pn.TestName.Length));
             msg.Length = (uint)pn.Plan.Count;
             msg.LogInterval = ProtoHelper.DEFAULT_TR_LOG_INTRVAL_MS;
 
