@@ -286,8 +286,11 @@ void UBA_BPT_init_enter(UBA_BPT *bpt) {
 
 	//select TR file
 	UBA_BPT_STATE state = bpt->state.next;
+
+//already done: see UBA_6_init_enter	
 //	bpt->TR_selected_index = 0;
-	UBA_TR_unpack(&TR_file.list[bpt->TR_selected_index], bpt); // load the test roution
+//	UBA_TR_unpack(&TR_file.list[bpt->TR_selected_index], bpt); // load the test roution
+
 	bpt->state.next = state;
 
 	bpt->wr_from = 0;
@@ -752,6 +755,7 @@ UBA_STATUS_CODE UBA_BPT_begin(UBA_BPT *bpt, uint8_t list_index) {
 
 	} else {
 		if (list_index < UBA_TR_LIST_SIZE) {
+			//set by web-console
 			UBA_TR_unpack(&TR_file.list[list_index], bpt); // load the test roution
 			bpt->TR_selected_index = list_index;
 

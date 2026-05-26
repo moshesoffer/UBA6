@@ -2098,15 +2098,15 @@ void UBA_LCD_screen_display_test_select(UBA_LCD_screen *screen) {
 		UBA_button_clear_pending(screen->main_buttons.btn_select_p);
 		UBA_button_clear_pending(screen->secondery_buttons.btn_select_p);
 
-		screen->tr_list_select_index = list_select_index;
-		screen->tr = &TR_file.list[list_select_index];
 		if (screen->pages.test_list.btn_back.effect == UBA_GFX_EFFECT_SELECTED) {
 			/*next: BACK button*/
-			screen->tr = NULL;
+//nothing selected: 
+//			screen->tr = NULL;
 			if (UBA_BPT_isUnpacked(screen->bpt)) {
-				if (UBA_TR_unpack(&TR_file.list[list_select_index], screen->bpt) != 0) {
-					UART_LOG_CRITICAL(UBA_COMP, "TR unpack Failed");
-				}
+//nothing selected: 
+//				if (UBA_TR_unpack(&TR_file.list[list_select_index], screen->bpt) != 0) {
+//					UART_LOG_CRITICAL(UBA_COMP, "TR unpack Failed");
+//				}
 				//Moshe
 				//if (TR_file.list[screen->tr_list_select_index].mode == UBA_PROTO_BPT_MODE_DUAL_CHANNEL) {
 				//	screen->shadow.ch_control = screen->ch_control;
@@ -2127,6 +2127,16 @@ void UBA_LCD_screen_display_test_select(UBA_LCD_screen *screen) {
 			}
 
 		} else {
+			//selected file: display test info
+			screen->tr_list_select_index = list_select_index;
+			screen->tr = &TR_file.list[list_select_index];
+
+//			if (UBA_TR_unpack(&TR_file.list[screen->tr_list_select_index], screen->bpt) != 0) {
+//				UART_LOG_CRITICAL(UBA_COMP, "TR unpack Failed");
+//			}
+//
+//			screen->bpt->TR_selected_index = screen->tr_list_select_index;
+
 			/*next: Test info*/
 			screen->state.next = UBA_LCD_SCREEN_DISPLAY_TEST_INFO;
 		}
@@ -2377,14 +2387,17 @@ void UBA_LCD_screen_display_test_info(UBA_LCD_screen *screen) {
 
 	if (UBA_button_is_pending(screen->main_buttons.btn_select_p) || UBA_button_is_pending(screen->secondery_buttons.btn_select_p)) {
 		if (screen->pages.test_info.btn_back.effect == UBA_GFX_EFFECT_SELECTED) {
+			//BACK button
 			screen->state.next = UBA_LCD_SCREEN_DISPLAY_TEST_SELECT;
 			screen->pages.screen_bpt.btn_next.effect = UBA_GFX_EFFECT_INVISIBLE;
 
 		} else if (screen->pages.test_info.btn_step.effect == UBA_GFX_EFFECT_SELECTED) {
+			//STEP button
 			screen->state.next = UBA_LCD_SCREEN_DISPLAY_TEST_STEP; 
 			screen->tr_step_display_index = 0;
 
 		} else if (screen->pages.test_info.btn_select.effect == UBA_GFX_EFFECT_SELECTED) {
+			//SELECT button
 			screen->tr_list_select_index = screen->pages.test_list.list_select_index;
 
 			if (UBA_TR_unpack(&TR_file.list[screen->tr_list_select_index], screen->bpt) != 0) {
@@ -2707,7 +2720,6 @@ void UBA_LCD_screen_display_test_step(UBA_LCD_screen *screen) {
 	}
 
 	if (UBA_button_is_pending(screen->main_buttons.btn_select_p) || UBA_button_is_pending(screen->secondery_buttons.btn_select_p)) {
-		//SELECT
 		if ((screen->tr != NULL && screen->bpt != NULL) &&
 			((screen->bpt)->current_step->step_index+1 < (screen->tr)->length)) {
 			if (screen->pages.test_info.btn_step.effect == UBA_GFX_EFFECT_SELECTED) {

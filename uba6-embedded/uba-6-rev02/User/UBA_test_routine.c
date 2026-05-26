@@ -59,9 +59,14 @@ int UBA_TR_demo_init(void) {
 	for (int index = 0; index < 10; index++) {
 		UBA_TR_print(&TR_file.list[index]);
 	}
+
 	//UBA_TR_unpack(&TR_file.list[0], &(UBA_6_device_g.BPT_A));
 	//UBA_TR_unpack(&TR_file.list[1], &(UBA_6_device_g.BPT_B));
 	//UBA_TR_unpack(&TR_file.list[2], &(UBA_6_device_g.BPT_AB));
+	//UBA_6_device_g.BPT_A.TR_selected_index = 0;
+	//UBA_6_device_g.BPT_B.TR_selected_index = 1;
+	//UBA_6_device_g.BPT_AB.TR_selected_index = 2;
+
 	return 0;
 }
 

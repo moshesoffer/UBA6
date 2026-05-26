@@ -141,20 +141,24 @@ void UBA_6_init_enter(UBA_6 *uba) {
 	uba->info.firmware.patch = UBA_FIRMWARE_PATCH;
 	uba->info.firmware.build = UBA_FIRMWARE_BUILD;
 	uba->settings.address = UBA_DEFUALT_ADRESS;
+
 	if (UBA_PROTO_load_from_file(UBA_FM_FOLDER_SETTINGS, UBA_FM_FILE_NAME_SETTINGS, UBA_PROTO_UBA6_settings_fields, &uba->settings) == false) {
 		UBA_PROTO_save_to_file(UBA_FM_FOLDER_SETTINGS, UBA_FM_FILE_NAME_SETTINGS, UBA_PROTO_UBA6_settings_fields, &uba->settings);
 	}
+
 	UBA_TR_unpack(&TR_file.list[0], &uba->BPT_A);
 	UBA_TR_unpack(&TR_file.list[1], &uba->BPT_B);
 	UBA_TR_unpack(&TR_file.list[2], &uba->BPT_AB);
 	uba->BPT_A.TR_selected_index = 0;
-	uba->BPT_B.TR_selected_index = 0;
-	uba->BPT_AB.TR_selected_index = 0;
+	uba->BPT_B.TR_selected_index = 1;
+	uba->BPT_AB.TR_selected_index = 2;
+
 	if (uba->settings.buzzer) {
 		buzzer_g.state.next = UBA_BUZZER_STATE_OFF;
 	} else {
 		buzzer_g.state.next = UBA_BUZZER_STATE_MUTE;
 	}
+	
 	if (uba->settings.address == 0) {
 		UART_LOG_CRITICAL(UBA_COMP, "UBA Address init with zero ,set default address ");
 		uba->settings.address = UBA_DEFUALT_ADRESS;
