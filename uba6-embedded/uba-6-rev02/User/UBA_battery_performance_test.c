@@ -423,23 +423,29 @@ void UBA_BPT_run_step(UBA_BPT *bpt) {
 			bpt->state.next = UBA_BPT_STATE_TEST_FAILED;
 		}
 
+		if (bpt->wr_from > 0) {
+UART_LOG(UBA_COMP, "run step err exit: bpt->wr_from %d [%s]", bpt->wr_from, bpt->filename);
+			UBA_FM_apppned_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
+			bpt->wr_from = 0;
+		}
+
 	} else if (UBA_channel_are_lines_connected(bpt->ch) == false) {
 		UART_LOG_CRITICAL(UBA_COMP, "run step not completed, lines disconnected on id %d %s", bpt->ch->id, bpt->ch->name);
 		bpt->state.next = UBA_BPT_STATE_TEST_FAILED;
 
+		if (bpt->wr_from > 0) {
+UART_LOG(UBA_COMP, "run step disconnected exit: bpt->wr_from %d [%s]", bpt->wr_from, bpt->filename);
+			UBA_FM_apppned_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
+			bpt->wr_from = 0;
+		}
 	}
+
 
 	//cache status message
 	UBA_BPT_set_cached_status_msg(bpt, /*start test=*/false);
 }
 
 void UBA_BPT_run_step_exit(UBA_BPT *bpt) {
-	if (bpt->wr_from > 0) {
-//UART_LOG(UBA_COMP, "run step exit: bpt->wr_from %d [%s]", bpt->wr_from, bpt->filename);
-		UBA_FM_apppned_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
-		bpt->wr_from = 0;
-	}
-
 	UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_STANDBY);
 	UBA_channel_run(bpt->ch);
 }
@@ -567,6 +573,12 @@ bool UBA_BPT_stop(UBA_BPT *bpt) {
 		} 
 		bpt->state.next = UBA_BPT_STATE_STANDBY;//UBA_BPT_STATE_STEP_COMPLETE
 		bpt->current_step = bpt->head_step;
+
+		if (bpt->wr_from > 0) {
+UART_LOG(UBA_COMP, "last step complete exit: bpt->wr_from %d [%s]", bpt->wr_from, bpt->filename);
+			UBA_FM_apppned_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
+			bpt->wr_from = 0;
+		}
 
 		int list_index = bpt->TR_selected_index;
 		if (TR_file.list[list_index].mode == UBA_PROTO_BPT_MODE_DUAL_CHANNEL) {
@@ -924,7 +936,7 @@ bool UBA_BPT_save_data_log(UBA_BPT *bpt) {
 		return false;
 	}
 
-	if (bpt->wr_from >= 512) {
+	if (bpt->wr_from >= 8000) {
 //UART_LOG(UBA_COMP, "save log: length %d [%s]", bpt->wr_from, bpt->filename);
 		UBA_FM_apppned_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
 		bpt->wr_from = 0;

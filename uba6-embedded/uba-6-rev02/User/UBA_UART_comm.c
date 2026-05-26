@@ -267,8 +267,8 @@ int process_message(MSG_Message *message) {
 			break;
 		case MSG_Message_cmd_tag:
 			UART_LOG_COMM_DEBUG("CMD message");
-			UBA_COMMAND_execute(&message->pyload.cmd);
-			//UBA_UART_cmd_pending_post(&message->pyload.cmd);
+			//UBA_COMMAND_execute(&message->pyload.cmd); //within the intterupt
+			UBA_UART_cmd_pending_post(&message->pyload.cmd);
 			break;
 		case MSG_Message_tr_tag:
 #if 0//save TR history in TR_file list */
@@ -445,7 +445,7 @@ void UBA_UART_comm_run() {
 //		start_time = 0;
 //	}
 
-	int max_msgs = 3;
+	int max_msgs = 1;
 	while (cmd_pending_msg_num) {
 		UBA_COMMAND_execute(&cmd_pending_msg[cmd_pending_start_index]);
 		cmd_pending_start_index = (cmd_pending_start_index+1) % 32;
@@ -456,7 +456,7 @@ void UBA_UART_comm_run() {
 		}
 	}
 
-	int max_queries = 2;
+	int max_queries = 1;
 	while (query_pending_reqest) {
 		UBA_UART_query_response_message(query_pending_reqest);
 		//prevent startvation
