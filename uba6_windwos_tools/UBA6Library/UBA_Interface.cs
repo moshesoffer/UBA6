@@ -360,7 +360,7 @@ namespace UBA6Library {
             return BitConverter.ToUInt32(buffer, 0);
         }
 
-        public async Task<Message?> GetMessage(Message? send, int timeout = 5000) {
+        public async Task<Message?> GetMessage(Message? send, int timeout = 100) {
            /* if (sp == null || !sp.IsOpen) {
                 _logger.LogError("Serial port is not open.");
                 failes++;
@@ -412,7 +412,7 @@ namespace UBA6Library {
             return responseMessage;
         }
 
-        public async Task<Message?> EnqueueMessageAndWaitForResponseAsync(Message? message, MessagePriority priority = MessagePriority.DEFUALT, int timeout = 0) {
+        public async Task<Message?> EnqueueMessageAndWaitForResponseAsync(Message? message, MessagePriority priority = MessagePriority.DEFUALT, int timeout = 100) {
             if (message == null) throw new ArgumentNullException(nameof(message));       
             var tcs = new TaskCompletionSource<Message?>();
             EventHandler<ProtoMessageEventArg>? handler = null;

@@ -20,6 +20,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 export const getActions = (row, authDispatch, ubaDevicesDispatch, testRoutinesDispatch) => {
     if (row?.status === statusCodes.RUNNING) {
+        //console.log('==> RUNNING');
         if ((row?.testCurrentStep + 1) < row?.totalStagesAmount) {
             return (
                 <ButtonGroup>
@@ -141,6 +142,7 @@ export const getActions = (row, authDispatch, ubaDevicesDispatch, testRoutinesDi
     else if (
         row?.status === statusCodes.STANDBY
     ) {
+        //console.log('==> STANDBY');
         return (
             <ButtonGroup>
                 <Button size="small" sx={{ width: 72, p: 0.2, height: 32 }} onClick={() => showWizardsZero(row, ubaDevicesDispatch)}>
@@ -264,6 +266,7 @@ const handleStopTest = (selectedRow, authDispatch, ubaDevicesDispatch) => {
 const handleForceStopTest = (selectedRow, authDispatch, ubaDevicesDispatch) => {
     let choice = true;//confirm('Confirm Stop Run');
     if(choice === true) {
+    console.log('==> handleForceStopTest');
         forceStopRunningTest(authDispatch, ubaDevicesDispatch, selectedRow?.runningTestID, selectedRow?.ubaSN, selectedRow?.testRoutineChannels);
         return true;
     }

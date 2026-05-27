@@ -28,6 +28,18 @@ export default function MainPage() {
 		//return () => console.log('MainPage unmount useEffect');
 	}, []);
 
+//	const lastRef = useRef(performance.now());	
+//	useEffect(() => {
+//    	const interval = setInterval(async () => {
+//    	    const now = performance.now();
+//    	    console.log('⏱ interval gap:', now - lastRef.current, 'ms');
+//    	    lastRef.current = now;
+//    	    await getUbaDevices(authDispatch, ubaDevicesDispatch);
+//    	}, 1000);
+//
+//      //return () => clearInterval(interval);
+//	}, []);
+
 	switch (state) {
 		case pageStateList.TABLE_VIEW: {
 			return <><TableView/><GraphDetails maxHeight={95} maxWidth={95} minWidth={95} minHeight={95} actionName={['graph.details',]}/></>;

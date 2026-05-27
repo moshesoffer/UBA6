@@ -583,11 +583,11 @@ bool UBA_BPT_stop(UBA_BPT *bpt) {
 
 		UBA_6_fan_on(&UBA_6_device_g, false);
 
-		if (bpt->wr_from > 0) {
-UART_LOG(UBA_COMP, "last step complete exit: bpt->wr_from %d [%s]", bpt->wr_from, bpt->filename);
-			UBA_FM_apppned_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
-			bpt->wr_from = 0;
-		}
+//		if (bpt->wr_from > 0) {
+//UART_LOG(UBA_COMP, "last step complete exit: bpt->wr_from %d [%s]", bpt->wr_from, bpt->filename);
+//			UBA_FM_apppned_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
+//			bpt->wr_from = 0;
+//		}
 
 		int list_index = bpt->TR_selected_index;
 		if (TR_file.list[list_index].mode == UBA_PROTO_BPT_MODE_DUAL_CHANNEL) {
@@ -917,12 +917,8 @@ bool UBA_BPT_save_data_log(UBA_BPT *bpt) {
 	size_t index;
 	bool status;
 	UBA_PROTO_DATA_LOG_data_log msg = UBA_PROTO_DATA_LOG_data_log_init_zero;
-	RTC_DateTypeDef date;
-	RTC_TimeTypeDef time;
 
-	HAL_RTC_GetDate(&hrtc, &date, RTC_FORMAT_BIN);
-	HAL_RTC_GetTime(&hrtc, &time, RTC_FORMAT_BIN);
-	msg.time = get_RTC_unix_timestamp() - RTC_datetime2unix_timestamp(&date, &time); // store only the time from start of the test
+	msg.time = get_RTC_unix_timestamp() - RTC_datetime2unix_timestamp(&bpt->start_date_time.date, &bpt->start_date_time.time); // store only the time from start of the test
 	msg.step_index = bpt->current_step->step_index;
 	msg.plan_index = bpt->current_step->plan_index;
 	msg.current = UBA_channel_get_current(bpt->ch);
@@ -954,8 +950,8 @@ bool UBA_BPT_save_data_log(UBA_BPT *bpt) {
 	}
 
 	if (bpt->wr_from >= 8000) {
-//UART_LOG(UBA_COMP, "save log: length %d [%s]", bpt->wr_from, bpt->filename);
-		UBA_FM_apppned_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
+UART_LOG(UBA_COMP, "save log: length %d [%s]", bpt->wr_from, bpt->filename);
+//		UBA_FM_apppned_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
 		bpt->wr_from = 0;
 	}
 	return true;
@@ -1000,5 +996,18 @@ void UBA_BPT_get_cached_status_msg(UBA_BPT *bpt, UBA_PROTO_BPT_status_message *m
 	//UART_LOG_BPT_INFO(UBA_COMP, "==> (msgGet) time: %d, step: %d of %d, step_type %d", msg->start_time, msg->current_step, msg->total_steps, msg->step_type);
 }
 
+void UBA_BPT_save_log(UBA_BPT *bpt) {	
+#define LOG_BUF_SIZE 4096
+	uint32_t chunck_length = LOG_BUF_SIZE;
 
+	if (UBA_BPT_isRunning(bpt) == true) {
+		return;
+	}
 
+	if (bpt->wr_from > 0) {
+		chunck_length = bpt->wr_from > chunck_length ? chunck_length : bpt->wr_from;
+UART_LOG(UBA_COMP, "==> last step complete exit: bpt->wr_from %d [%s]", chunck_length, bpt->filename);
+		UBA_FM_apppned_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, chunck_length); 
+		bpt->wr_from -= chunck_length;
+	}
+}

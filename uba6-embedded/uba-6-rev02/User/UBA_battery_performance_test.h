@@ -256,5 +256,7 @@ void UBA_BPT_get_tr_filename(UBA_BPT *bpt, char *tr_filename);
 void UBA_BPT_set_cached_status_msg(UBA_BPT *bpt, bool start);
 void UBA_BPT_get_cached_status_msg(UBA_BPT *bpt, UBA_PROTO_BPT_status_message *msg);
 
+void UBA_BPT_save_log(UBA_BPT *bpt);
+
 #endif /* UBA_BATTERY_PERFORMANCE_TEST_H_ */
 
