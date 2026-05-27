@@ -828,11 +828,14 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 				bool line_connected [2];
 				bool is_connected = false;
 				UBA_channel_get_lines_connected(screen->bpt->ch, line_connected);
-				if (screen->ch_control == UBA_CHANNLE_ID_A || screen->ch_control == UBA_CHANNLE_ID_B) {
+				if (screen->ch_control == UBA_CHANNLE_ID_A) {
+					is_connected = line_connected[0];
+				} else if (screen->ch_control == UBA_CHANNLE_ID_B) {
 					is_connected = line_connected[0];
 				} else /*CHANNEL_ID_AB*/ {
 					is_connected = line_connected[0] || line_connected[1];
 				}
+				
 				if (is_connected == false) {
 				//if (UBA_channel_are_lines_connected (screen->bpt->ch) == false) { 
 					screen->bpt->error = UBA_PROTO_UBA6_ERROR_LINE_NOT_CONNECTED;

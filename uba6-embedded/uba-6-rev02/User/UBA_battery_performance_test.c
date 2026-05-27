@@ -419,6 +419,7 @@ void UBA_BPT_run_step(UBA_BPT *bpt) {
 		UBA_BPT_save_data_log(bpt);
 		bpt->log_tick_ms = curr_tick_ms;
 	}
+
 	if (UBA_BPT_isStep_completed(bpt)) {
 		bpt->state.next = UBA_BPT_STATE_STEP_COMPLETE;
 		bpt->ch->num_consecutive_errors  = 0;
@@ -446,7 +447,6 @@ UART_LOG(UBA_COMP, "run step disconnected exit: bpt->wr_from %d [%s]", bpt->wr_f
 			bpt->wr_from = 0;
 		}
 	}
-
 
 	//cache status message
 	UBA_BPT_set_cached_status_msg(bpt, /*start test=*/false);
@@ -640,6 +640,7 @@ bool UBA_BPT_start(UBA_BPT *bpt) {
 	if (bpt != NULL) {
 		//verify battery (lines) are connected
 		if (UBA_channel_are_lines_connected (bpt->ch) == false) {
+			bpt->state.next = UBA_BPT_STATE_TEST_FAILED;
 			return false;
 		}
 
