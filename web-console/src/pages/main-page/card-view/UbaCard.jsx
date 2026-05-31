@@ -15,7 +15,7 @@ import { useTestRoutinesDispatch, } from 'src/store/TestRoutinesProvider';
 import {getText, getDate} from 'src/services/string-definitions';
 import Tooltip from '@mui/material/Tooltip';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import {getTestRuntime} from '../utils';
+import {getTestRuntime, } from '../utils';
 import {useTestRoutines,} from 'src/store/TestRoutinesProvider';
 import {useEffect, useRef,} from 'react';
 import {getUbaDevices,} from 'src/action-creators/UbaDevices';
@@ -137,11 +137,7 @@ export default function UbaCard({row}) {
 						</span>
 
 						<span style={{ textAlign: 'center', fontSize: '12px' }}>
-						  	{row?.[channelIndex]?.status !== statusCodes.STANDBY ? (
 						  	  	<b>{formatTime(getTestRuntime(row?.[channelIndex]))}</b>
-						  	) : (
-						  	    <b>00:00:00</b>
-						  	)}
 						</span>
 						<span style={{ display: 'block', textAlign: 'center', fontSize: '4px' }}>
 							.

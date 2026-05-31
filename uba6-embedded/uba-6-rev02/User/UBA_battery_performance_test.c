@@ -1000,6 +1000,8 @@ void UBA_BPT_get_cached_status_msg(UBA_BPT *bpt, UBA_PROTO_BPT_status_message *m
 
 void UBA_BPT_save_log(UBA_BPT *bpt) {	
 #define LOG_BUF_SIZE 4096
+
+if (UBA_BPT_isRunning(bpt) == false) {
 	uint32_t chunck_length = LOG_BUF_SIZE;
 
 	if (UBA_BPT_isRunning(bpt) == true) {
@@ -1012,4 +1014,5 @@ UART_LOG(UBA_COMP, "==> last step complete exit: bpt->wr_from %d [%s]", chunck_l
 		UBA_FM_apppned_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, chunck_length); 
 		bpt->wr_from -= chunck_length;
 	}
+}
 }

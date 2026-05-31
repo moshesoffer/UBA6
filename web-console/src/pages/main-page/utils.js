@@ -3,13 +3,16 @@ import {category, statusCodes, getKeyByValue, UBA_CHANNEL_LIST, isTestRunning} f
 import {getText,} from 'src/services/string-definitions';
 import {dateFromUtc,} from 'src/utils/dateTimeHelper';
 
+let delayStartTimeA = -1;
+let delayStartTimeB = -1;
+
+let pausedateChnlB = 0;
 let runtimeChnlA = null;
 let rundateChnlA = 0;
 
 let pausedateChnlA = 0;
 let runtimeChnlB = null;
 let rundateChnlB = 0;
-let pausedateChnlB = 0;
 
 export const getTestResultTimestamps = (reports) => {
 	if (!reports) return [];
@@ -45,7 +48,7 @@ const getRuntime = timestampStart => {
 	const now = new Date();
 	let diff = now.getTime() - start.getTime();
 	diff = Math.round(diff / 1000);
-  console.log('==> time start:', start, ' now: ', now, ' diff: ', diff);
+//console.log('==> time start:', start, ' now: ', now, ' diff: ', diff);
 
 	return diff;
 }
@@ -58,12 +61,19 @@ export const getTestRuntime = ubaDevice => {
 	const now = getRuntime(ubaDevice.timestampStart) || 0;
 
 	if (ubaDevice.channel === 'A') {
+		if (delayStartTimeA === -1/*inital value when test start*/) {
+			delayStartTimeA = now;
+//			console.log (`==> delayStartTimeA: ${delayStartTimeA}`);
+		}
+
 		//console.log (`==> getTestRuntime: ${ubaDevice.channel}`);
 		if ((ubaDevice.status === statusCodes.RUNNING) || (ubaDevice.status === statusCodes.NEXTSTEP)) {
-			rundateChnlA = now - pausedateChnlA;
-		} else 
-		if (ubaDevice.status === statusCodes.PAUSED) {
-			pausedateChnlA = now - rundateChnlA;
+			rundateChnlA = now - pausedateChnlA - delayStartTimeA;
+		} else if (ubaDevice.status === statusCodes.PAUSED) {
+			pausedateChnlA = now - rundateChnlA + delayStartTimeA;
+		} else if (ubaDevice.status === statusCodes.STANDBY) {
+			runtimeChnlA = 0;
+			delayStartTimeA = -1;
 		}
 
 		runtimeChnlA = formatSeconds(rundateChnlA);
@@ -76,6 +86,8 @@ export const getTestRuntime = ubaDevice => {
 		} else 
 		if (ubaDevice.status === statusCodes.PAUSED) {
 			pausedateChnlB = now - rundateChnlB;
+		} else {
+			delayStartTimeB = -1;
 		}
 
 		runtimeChnlB = formatSeconds(rundateChnlB);
