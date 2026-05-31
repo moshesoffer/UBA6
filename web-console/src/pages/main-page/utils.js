@@ -4,12 +4,11 @@ import {getText,} from 'src/services/string-definitions';
 import {dateFromUtc,} from 'src/utils/dateTimeHelper';
 
 let delayStartTimeA = -1;
-let delayStartTimeB = -1;
-
 let pausedateChnlB = 0;
 let runtimeChnlA = null;
 let rundateChnlA = 0;
 
+let delayStartTimeB = -1;
 let pausedateChnlA = 0;
 let runtimeChnlB = null;
 let rundateChnlB = 0;
@@ -86,7 +85,8 @@ export const getTestRuntime = ubaDevice => {
 		} else 
 		if (ubaDevice.status === statusCodes.PAUSED) {
 			pausedateChnlB = now - rundateChnlB;
-		} else {
+		} else if (ubaDevice.status === statusCodes.STANDBY) {
+			runtimeChnlB = 0;
 			delayStartTimeB = -1;
 		}
 
