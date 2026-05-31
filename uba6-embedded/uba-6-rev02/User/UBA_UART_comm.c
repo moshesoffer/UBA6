@@ -534,6 +534,7 @@ void UBA_UART_transfer_file(char *folder, char *filename, uint32_t chunk_index) 
 	message.pyload.file.chunk_index = chunk_index;
 	memcpy(message.pyload.file.filename, filename, strlen(filename) + 1);
 	UBA_FM_transfer_chunk(folder, &message.pyload.file);
+	UART_LOG(COMP, "==> File: %s Was Sent chunk %lu", message.pyload.file.filename, chunk_index);
 	if (UBA_UART_sent_message(&message, MSG_Message_file_tag)) {
 		UART_LOG_WARNNING(COMP, "File: %s Was Sent chunk %lu", message.pyload.file.filename, chunk_index);
 	}
@@ -542,6 +543,7 @@ void UBA_UART_transfer_file(char *folder, char *filename, uint32_t chunk_index) 
 void UBA_UART_transfer_file_list(char *folder, uint16_t skip) {
 	MSG_Message message = { 0 };
 	UBA_FM_file_list(folder, &message.pyload.fm_list, skip);
+	UART_LOG(COMP, "==> File List (%u/%u): Was Sent, folder [%s] ", message.pyload.fm_list.filenames_count, message.pyload.fm_list.total_files, folder);
 	if (UBA_UART_sent_message(&message, MSG_Message_fm_list_tag)) {
 		UART_LOG_WARNNING(COMP, "File List (%u/%u): Was Sent ", message.pyload.fm_list.filenames_count, message.pyload.fm_list.total_files);
 	}
@@ -551,6 +553,7 @@ void UBA_UART_transfer_single_file_name(uint8_t *filename) {
 	MSG_Message message = { 0 };
 	memcpy(&message.pyload.fm_list.filenames[0][0], filename, strlen(filename) + 1);
 	message.pyload.fm_list.filenames_count = 1;
+	UART_LOG(COMP, "==> Single File: %s Was Sent", filename);
 	if (UBA_UART_sent_message(&message, MSG_Message_fm_list_tag)) {
 		UART_LOG_WARNNING(COMP, "File List (%u/%u): Was Sent ", message.pyload.fm_list.filenames_count, message.pyload.fm_list.total_files);
 	}

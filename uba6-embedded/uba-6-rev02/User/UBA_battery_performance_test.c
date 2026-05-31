@@ -123,7 +123,6 @@ void UBA_BPT_test_result_filename(UBA_BPT *bpt) {
 		UART_LOG_ERROR(UBA_COMP, "Buffer length is to short(%lu,%d)", UBA_BPT_FILENAME_MAX_SIZE, n);
 	}
 	UART_LOG_INFO(UBA_COMP, "update BPT file name to %s ", bpt->filename);
-
 }
 
 void UBA_BPT_update_state(UBA_BPT *bpt) {
@@ -326,7 +325,9 @@ void UBA_BPT_standby(UBA_BPT *bpt) {
 }
 
 void UBA_BPT_standby_exit(UBA_BPT *bpt) {
-	UBA_BPT_test_result_filename(bpt);
+	if (bpt->current_step == bpt->head_step) {
+		UBA_BPT_test_result_filename(bpt);
+	}
 }
 
 void UBA_BPT_pause_enter(UBA_BPT *bpt) {	
@@ -588,6 +589,7 @@ bool UBA_BPT_stop(UBA_BPT *bpt) {
 //			UBA_FM_apppned_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
 //			bpt->wr_from = 0;
 //		}
+		//UBA_BPT_test_result_filename(bpt);
 
 		int list_index = bpt->TR_selected_index;
 		if (TR_file.list[list_index].mode == UBA_PROTO_BPT_MODE_DUAL_CHANNEL) {

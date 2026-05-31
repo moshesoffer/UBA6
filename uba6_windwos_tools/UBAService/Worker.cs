@@ -67,13 +67,13 @@ namespace UBAService {
                         try {
                             GETPendingTasksDTO pt = await wcs.GetPendingTasks();
                             if (pt != null) {
-                                //if (cycle1++ % 1 == 0) {
-                                //    //Change Running test status (uba.Status) - done manually by user (confirm click)
-                                //    if (pt?.PendingRunningTests?.Count == 0 && pt?.PendingConnectionUbaDevices?.Count == 0) {
-                                //        await refreshChannleReading(stoppingToken);
-                                //    }
-                                //    cycle1 = 0;
-                                //}
+                                if (cycle1++ % 1 == 0) {
+                                    //Change Running test status (uba.Status) - done manually by user (confirm click)
+                                    if (pt?.PendingRunningTests?.Count == 0 && pt?.PendingConnectionUbaDevices?.Count == 0) {
+                                        await refreshChannleReading(stoppingToken);
+                                    }
+                                    cycle1 = 0;
+                                }
 
                                 if (cycle1++ % 1 == 0) {
                                     //update UBA running test data 
@@ -151,12 +151,14 @@ namespace UBAService {
                 ////_logger.LogInformation("Found {Count} UBA devices.", ubaDeviceDtos.Count);
                 foreach (var ubaDto in ubaDeviceDtos) {
                     try {
-//_logger.LogInformation("3. {Count}-UBAs channel {Channel} status {Status}", ubaDeviceDtos.Count, ubaDto.Channel, ubaDto.Status);
+//logger.LogInformation("3. {Count}-UBAs channel {Channel} status {Status}", ubaDeviceDtos.Count, ubaDto.Channel, ubaDto.Status);
                         if (ubaDto.Channel.Equals("A") || ubaDto.Channel.Equals("Ab")) {
                             Message message = await UBAs.First().GetMessage(UBA_PROTO_QUERY.RECIPIENT.BptA);
                             if (message != null) {
                                 await wcs.UpdateTestReadingData(ubaDto.RunningTestID, message.QueryResponse.Bpt, true);
-                                if ((((RunningTestsController.Status)ubaDto.Status) & RunningTestsController.Status.PENDING) == 0) {
+
+                                if (((((RunningTestsController.Status)ubaDto.Status) & RunningTestsController.Status.STOPPED) == 0) &&
+                                    ((((RunningTestsController.Status)ubaDto.Status) & RunningTestsController.Status.PENDING) == 0)) {
                                     ////_logger.LogInformation("Change PENDING Test Status {State}", message.QueryResponse.Bpt.State);
 //_logger.LogInformation("3.1.Pending test {Channel} {Status}, set to {newState}", ubaDto.Channel, ubaDto.Status, message.QueryResponse.Bpt.State);
                                     await wcs.ChangeRunningTestStatus(ubaDto, Bptstate2DTOstate(message.QueryResponse.Bpt.State, message.QueryResponse.Bpt.StepType));
@@ -167,7 +169,9 @@ namespace UBAService {
                             Message message = await UBAs.First().GetMessage(UBA_PROTO_QUERY.RECIPIENT.BptB);
                             if (message != null) {
                                 await wcs.UpdateTestReadingData(ubaDto.RunningTestID, message.QueryResponse.Bpt, true);
-                                if ((((RunningTestsController.Status)ubaDto.Status) & RunningTestsController.Status.PENDING) == 0) {
+
+                                if (((((RunningTestsController.Status)ubaDto.Status) & RunningTestsController.Status.STOPPED) == 0) &&
+                                    ((((RunningTestsController.Status)ubaDto.Status) & RunningTestsController.Status.PENDING) == 0)) {
                                     ////_logger.LogInformation("Change PENDING Test Status {State}", message.QueryResponse.Bpt.State);
 //_logger.LogInformation("3.2.Pending test {Channel} {Status}, set to {newState}", ubaDto.Channel, ubaDto.Status, message.QueryResponse.Bpt.State);
                                     await wcs.ChangeRunningTestStatus(ubaDto, Bptstate2DTOstate(message.QueryResponse.Bpt.State, message.QueryResponse.Bpt.StepType));
