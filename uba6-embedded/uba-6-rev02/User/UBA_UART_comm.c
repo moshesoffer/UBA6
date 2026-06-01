@@ -42,7 +42,7 @@ static int cmd_pending_msg_num = 0;
 
 static uint32_t query_pending_id = 0;
 static uint32_t cmd_pending_start_index = 0;
-static UBA_PROTO_CMD_command_message cmd_pending_msg[32];
+static UBA_PROTO_CMD_command_message cmd_pending_msg[64];
 
 #if (UBA_LOG_LEVEL_COMM <= UART_LOG_LEVEL_INFO)
 #define UART_LOG_COMM_INFO(...) UART_LOG_INFO(COMP,##__VA_ARGS__)
@@ -77,11 +77,11 @@ void UBA_UART_qeury_pending_clear(UBA_UART_QUERY_RECIPIENT clear_query_request) 
 
 void UBA_UART_cmd_pending_post(UBA_PROTO_CMD_command_message *cmd) {
 	cmd_pending_msg_num++;
-	memcpy (&cmd_pending_msg [(cmd_pending_start_index + cmd_pending_msg_num - 1) % 32], cmd, sizeof(UBA_PROTO_CMD_command_message));
+	memcpy (&cmd_pending_msg [(cmd_pending_start_index + cmd_pending_msg_num - 1) % 64], cmd, sizeof(UBA_PROTO_CMD_command_message));
 }
 void UBA_UART_cmd_pending_clear() {
 	cmd_pending_msg_num--;
-	cmd_pending_start_index = (cmd_pending_start_index+1) %32;
+	cmd_pending_start_index = (cmd_pending_start_index+1) %64;
 }
 
 bool uart_write_callback(pb_ostream_t *stream, const uint8_t *buf, size_t count) {
@@ -267,8 +267,8 @@ int process_message(MSG_Message *message) {
 			break;
 		case MSG_Message_cmd_tag:
 			UART_LOG_COMM_DEBUG("CMD message");
-			//UBA_COMMAND_execute(&message->pyload.cmd); //within the intterupt
-			UBA_UART_cmd_pending_post(&message->pyload.cmd);
+			UBA_COMMAND_execute(&message->pyload.cmd); //within the intterupt
+			//UBA_UART_cmd_pending_post(&message->pyload.cmd);
 			break;
 		case MSG_Message_tr_tag:
 #if 0//save TR history in TR_file list */
@@ -276,7 +276,8 @@ int process_message(MSG_Message *message) {
 			memcpy(&TR_file.list[message->pyload.tr.index], &message->pyload.tr.tr, sizeof(message->pyload.tr.tr));
 			UBA_TR_print(&TR_file.list[message->pyload.tr.index]);
 #else
-			UART_LOG_COMM_DEBUG("TR message: %s Store at Index: %u", message->pyload.tr.tr.name, message->pyload.tr.index);
+
+UART_LOG_COMM_DEBUG("TR message: %s Store at Index: %u", message->pyload.tr.tr.name, message->pyload.tr.index);
 			memcpy(&TR_file.list[message->pyload.tr.index], &message->pyload.tr.tr, sizeof(message->pyload.tr.tr));
 			UBA_TR_print(&TR_file.list[message->pyload.tr.index]);
 #endif//save TR history in TR_file list */
@@ -448,7 +449,7 @@ void UBA_UART_comm_run() {
 	int max_msgs = 1;
 	while (cmd_pending_msg_num) {
 		UBA_COMMAND_execute(&cmd_pending_msg[cmd_pending_start_index]);
-		cmd_pending_start_index = (cmd_pending_start_index+1) % 32;
+		cmd_pending_start_index = (cmd_pending_start_index+1) % 64;
 		cmd_pending_msg_num--;
 		//prevent startvation
 		if (max_msgs-- == 0) {

@@ -69,8 +69,8 @@ namespace UBA6Library {
             sp = new SerialPort(portName, baudRate);
             sp.ReadBufferSize = 8192;
             sp.Parity = Parity.None;
-            sp.ReadTimeout = 300;
-            sp.WriteTimeout = 300;
+            sp.ReadTimeout = 600;
+            sp.WriteTimeout = 600;
             sp.DataReceived += SerialPort_DataReceived;
             _logger.LogDebug($"Initializing UBA_Interface with COM port: {portName}");
             try {
@@ -101,8 +101,8 @@ namespace UBA6Library {
             }
             sp = new SerialPort(newComPort, 115200);
             sp.Parity = Parity.None;
-            sp.ReadTimeout = 300;
-            sp.WriteTimeout = 300;
+            sp.ReadTimeout = 600;
+            sp.WriteTimeout = 600;
             sp.DataReceived += SerialPort_DataReceived;
             try {
                 sp.Open();
@@ -360,7 +360,7 @@ namespace UBA6Library {
             return BitConverter.ToUInt32(buffer, 0);
         }
 
-        public async Task<Message?> GetMessage(Message? send, int timeout = 100) {
+        public async Task<Message?> GetMessage(Message? send, int timeout = 5000) {
            /* if (sp == null || !sp.IsOpen) {
                 _logger.LogError("Serial port is not open.");
                 failes++;
@@ -368,7 +368,7 @@ namespace UBA6Library {
             }*/
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             if (send?.PyloadCase == Message.PyloadOneofCase.Query) {
-                Message? res = await EnqueueMessageAndWaitForResponseAsync(new Message(send), MessagePriority.DEVICE_QUERY, 100/*timeout*/);
+                Message? res = await EnqueueMessageAndWaitForResponseAsync(new Message(send), MessagePriority.DEVICE_QUERY, 5000/*timeout*/);
                 if (res != null) {
                     _logger.LogDebug($"Received Query Response : {res.QueryResponse.Recipient} in {stopwatch.ElapsedMilliseconds} ms");
                     return new Message(res);
@@ -396,7 +396,7 @@ namespace UBA6Library {
         }
 
 
-        public async Task<Message?> GetMessage(UBA_PROTO_QUERY.RECIPIENT recipient, UInt32 targateAddress = 0xffffffff, int timeout = 5000) {
+        public async Task<Message?> GetMessage(UBA_PROTO_QUERY.RECIPIENT recipient, UInt32 targateAddress = 0xffffffff, int timeout = 10000) {
           /*  if (sp == null || !sp.IsOpen) {
                 _logger.LogError("Serial port is not open.");
                 failes++;
@@ -412,7 +412,7 @@ namespace UBA6Library {
             return responseMessage;
         }
 
-        public async Task<Message?> EnqueueMessageAndWaitForResponseAsync(Message? message, MessagePriority priority = MessagePriority.DEFUALT, int timeout = 100) {
+        public async Task<Message?> EnqueueMessageAndWaitForResponseAsync(Message? message, MessagePriority priority = MessagePriority.DEFUALT, int timeout = 0) {
             if (message == null) throw new ArgumentNullException(nameof(message));       
             var tcs = new TaskCompletionSource<Message?>();
             EventHandler<ProtoMessageEventArg>? handler = null;
