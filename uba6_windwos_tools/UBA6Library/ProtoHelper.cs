@@ -204,6 +204,8 @@ namespace UBA6Library {
         public static List<UBA_PROTO_DATA_LOG.data_log> DecodeDataLogMessages(byte[] data) {
             List<UBA_PROTO_DATA_LOG.data_log> logs = new List<UBA_PROTO_DATA_LOG.data_log>();
             using var ms = new MemoryStream(data);
+            ulong totlength = 0;
+            data_log dataLog;
             while (ms.Position < ms.Length) {
                 // Decode varint (message length)
                 ulong length = DecodeVarint(ms);
@@ -214,12 +216,26 @@ namespace UBA6Library {
                 byte[] msgBytes = new byte[length];
                 ms.Read(msgBytes, 0, (int)length);
 
+                totlength += length;
+                //Console.WriteLine($"ParseFrom ms.Position={ms.Position} length={length} totlength={totlength}   ms.Length={ms.Length}");
+                
                 // Parse protobuf message
-                data_log dataLog = data_log.Parser.ParseFrom(msgBytes);
+                try {
+                    data_log dataLogTmp = data_log.Parser.ParseFrom(msgBytes);
+                    //Console.WriteLine($"..");
+
+                    dataLog = dataLogTmp;
+                } catch (Exception ex) {
+                    totlength -= length;
+                    Console.WriteLine($"exception: ParseFrom Length={msgBytes?.Length} TotLength={totlength}");
+                    //Console.WriteLine($"First bytes={BitConverter.ToString(msgBytes?.Take(64).ToArray())}");
+                    //Console.WriteLine(ex.ToString());
+                    continue;
+                }
 
                 // Map to struct
-
                 logs.Add(dataLog);
+                //Console.WriteLine($"logs.Count= {logs.Count}");
             }
             return logs;
         }
