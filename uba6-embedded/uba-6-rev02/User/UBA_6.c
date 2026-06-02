@@ -102,14 +102,14 @@ void UBA_6_fan_control(UBA_6 *uba) {
 	if (uba->isFan_on) {
 		if ((UBA_BPT_isPause(&uba->BPT_A))|| UBA_BPT_isPause(&uba->BPT_B) || UBA_BPT_isPause(&uba->BPT_AB)) {
 			HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_RESET);
-			UART_LOG_WARNNING(UBA_COMP, "==== FAN Off ====");
+			UART_LOG_WARNNING(UBA_COMP, "==== FAN Off (1) ====");
 			uba->isFan_on = false;
 		
 		} else if(UBA_BPT_isRunning(&uba->BPT_A) || UBA_BPT_isRunning(&uba->BPT_B) || UBA_BPT_isRunning(&uba->BPT_AB)) {
 
 		} else {
 			HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_RESET);
-			UART_LOG_WARNNING(UBA_COMP, "==== FAN Off ====");
+			UART_LOG_WARNNING(UBA_COMP, "==== FAN Off (2) ====");
 			uba->isFan_on = false;
 		}
 
@@ -119,7 +119,7 @@ void UBA_6_fan_control(UBA_6 *uba) {
 		} else if (UBA_BPT_isRunning(&uba->BPT_A) || UBA_BPT_isRunning(&uba->BPT_B) || UBA_BPT_isRunning(&uba->BPT_AB)) {
 			HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_SET);
 			uba->isFan_on = true;
-			UART_LOG_WARNNING(UBA_COMP, "==== FAN On ====");
+			UART_LOG_WARNNING(UBA_COMP, "==== FAN On (1) ====");
 		} else {
 		}
 	}
@@ -128,11 +128,11 @@ void UBA_6_fan_control(UBA_6 *uba) {
 void UBA_6_fan_on(UBA_6 *uba, bool fan_on) {
 	if (fan_on == false) {
 		HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_RESET);
-		UART_LOG_WARNNING(UBA_COMP, "==== FAN Off ====");
+		UART_LOG_WARNNING(UBA_COMP, "==== FAN Off (3) ====");
 	}
 	if (fan_on == true) {
 		HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_SET);
-		UART_LOG_WARNNING(UBA_COMP, "==== FAN Off ====");
+		UART_LOG_WARNNING(UBA_COMP, "==== FAN On (2) ====");
 	}
 }
 

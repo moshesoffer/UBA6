@@ -98,7 +98,7 @@ namespace UBAService {
                                     cycle5 = 0;
                                 }
                                 
-                                if (cycle3++ % 1 == 0) {
+                                if (cycle3++ % 3 == 0) {
                                     if (pt?.PendingRunningTests?.Count > 0) {
                                         //pole RunningTestsController.Status change (GETPendingTestResponse)
                                         await resolvePendingRunningTest(pt?.PendingRunningTests);
@@ -118,7 +118,7 @@ namespace UBAService {
                                 //    cycle5 = 0;
                                 //}
 
-                                if (cycle6++ % 5 == 0) {
+                                if (cycle6++ % 8 == 0) {
                                     if (testInProgress == false) {
                                         updateRunningTestStatus(pt?.PendingRunningTests);
                                     }
@@ -130,7 +130,7 @@ namespace UBAService {
                             continue;
                         }
                     }
-                    await Task.Delay(10/*msec delay*/, stoppingToken);
+                    await Task.Delay(1/*msec delay*/, stoppingToken);
                 }
             } catch (Exception ex) {
                 _logger.LogError(ex, "An error occurred in the UBA Service: {Message}", ex.Message);
