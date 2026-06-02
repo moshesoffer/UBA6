@@ -347,7 +347,7 @@ void UBA_LCD_screen_load_channel(UBA_LCD_channel *lcd_ch, UBA_channel *ch) {
 		ch->shadow.ch_name_changed = true;
 	}
 
-	if (ch->state.current != ch->shadow.state) {
+	//if (ch->state.current != ch->shadow.state) {
 		switch (ch->state.current) {
 			case UBA_CHANNEL_STATE_INIT:
 				lcd_ch->status.effect = UBA_GFX_EFFECT_SOLID;
@@ -385,7 +385,7 @@ void UBA_LCD_screen_load_channel(UBA_LCD_channel *lcd_ch, UBA_channel *ch) {
 
 		//update shadow - will be set in draw function
 		ch->shadow.state = ch->state.current;
-	}
+	//}
 
 	lcd_ch->shadow.volt_vlaue_changed = false;
 	if (ch->id == UBA_CHANNLE_ID_AB) {
@@ -868,11 +868,10 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 	//	//updated already in load screen
 	//	ch->shadow.state = UBA_CHANNEL_STATE_INIT;
 	//} else {
-	if (lcd_bpt_shadow->current_state != channel_test->state.current)
-	{
+	//if (lcd_bpt_shadow->current_state != channel_test->state.current) {
 		switch (screen->bpt->state.current) {
 			case UBA_BPT_STATE_PAUSE:
-				sprintf(lcd_bpt->channel.status.elemnt.status.text, "PAUSE");
+				sprintf(lcd_bpt->channel.status.elemnt.status.text, "PAUSED");
 				lcd_bpt->channel.status.elemnt.status.color_fill = UBA_GFX_COLOR_YELLOW;
 				lcd_bpt->channel.status.effect = UBA_GFX_EFFECT_BLINK_SLOW;
 				ch->shadow.state = UBA_CHANNEL_STATE_INIT;
@@ -880,7 +879,7 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 			case UBA_BPT_STATE_TEST_FAILED:
 				lcd_bpt->channel.status.effect = UBA_GFX_EFFECT_SOLID;
 				if ((screen->bpt->error & UBA_PROTO_UBA6_ERROR_USER_ABORT) == UBA_PROTO_UBA6_ERROR_USER_ABORT) {
-					sprintf(lcd_bpt->channel.status.elemnt.status.text, "ABORT");
+					sprintf(lcd_bpt->channel.status.elemnt.status.text, "ABORTED");
 
 				} else {
 					sprintf(lcd_bpt->channel.status.elemnt.status.text, "FAIL");
@@ -906,7 +905,7 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 		}
 		//update shadow - will be done later
 		//lcd_bpt_shadow->current_state = channel_test->state.current;
-	}
+	//}
 
 	//Step	
 	if (UBA_BPT_isRunning(channel_test)) {

@@ -788,6 +788,9 @@ UBA_STATUS_CODE UBA_BPT_begin(UBA_BPT *bpt, uint8_t list_index) {
 
 			if (bpt->ch->current_screen != NULL) {
 				UBA_LCD_screen_event(bpt->ch->current_screen, UBA_LCD_SCREEN_DISPLAY_EXE_CMD, UBA_LCD_SCREEN_DISPLAY_EVENT_SELECT);
+
+				((UBA_LCD_screen*)bpt->ch->current_screen)->tr = bpt->tr;
+				((UBA_LCD_screen*)bpt->ch->current_screen)->tr_list_select_index = bpt->TR_selected_index;
 			}
 
 			bpt->start_date_time.add_pause_seconds = 0;
