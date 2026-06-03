@@ -127,7 +127,7 @@ namespace UBA6Library {
                 MinTemperature = minTemp,
                 Sc = sc
             };
-////            Console.WriteLine($"Create Discharge Step: {cs.Source} {cs.Current.Value} [{cs.Current.Type}] {cs.MinTemperature} C");
+            Console.WriteLine($"==> Create Discharge Step: {cs.Source} {cs.Current.Value} [{cs.Current.Type}] {cs.MinTemperature} C");
             return cs;
         }
 

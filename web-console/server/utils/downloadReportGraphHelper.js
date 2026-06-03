@@ -30,10 +30,10 @@ const getLastDischarges = (planByStepIndex) => {
 			lastDischargesCapacity += planStepWrapper.capacitySum;
 			lastDischargesEnergy += planStepWrapper.energySum;
 		} else if(dischargeStepFound) {
-			return { lastDischargesCapacity: (lastDischargesCapacity / 3600) / 1000, lastDischargesEnergy: (lastDischargesEnergy / 3600) / 1000 };
+			return { lastDischargesCapacity: (lastDischargesCapacity / 3600), lastDischargesEnergy: (lastDischargesEnergy / 3600) };
 		}
 	});
-	return { lastDischargesCapacity: (lastDischargesCapacity / 3600) / 1000, lastDischargesEnergy: (lastDischargesEnergy / 3600) / 1000 };
+	return { lastDischargesCapacity: (lastDischargesCapacity / 3600), lastDischargesEnergy: (lastDischargesEnergy / 3600) };
 }
 
 const deleteFiles = (excelOutputFilePath, pdfPath) => {
@@ -110,7 +110,7 @@ const downloadReportsGraph = async (req, res) => {
 		let previousTimestamp = 0;
 		let maxTemperature = -9999;
 		testResults.forEach((testResult, index) => {
-		logger.info(`downloadReportsGraph [${req.params?.reportID} {index}]`);
+			logger.info(`downloadReportsGraph [${req.params?.reportID} ${index}] `);
 			const currentPlanIndex = testResult.planIndex;
 			const currentStepIndex = testResult.stepIndex;
 			const planStep = planArr[currentPlanIndex];
@@ -172,8 +172,8 @@ const downloadReportsGraph = async (req, res) => {
 		});
 		
 		const lastDischarges = getLastDischarges(planByStepIndex);
-		reportSheet.cell(cells.lastDischarges1).value(Math.abs(lastDischarges.lastDischargesCapacity));
-		reportSheet.cell(cells.lastDischarges2).value(Math.abs(lastDischarges.lastDischargesEnergy));
+		reportSheet.cell(cells.lastDischarges1).value(Math.abs(lastDischarges.lastDischargesCapacity)).style("horizontalAlignment", "right").style("numberFormat", "0.000");
+		reportSheet.cell(cells.lastDischarges2).value(Math.abs(lastDischarges.lastDischargesEnergy)).style("horizontalAlignment", "right").style("numberFormat", "0.000");
 		//add summary
 		addSummary(testData, lastDischarges, maxTemperature, rowNumber, reportSheet);
 		
@@ -261,58 +261,60 @@ const addChargeStepFromPlan = (stepIndex, planStepWrapper, testData, rowNumber, 
 	
 	rowNumber++;
 	reportSheet.cell(`D${rowNumber}`).value(generalConsts.source);
-	reportSheet.cell(`E${rowNumber}`).value(planStep.source);
+	reportSheet.cell(`E${rowNumber}`).value(planStep.source).style("horizontalAlignment", "right");
 	reportSheet.cell(`H${rowNumber}`).value(generalConsts.chargeCapacity);
 	const chargeCapacity = planStepWrapper.capacitySum / 3600;
 	const chargeCapacityT = chargeCapacity > 1000 ? chargeCapacity / 1000 : chargeCapacity;
-	reportSheet.cell(`I${rowNumber}`).value(chargeCapacityT);
-	reportSheet.cell(`J${rowNumber}`).value(chargeCapacity > 1000 ? 'Ah' : 'mAh');
+	reportSheet.cell(`I${rowNumber}`).value(chargeCapacityT).style("horizontalAlignment", "right").style("numberFormat", "0.000");
+	//reportSheet.cell(`J${rowNumber}`).value(chargeCapacity > 1000 ? 'Ah' : 'mAh');
+	reportSheet.cell(`J${rowNumber}`).value('Ah');
 
 	rowNumber++;
 	reportSheet.cell(`D${rowNumber}`).value(generalConsts.chargeCurrent);
-	reportSheet.cell(`E${rowNumber}`).value(splitUnitVariants(planStep.chargeCurrent).first);
+	reportSheet.cell(`E${rowNumber}`).value(splitUnitVariants(planStep.chargeCurrent).first).style("horizontalAlignment", "right").style("numberFormat", "0.000");
 	reportSheet.cell(`F${rowNumber}`).value(splitUnitVariants(planStep.chargeCurrent).second);
 	reportSheet.cell(`H${rowNumber}`).value(generalConsts.chargeEnergy);
-	reportSheet.cell(`I${rowNumber}`).value(planStepWrapper.energySum / 3600);
+	reportSheet.cell(`I${rowNumber}`).value(planStepWrapper.energySum / 3600).style("horizontalAlignment", "right").style("numberFormat", "0.000");
 	reportSheet.cell(`J${rowNumber}`).value('Wh');
 
 	rowNumber++;
 	reportSheet.cell(`D${rowNumber}`).value(generalConsts.chargePerCell);
-	reportSheet.cell(`E${rowNumber}`).value(planStep.chargePerCell);
+	reportSheet.cell(`E${rowNumber}`).value(planStep.chargePerCell).style("horizontalAlignment", "right");
 	reportSheet.cell(`F${rowNumber}`).value('V');
-	reportSheet.cell(`I${rowNumber}`).value(((chargeCapacity / 1000) / testData.ratedBatteryCapacity) * 100);
+	reportSheet.cell(`I${rowNumber}`).value(((chargeCapacity / 1000) / testData.ratedBatteryCapacity) * 100).style("horizontalAlignment", "right").style("numberFormat", "0.000");
 	reportSheet.cell(`J${rowNumber}`).value('%');
 
 	rowNumber++;
-	reportSheet.cell(`H${rowNumber}`).value(generalConsts.duration);
-	reportSheet.cell(`I${rowNumber}`).value(planStepWrapper.timestampArr[planStepWrapper.timestampArr.length - 1] - planStepWrapper.timestampArr[0]);
+	reportSheet.cell(`H${rowNumber}`).value(generalConsts.duration)
+	reportSheet.cell(`I${rowNumber}`).value(planStepWrapper.timestampArr[planStepWrapper.timestampArr.length - 1] - planStepWrapper.timestampArr[0]).style("horizontalAlignment", "right");
+	reportSheet.cell(`J${rowNumber}`).value('sec').style("horizontalAlignment", "left");
 
 	rowNumber++;
 	reportSheet.cell(`D${rowNumber}`).value(generalConsts.maxTermperature);
-	reportSheet.cell(`E${rowNumber}`).value(planStep.maxTemp);
+	reportSheet.cell(`E${rowNumber}`).value(planStep.maxTemp).style("horizontalAlignment", "right").style("numberFormat", "0.00");
 	reportSheet.cell(`F${rowNumber}`).value('°C');
 	reportSheet.cell(`H${rowNumber}`).value(generalConsts.initialVoltage);
-	reportSheet.cell(`I${rowNumber}`).value(planStepWrapper.voltageArr[0]);
+	reportSheet.cell(`I${rowNumber}`).value(planStepWrapper.voltageArr[0]).style("horizontalAlignment", "right");
 	reportSheet.cell(`J${rowNumber}`).value('V');
 
 	rowNumber++;
 	reportSheet.cell(`D${rowNumber}`).value(generalConsts.maxTime);
-	reportSheet.cell(`E${rowNumber}`).value(planStep.maxTime);
+	reportSheet.cell(`E${rowNumber}`).value(planStep.maxTime).style("horizontalAlignment", "right");
 	reportSheet.cell(`H${rowNumber}`).value(generalConsts.endVoltage);
-	reportSheet.cell(`I${rowNumber}`).value(planStepWrapper.voltageArr[planStepWrapper.voltageArr.length - 1]);
+	reportSheet.cell(`I${rowNumber}`).value(planStepWrapper.voltageArr[planStepWrapper.voltageArr.length - 1]).style("horizontalAlignment", "right");
 	reportSheet.cell(`J${rowNumber}`).value('V');
 
 	rowNumber++;
 	reportSheet.cell(`D${rowNumber}`).value(generalConsts.cutOffCurrent);
-	reportSheet.cell(`E${rowNumber}`).value(splitUnitVariants(planStep.cutOffCurrent).first);
+	reportSheet.cell(`E${rowNumber}`).value(splitUnitVariants(planStep.cutOffCurrent).first).style("horizontalAlignment", "right");
 	reportSheet.cell(`F${rowNumber}`).value(splitUnitVariants(planStep.cutOffCurrent).second);
 	reportSheet.cell(`H${rowNumber}`).value(generalConsts.endTemperature);
-	reportSheet.cell(`I${rowNumber}`).value(planStepWrapper.temperatureArr[planStepWrapper.temperatureArr.length - 1]);
+	reportSheet.cell(`I${rowNumber}`).value(planStepWrapper.temperatureArr[planStepWrapper.temperatureArr.length - 1]).style("horizontalAlignment", "right").style("numberFormat", "0.00");
 	reportSheet.cell(`J${rowNumber}`).value('°C');
 
 	rowNumber++;
 	reportSheet.cell(`D${rowNumber}`).value(generalConsts.chargeLimit);
-	reportSheet.cell(`E${rowNumber}`).value(splitUnitVariants(planStep.chargeLimit).first);
+	reportSheet.cell(`E${rowNumber}`).value(splitUnitVariants(planStep.chargeLimit).first).style("horizontalAlignment", "right");
 	reportSheet.cell(`F${rowNumber}`).value(splitUnitVariants(planStep.chargeLimit).second);
 
 	return rowNumber + 3;
@@ -325,14 +327,14 @@ const addDelayStepFromPlan = (stepIndex, planStepWrapper, testData, rowNumber, r
 	
 	rowNumber++;
 	reportSheet.cell(`D${rowNumber}`).value(generalConsts.time);
-	reportSheet.cell(`E${rowNumber}`).value(planStep.time);
+	reportSheet.cell(`E${rowNumber}`).value(planStep.time).style("horizontalAlignment", "right");
 	reportSheet.cell(`H${rowNumber}`).value(generalConsts.endTemperature);
-	reportSheet.cell(`I${rowNumber}`).value(planStepWrapper.temperatureArr[planStepWrapper.temperatureArr.length - 1]);
+	reportSheet.cell(`I${rowNumber}`).value(planStepWrapper.temperatureArr[planStepWrapper.temperatureArr.length - 1]).style("horizontalAlignment", "right").style("numberFormat", "0.00");
 	reportSheet.cell(`J${rowNumber}`).value('°C');
 
 	rowNumber++;
 	reportSheet.cell(`D${rowNumber}`).value(generalConsts.toTemperature);
-	reportSheet.cell(`E${rowNumber}`).value(planStep.waitTemp);
+	reportSheet.cell(`E${rowNumber}`).value(planStep.waitTemp).style("horizontalAlignment", "right").style("numberFormat", "0.00");
 	reportSheet.cell(`F${rowNumber}`).value('°C');
 
 	return rowNumber + 3;
@@ -345,68 +347,70 @@ const addDischargeStepFromPlan = (stepIndex, planStepWrapper, testData, rowNumbe
 	
 	rowNumber++;
 	reportSheet.cell(`D${rowNumber}`).value(generalConsts.source);
-	reportSheet.cell(`E${rowNumber}`).value(planStep.source);
+	reportSheet.cell(`E${rowNumber}`).value(planStep.source).style("horizontalAlignment", "right");
 	
 	rowNumber++;
 	reportSheet.cell(`D${rowNumber}`).value(generalConsts.disChargeCurrent);
-	reportSheet.cell(`E${rowNumber}`).value(splitUnitVariants(planStep.dischargeCurrent).first);
+	reportSheet.cell(`E${rowNumber}`).value(splitUnitVariants(planStep.dischargeCurrent).first).style("horizontalAlignment", "right");
 	reportSheet.cell(`F${rowNumber}`).value(splitUnitVariants(planStep.dischargeCurrent).second);
 	reportSheet.cell(`H${rowNumber}`).value(generalConsts.dischargeCapacity);
 	const chargeCapacity = Math.abs(planStepWrapper.capacitySum / 3600);
 	const chargeCapacityT = chargeCapacity > 1000 ? chargeCapacity / 1000 : chargeCapacity;
-	reportSheet.cell(`I${rowNumber}`).value(Math.abs(chargeCapacityT));
-	reportSheet.cell(`J${rowNumber}`).value(Math.abs(chargeCapacity) > 1000 ? 'Ah' : 'mAh');
+	reportSheet.cell(`I${rowNumber}`).value(Math.abs(chargeCapacityT)).style("horizontalAlignment", "right").style("numberFormat", "0.000");
+	//reportSheet.cell(`J${rowNumber}`).value(Math.abs(chargeCapacity) > 1000 ? 'Ah' : 'mAh');
+	reportSheet.cell(`J${rowNumber}`).value('Ah');
 
 	rowNumber++;
 	reportSheet.cell(`D${rowNumber}`).value(generalConsts.minTemperature);
-	reportSheet.cell(`E${rowNumber}`).value(planStep.minTemp);
+	reportSheet.cell(`E${rowNumber}`).value(planStep.minTemp).style("horizontalAlignment", "right").style("numberFormat", "0.00");
 	reportSheet.cell(`F${rowNumber}`).value('°C');
 	reportSheet.cell(`H${rowNumber}`).value(generalConsts.dischargeEnergy);
-	reportSheet.cell(`I${rowNumber}`).value(Math.abs(planStepWrapper.energySum / 3600));
+	reportSheet.cell(`I${rowNumber}`).value(Math.abs(planStepWrapper.energySum / 3600)).style("horizontalAlignment", "right").style("numberFormat", "0.000");
 	reportSheet.cell(`J${rowNumber}`).value('Wh');
 
 	rowNumber++;
-	reportSheet.cell(`I${rowNumber}`).value(((chargeCapacity / 1000) / testData.ratedBatteryCapacity) * 100);
+	reportSheet.cell(`I${rowNumber}`).value(((chargeCapacity / 1000) / testData.ratedBatteryCapacity) * 100).style("horizontalAlignment", "right").style("numberFormat", "0.000");
 	reportSheet.cell(`J${rowNumber}`).value('%');
 
 	rowNumber++;
 	reportSheet.cell(`D${rowNumber}`).value(generalConsts.maxTermperature);
-	reportSheet.cell(`E${rowNumber}`).value(planStep.maxTemp);
+	reportSheet.cell(`E${rowNumber}`).value(planStep.maxTemp).style("horizontalAlignment", "right").style("numberFormat", "0.00");
 	reportSheet.cell(`F${rowNumber}`).value('°C');
 	reportSheet.cell(`H${rowNumber}`).value(generalConsts.duration);
-	reportSheet.cell(`I${rowNumber}`).value(planStepWrapper.timestampArr[planStepWrapper.timestampArr.length - 1] - planStepWrapper.timestampArr[0]);
+	reportSheet.cell(`I${rowNumber}`).value(planStepWrapper.timestampArr[planStepWrapper.timestampArr.length - 1] - planStepWrapper.timestampArr[0]).style("horizontalAlignment", "right");
+	reportSheet.cell(`J${rowNumber}`).value('sec');
 
 	rowNumber++;
 	reportSheet.cell(`D${rowNumber}`).value(generalConsts.maxTime);
-	reportSheet.cell(`E${rowNumber}`).value(planStep.maxTime);
+	reportSheet.cell(`E${rowNumber}`).value(planStep.maxTime).style("horizontalAlignment", "right");
 	reportSheet.cell(`H${rowNumber}`).value(generalConsts.initialVoltage);
-	reportSheet.cell(`I${rowNumber}`).value(planStepWrapper.voltageArr[0]);
+	reportSheet.cell(`I${rowNumber}`).value(planStepWrapper.voltageArr[0]).style("horizontalAlignment", "right");
 	reportSheet.cell(`J${rowNumber}`).value('V');
 
 	rowNumber++;
 	reportSheet.cell(`D${rowNumber}`).value(generalConsts.cutOffVoltage);
-	reportSheet.cell(`E${rowNumber}`).value(planStep.cutOffVoltage);
+	reportSheet.cell(`E${rowNumber}`).value(planStep.cutOffVoltage).style("horizontalAlignment", "right");
 	reportSheet.cell(`F${rowNumber}`).value('V');
 	reportSheet.cell(`H${rowNumber}`).value(generalConsts.midPointVoltage);
-	reportSheet.cell(`I${rowNumber}`).value(median(planStepWrapper.voltageArr));
+	reportSheet.cell(`I${rowNumber}`).value(median(planStepWrapper.voltageArr)).style("horizontalAlignment", "right");
 	reportSheet.cell(`J${rowNumber}`).value('V');
 
 	rowNumber++;
 	reportSheet.cell(`D${rowNumber}`).value(generalConsts.disChargeLimit);
-	reportSheet.cell(`E${rowNumber}`).value(splitUnitVariants(planStep.dischargeLimit).first);
+	reportSheet.cell(`E${rowNumber}`).value(splitUnitVariants(planStep.dischargeLimit).first).style("horizontalAlignment", "right");
 	reportSheet.cell(`F${rowNumber}`).value(splitUnitVariants(planStep.dischargeLimit).second);
 	reportSheet.cell(`H${rowNumber}`).value(generalConsts.endVoltage);
-	reportSheet.cell(`I${rowNumber}`).value(planStepWrapper.voltageArr[planStepWrapper.voltageArr.length - 1]);
+	reportSheet.cell(`I${rowNumber}`).value(planStepWrapper.voltageArr[planStepWrapper.voltageArr.length - 1]).style("horizontalAlignment", "right");
 	reportSheet.cell(`J${rowNumber}`).value('V');
 
 	rowNumber++;
 	reportSheet.cell(`H${rowNumber}`).value(generalConsts.midPointCurrent);
-	reportSheet.cell(`I${rowNumber}`).value(median(planStepWrapper.currentArr));
-	reportSheet.cell(`J${rowNumber}`).value('A');
+	reportSheet.cell(`I${rowNumber}`).value(median(planStepWrapper.currentArr)).style("horizontalAlignment", "right");
+	reportSheet.cell(`J${rowNumber}`).value('mA');
 
 	rowNumber++;
 	reportSheet.cell(`H${rowNumber}`).value(generalConsts.endTemperature);
-	reportSheet.cell(`I${rowNumber}`).value(planStepWrapper.temperatureArr[planStepWrapper.temperatureArr.length - 1]);
+	reportSheet.cell(`I${rowNumber}`).value(planStepWrapper.temperatureArr[planStepWrapper.temperatureArr.length - 1]).style("horizontalAlignment", "right").style("numberFormat", "0.00");
 	reportSheet.cell(`J${rowNumber}`).value('°C');
 
 	return rowNumber + 3;
@@ -417,21 +421,21 @@ const addSummary = (testData, lastDischarges, maxTemperature, rowNumber, reportS
 	
 	rowNumber++;
 	reportSheet.cell(`D${rowNumber}`).value(generalConsts.lastDischarges);
-	reportSheet.cell(`E${rowNumber}`).value(lastDischarges.lastDischargesCapacity);
+	reportSheet.cell(`E${rowNumber}`).value(lastDischarges.lastDischargesCapacity).style("horizontalAlignment", "right").style("numberFormat", "0.000");
 	reportSheet.cell(`F${rowNumber}`).value('Ah');
 
 	rowNumber++;
-	reportSheet.cell(`E${rowNumber}`).value(lastDischarges.lastDischargesEnergy);
+	reportSheet.cell(`E${rowNumber}`).value(lastDischarges.lastDischargesEnergy).style("horizontalAlignment", "right").style("numberFormat", "0.000");
 	reportSheet.cell(`F${rowNumber}`).value('Wh');
 
 	rowNumber++;
 	reportSheet.cell(`D${rowNumber}`).value(generalConsts.fromRated);
-	reportSheet.cell(`E${rowNumber}`).value((lastDischarges.lastDischargesCapacity / testData.ratedBatteryCapacity) * 100);
+	reportSheet.cell(`E${rowNumber}`).value((lastDischarges.lastDischargesCapacity / testData.ratedBatteryCapacity) * 100).style("horizontalAlignment", "right").style("numberFormat", "0.000");
 	reportSheet.cell(`F${rowNumber}`).value('%');
 
 	rowNumber++;
 	reportSheet.cell(`D${rowNumber}`).value(generalConsts.maxTermperature);
-	reportSheet.cell(`E${rowNumber}`).value(maxTemperature);
+	reportSheet.cell(`E${rowNumber}`).value(maxTemperature).style("horizontalAlignment", "right").style("numberFormat", "0.00");
 	reportSheet.cell(`F${rowNumber}`).value('°C');
 
 	rowNumber+=2;
