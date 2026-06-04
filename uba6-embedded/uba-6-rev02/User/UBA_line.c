@@ -98,7 +98,7 @@ typedef enum UBA_LINE_CHARGE_DELTA {
 
 #define UBA_LINE_CHARGE_DAC_RES (0.620f) /*0.620* mA == DAC value (1 DAC bit is 1.611mA)   new_dac = (charge_current * 50 * 4096) / (100 * 3300);*/
 #define UBA_LINE_CHARGE_CURRENT_HYST_MA (2) /*1 bits in DAC (1/0.620 == 1.611 --->2 ) the DAC בשמ Flicker a single byte == 2 mA noise*/
-#define UBA_LINE_CHARGE_CURRENT_HYST_FACTOR (25)
+#define UBA_LINE_CHARGE_CURRENT_HYST_FACTOR (5)//originally set to 25
 #define UBA_LINE_CHARGE_CURRENT_HYST_DIV (10)
 #define UBA_LINE_CHARGE_CURRENT_HYST_MA_FACTOR (UBA_LINE_CHARGE_CURRENT_HYST_MA * UBA_LINE_CHARGE_CURRENT_HYST_FACTOR)
 #define UBA_LINE_CHARGE_CURRENT_HYST_RAW ((int) (UBA_LINE_CHARGE_CURRENT_HYST_MA_FACTOR / UBA_LINE_CHARGE_DAC_RES ))
@@ -538,7 +538,7 @@ void UBA_line_get_line_data(UBA_line *line) {
 }
 void UBA_line_discharge_current_control(UBA_line *line) {
 	if (UBA_IN_RANGE_HYST(line->data.discharge_current,line->target.current ,UBA_LINE_DSCH_CURRENT_HYST_MA) == false) {
-		UART_LOG_LINE_INFO(line->name, "Current(%d) not on Target(%d)", line->data.discharge_current, line->target.current);
+		UART_LOG_LINE_INFO("line",line->name, "Current(%d) not on Target(%d)", line->data.discharge_current, line->target.current);
 		int32_t diff = line->target.current - line->data.discharge_current;
 		uint16_t dac = UBA_LINE_DSCH_DAC_MA2DAC(abs(diff));
 		if (diff < 0) {
@@ -620,7 +620,7 @@ UBA_LINE_CHARGE_DELTA UBA_line_control_v_gen(UBA_line *line, int32_t ref_voltage
 		line->data.charge_current, line->data.discharge_current,
 		line->target.current, line->target.voltage);
 
-	if (delta <= 0) {
+	if (delta <= -150) {
 		UART_LOG_LINE_INFO(line->name, "increase voltage, delta %d < 0 (gen_voltage %d voltage/measure %d)", delta, line->data.gen_voltage, line->data.voltage);
 		UBA_line_increase_charge_voltage(line, delta); // to low
 		ret = UBA_LINE_CHARGE_DELTA_LOW;
@@ -646,7 +646,8 @@ UBA_LINE_CHARGE_DELTA UBA_line_control_v_gen(UBA_line *line, int32_t ref_voltage
 
 		} else {
 			// vbat didnt reatch the target voltage
-			ret = UBA_LINE_CHARGE_DELTA_ON_TARGET;
+//			ret = UBA_LINE_CHARGE_DELTA_ON_TARGET;
+			ret = UBA_LINE_CHARGE_DELTA_ON_GAP;
 			UART_LOG_LINE_WARN("Delta on Target: %05d/%05d", line->data.voltage, line->target.voltage);
 		}
 	}
@@ -905,22 +906,22 @@ void UBA_line_discharging_enter(UBA_line *line) {
 
 void UBA_line_discharging(UBA_line *line) {
 	uint32_t d_time = HAL_GetTick() - line->data_refresh_tick;
-	if (d_time > UBA_LINE_DATA_READ_TIME_MS) {
+	if (d_time > 500) {//UBA_LINE_DATA_READ_TIME_MS) {
 		line->data_refresh_tick = HAL_GetTick();
-UART_LOG_LINE_DEBUG("==> Moshe: error: 0x%x", line->error);
+//UART_LOG_LINE_DEBUG("==> Moshe: error: 0x%x", line->error);
 		UBA_line_get_line_data(line);
-UART_LOG_LINE_DEBUG("==> Moshe after get line: error: 0x%x", line->error);
+//UART_LOG_LINE_DEBUG("==> Moshe after get line: error: 0x%x", line->error);
 		if ((line->error & UBA_LINE_ERROR_DEAD)) {
 			UBA_line_set_next_state(line, UBA_LINE_STATE_DEAD);
 		} else if (line->error & UBA_LINE_ERROR_IDLE_ONLY) {
 			UBA_line_set_next_state(line, UBA_LINE_STATE_IDLE);
 		}
 
-		if (UBA_IN_RANGE_HYST((line->ADC_raw_data[ADC_CHNNEL_DSCH_CURR] & 0xfff),line->data_write.dac_cc ,UBA_LINE_CHARGE_CURRENT_HYST_MA) == false) {
-			UART_LOG_LINE_ERROR(line->name, "ADC:%u DAC:%u mismatch", (line->ADC_raw_data[ADC_CHNNEL_DSCH_CURR] & 0xfff), line->data_write.dac_cc);
-		}else{
+		//if (UBA_IN_RANGE_HYST((line->ADC_raw_data[ADC_CHNNEL_DSCH_CURR] & 0xfff),line->data_write.dac_cc ,10/*UBA_LINE_CHARGE_CURRENT_HYST_MA*/) == false) {
+		//	UART_LOG_LINE_ERROR(line->name, "ADC:%u DAC:%u mismatch", (line->ADC_raw_data[ADC_CHNNEL_DSCH_CURR] & 0xfff), line->data_write.dac_cc);
+		//}else{
 			UBA_line_discharge_current_control(line);
-		}
+		//}
 		line->data.capacity -= (line->data.discharge_current * d_time); // mA*mSec
 	}
 }

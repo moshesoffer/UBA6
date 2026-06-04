@@ -143,10 +143,10 @@ export const getChargeCurrent = chargeCurrent => {
 	if (chargeCurrent === null) {
 		return getText('common.NOT_APPLICABLE');
 	}
-	//if(chargeCurrent > 1000){
+	if(chargeCurrent > 1000){
 		return `${Number(chargeCurrent).toFixed(5)} A`;
-	//}
-	//return `${Number(chargeCurrent*1000).toFixed(2)} mA`;
+	}
+	return `${Number(chargeCurrent*1000).toFixed(2)} mA`;
 }
 
 export const getTemperature = temperature => {
@@ -165,8 +165,8 @@ export const getCapacity = capacity => {
 		return getText('common.NOT_APPLICABLE');
 	}
 	
-	return `${Number(capacity / 1000).toFixed(5)} Ah`;
-	//return `${Number(capacity).toFixed(3)} mAh`;
+	//return `${Number(capacity / 1000).toFixed(5)} Ah`;
+	return `${Number(capacity).toFixed(3)} mAh`;
 }
 
 export const getTestStep = data => {

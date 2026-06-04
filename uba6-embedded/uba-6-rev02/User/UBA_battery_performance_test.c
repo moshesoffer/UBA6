@@ -410,6 +410,7 @@ void UBA_BPT_run_step_enter(UBA_BPT *bpt) {
 
 	//init stablization error mechanism
 	bpt->ch->num_consecutive_errors = 0;
+
 }
 
 void UBA_BPT_run_step(UBA_BPT *bpt) {
