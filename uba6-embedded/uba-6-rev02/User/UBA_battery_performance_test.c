@@ -345,21 +345,23 @@ void UBA_BPT_pause(UBA_BPT *bpt) {
 }
 
 void UBA_BPT_pause_exit(UBA_BPT *bpt) {
-	switch (bpt->current_step->type_id) {
-		case UBA_BPT_STEP_TYPE_CHARGE:
-			UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_CHARGE);
-			UBA_6_fan_on(&UBA_6_device_g, true);
-			break;
-		case UBA_BPT_STEP_TYPE_DISCHARGE:
-			UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_DISCHARGE);
-			UBA_6_fan_on(&UBA_6_device_g, true);
-			break;
-		case UBA_BPT_STEP_TYPE_DELAY:
-			UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_DELAY);
-			UBA_6_fan_on(&UBA_6_device_g, true);
-			break;
-		default:
-			UART_LOG_ERROR(UBA_COMP, "Step Type id is unknown:%u", bpt->current_step->type_id);
+	if (bpt->state.next != UBA_BPT_STATE_STANDBY) {
+		switch (bpt->current_step->type_id) {
+			case UBA_BPT_STEP_TYPE_CHARGE:
+				UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_CHARGE);
+				UBA_6_fan_on(&UBA_6_device_g, true);
+				break;
+			case UBA_BPT_STEP_TYPE_DISCHARGE:
+				UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_DISCHARGE);
+				UBA_6_fan_on(&UBA_6_device_g, true);
+				break;
+			case UBA_BPT_STEP_TYPE_DELAY:
+				UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_DELAY);
+				UBA_6_fan_on(&UBA_6_device_g, true);
+				break;
+			default:
+				UART_LOG_ERROR(UBA_COMP, "Step Type id is unknown:%u", bpt->current_step->type_id);
+		}
 	}
 }
 
