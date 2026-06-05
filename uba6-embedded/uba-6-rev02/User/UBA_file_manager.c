@@ -404,6 +404,17 @@ uint32_t UBA_FM_file_size(char *folder, char *file_name) {
 }
 
 int UBA_FM_transfer_chunk(char *folder, UBA_PROTO_FM_file_transfer *msg) {
+//	msg->data.size = 0;
+//	for (int index=0; index<8; index++) {
+//		int read = UBA_FM_read_chunk(UBA_FM_FOLDER_TEST_RESULTS, msg->filename, &msg->data.bytes[msg->data.size], 128, msg->chunk_index*8+index);
+//		msg->data.size += read; // the number if bytes read
+//		if (read < 128) {
+//			break;
+//		}
+//	}
+//	msg->total_size = UBA_FM_file_size(folder, msg->filename);
+//	return msg->data.size;
+
 	int read = UBA_FM_read_chunk(UBA_FM_FOLDER_TEST_RESULTS, msg->filename, msg->data.bytes, sizeof(msg->data.bytes), msg->chunk_index);
 	msg->data.size = read; // the number if bytes read
 	msg->total_size = UBA_FM_file_size(folder, msg->filename);
