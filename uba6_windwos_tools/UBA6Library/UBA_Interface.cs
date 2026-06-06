@@ -24,8 +24,9 @@ namespace UBA6Library {
         private PriorityQueue<Message, int> messageQueue = new();
         private CancellationTokenSource? _cts;
         private Task? _processingTask;
+        private Task? _readerTask;
         public event EventHandler<ProtoMessageEventArg>? MessageReceived;
-        private int messageSize = 0;
+//        private int messageSize = 0;
         protected static UInt32 messageId = 0;
         private int failes { get; set; } = 0; // the number of failed to open the port 
         public string PortName => sp?.PortName ?? "Not Connected";
@@ -44,7 +45,9 @@ namespace UBA6Library {
             DEFUALT = 10,
 
         }
-    
+        private readonly MemoryStream _rxBuffer = new();
+        private readonly object _lock = new();
+
         private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
         public UBA_Interface(ILogger<UBA_Interface> logger) {
@@ -67,11 +70,11 @@ namespace UBA6Library {
 
         public UBA_Interface(ILogger<UBA_Interface> logger, string portName, int baudRate = 115200) : this(logger) {
             sp = new SerialPort(portName, baudRate);
-            sp.ReadBufferSize = 8192;
+            sp.ReadBufferSize = 2048;
             sp.Parity = Parity.None;
-            sp.ReadTimeout = 600;
-            sp.WriteTimeout = 600;
-            sp.DataReceived += SerialPort_DataReceived;
+            sp.ReadTimeout = 3000;
+            sp.WriteTimeout = 300;
+////            sp.DataReceived += SerialPort_DataReceived;
             _logger.LogDebug($"Initializing UBA_Interface with COM port: {portName}");
             try {
                 sp.Open();
@@ -93,17 +96,18 @@ namespace UBA6Library {
             }
             if (sp != null ) {
                 _logger.LogDebug($"Switching COM port from {sp.PortName} to {newComPort}");
-                    sp.DataReceived -= SerialPort_DataReceived;
+//                    sp.DataReceived -= SerialPort_DataReceived;
                 if (sp.IsOpen) { 
                     sp.Close();
                 }
                 sp.Dispose();
             }
             sp = new SerialPort(newComPort, 115200);
+            sp.ReadBufferSize = 2048;
             sp.Parity = Parity.None;
-            sp.ReadTimeout = 600;
-            sp.WriteTimeout = 600;
-            sp.DataReceived += SerialPort_DataReceived;
+            sp.ReadTimeout = 3000;
+            sp.WriteTimeout = 300;
+//            sp.DataReceived += SerialPort_DataReceived;
             try {
                 sp.Open();
                 _logger.LogDebug($"COM port switched to {sp.PortName}");
@@ -114,6 +118,42 @@ namespace UBA6Library {
             }
         }
 
+private readonly object _portLock = new();
+
+private void SafeReset()
+{
+    lock (_portLock)
+    {
+        try
+        {
+            if (sp == null)
+                return;
+
+            _logger.LogWarning("Resetting serial port...");
+
+            if (sp.IsOpen)
+                sp.Close();
+
+            Thread.Sleep(300);
+
+            sp.Dispose();
+
+            sp = new SerialPort(sp.PortName, 115200)
+            {
+                ReadBufferSize = 2048,
+                Parity = Parity.None,
+                ReadTimeout = 3000,
+                WriteTimeout = 300
+            };
+
+            sp.Open();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Reset failed");
+        }
+    }
+}
         public void EnqueueMessage(Message message, MessagePriority priority = MessagePriority.DEFUALT) {
             if (message == null) {
                 throw new ArgumentNullException(nameof(message));
@@ -122,14 +162,14 @@ namespace UBA6Library {
             messageQueue.Enqueue(message, (int)priority);
         }
 
-        public void StartProcessing() {
-            if (_processingTask != null && !_processingTask.IsCompleted) {
-                _logger.LogDebug("Processing task is already running, not starting a new one.");
-                return;
-            }
-            _cts = new CancellationTokenSource();
-            _processingTask = Task.Run(() => ProcessQueueAsync(_cts.Token));
-        }
+//        public void StartProcessing() {
+//            if (_processingTask != null && !_processingTask.IsCompleted) {
+//                _logger.LogDebug("Processing task is already running, not starting a new one.");
+//                return;
+//            }
+//            _cts = new CancellationTokenSource();
+//            _processingTask = Task.Run(() => ProcessQueueAsync(_cts.Token));
+//        }
 
         public void StopProcessing() {
             _cts?.Cancel();
@@ -168,61 +208,107 @@ namespace UBA6Library {
 
         private readonly object _serialReadLock = new object();
 
-        private async void SerialPort_DataReceived(object sender, SerialDataReceivedEventArgs e) {
+public void StartProcessing()
+{
+    if (_processingTask != null && !_processingTask.IsCompleted)
+    {
+        _logger.LogDebug("Queue processing already running.");
+        return;
+    }
 
-            byte[] buffer = new byte[0];
+    _cts = new CancellationTokenSource();
+
+    _processingTask = Task.Run(() => ProcessQueueAsync(_cts.Token));
+
+    // NEW: start serial reader
+    _readerTask = Task.Run(() => ReadLoop(_cts.Token));
+}
+private void ReadExact(Stream stream, byte[] buffer, int count)
+{
+    int offset = 0;
+    int stallCounter = 0;
+
+    while (offset < count)
+    {
+        int read = stream.Read(buffer, offset, count - offset);
+
+        if (read > 0)
+        {
+            offset += read;
+            stallCounter = 0;
+        }
+        else
+        {
+            stallCounter++;
+
+            if (stallCounter > 50)
+                throw new IOException("Serial stalled mid-message");
+        }
+    }
+}
+private void ReadLoop(CancellationToken token)
+{
+    var parser = new MessageParser<Message>(() => new Message());
+
+    while (!token.IsCancellationRequested)
+    {
+        try
+        {
+            if (sp == null || !sp.IsOpen)
+            {
+                Thread.Sleep(200);
+                continue;
+            }
+
+            // 1. Read protobuf length prefix
+            ulong length = DecodeVarint(sp.BaseStream);
+
+            if (length == 0)
+                continue;
+
+            if (length == 0 || length > 10_000_000)
+            {
+                _logger.LogError($"Invalid length: {length}");
+                continue;
+            }
+            if (length > 10_000_000)
+                throw new InvalidDataException($"Invalid length: {length}");
+
+            byte[] buffer = new byte[(int)length];
+
+            // 2. Read full payload
+            ReadExact(sp.BaseStream, buffer, (int)length);
+
+            // 3. Parse protobuf
             try {
-                SerialPort sp = sender as SerialPort;
-                if (sp.BytesToRead == 0) {
-                    return;
-                }
-                if (messageSize == 0) {
-                    try {
-                        ulong messageLength = DecodeVarint(sp.BaseStream);
-                        _logger.LogDebug($"Message Length: {messageLength}");
-                        messageSize = (int)messageLength;
-                    } catch {
-                        _logger.LogInformation($"DecodeVarint read failed.");
-                    }
-                }
-                //double check message size
-                if (messageSize == 0) {
-                    return;
-                }
+            Message msg = parser.ParseFrom(buffer);
 
-                buffer = new byte[messageSize];// create buffer with size of message
-                try
-                {
-                    int bytesRead = 0;
-                    while (bytesRead < messageSize) {
-                        ////Moshe - concatenate read buffer parts
-                        int currBytes = sp.BaseStream.Read(buffer, bytesRead, messageSize-bytesRead); // read the message from the stream
-                        bytesRead += currBytes;
-                    }
-                    if (bytesRead == messageSize) { // check if we read the full message
-                        var parser = new MessageParser<Message>(() => new Message());
-                        Message message = parser.ParseFrom(buffer, 0, messageSize);
-                        _logger.LogDebug($"new message recevied: {message}");
-                        MessageReceived?.Invoke(this, new ProtoMessageEventArg(message));
-                    } else {
-                        _logger.LogError($"Buffer length({bytesRead}) != Message Size({messageSize})");
-                        throw new Exception($"Buffer length({bytesRead})!= Message Size({messageSize})");
-                    }
-                }
-                catch /*(OperationCanceledException)*/
-                {
-                    ////throw new TimeoutException("Serial read timed out.");
-                    _logger.LogInformation($"Serial read timed out.");
-                }
-            } catch (Exception ex) {
-                _logger.LogDebug($"Buffer (hex): {BitConverter.ToString(buffer)} - Exception {ex}");
-                _logger.LogInformation($"Error reading from serial: {ex.Message} , Resetting the serial port");
-                //Moshe
-                ////sp.DiscardInBuffer();
-            } finally {
-                messageSize = 0;
+            _logger.LogDebug($"RX Message: {msg}");
+
+            // 4. Raise event
+            MessageReceived?.Invoke(this, new ProtoMessageEventArg(msg));
+
+            } catch {
+                _logger.LogDebug($"ParseFrom: scan for next valid varint");
+                continue;
             }
         }
+        catch (TimeoutException)
+        {
+            // ignore read timeouts
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Serial failure - restarting reader");
+
+            Task.Run(() =>
+            {
+                Thread.Sleep(500);
+                SafeReset();
+            });
+        }
+    }
+}
 
 
         private List<byte> message2byteArry(Message? msg = null) {
@@ -260,7 +346,7 @@ namespace UBA6Library {
                                 _logger.LogInformation("Serial port is closed, attempting to reopen.");
                                 this.SwitchCom(sp.PortName, true);
                             }
-                        } finally {
+                       } finally {
                         }
                     } else {
                         messageQueue.Enqueue(msg, 1);
@@ -480,13 +566,14 @@ namespace UBA6Library {
                     EnqueueMessage(message, priority);
                     using (timeoutCts) {
 ////_logger.LogInformation($"==> await Task.WhenAny 2 task ID: {tcs.Task} pri {priority}");
+                        timeout = 10000;
                         var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
 ////_logger.LogInformation($"==> response Task.WhenAny 2 taskID: {completedTask.Id}");
                         if (completedTask == tcs.Task) {
                             _logger.LogDebug($"Received response for Message ID: {message.Head.Id}");
                             return tcs.Task.Result;
                         } else {
-                            _logger.LogError($"2-Timeout waiting for response with Message ID: {message.Head.Id} {completedTask.Id}");
+                            _logger.LogError($"2-Timeout waiting for Chunk File response with Message ID: {message.Head.Id} {completedTask.Id}");
                             return null;
                         }
                     }

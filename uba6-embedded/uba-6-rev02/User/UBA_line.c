@@ -901,12 +901,11 @@ void UBA_line_discharging_enter(UBA_line *line) {
 	if (line->isBattery_connected == false) {
 
 	}
-
 }
 
 void UBA_line_discharging(UBA_line *line) {
 	uint32_t d_time = HAL_GetTick() - line->data_refresh_tick;
-	if (d_time > 500) {//UBA_LINE_DATA_READ_TIME_MS) {
+	if (d_time > UBA_LINE_DATA_READ_TIME_MS) {
 		line->data_refresh_tick = HAL_GetTick();
 //UART_LOG_LINE_DEBUG("==> Moshe: error: 0x%x", line->error);
 		UBA_line_get_line_data(line);

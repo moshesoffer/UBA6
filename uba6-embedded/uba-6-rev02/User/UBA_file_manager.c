@@ -294,6 +294,8 @@ int UBA_FM_seek_read_data(char *folder, char *file_name, uint32_t seek, uint8_t 
 			if (res == FR_OK) {
 				res = f_lseek(&file, seek); // move seek to the correct position
 				if (res == FR_OK) {
+					uint32_t file_size = f_size(&file);
+					max_data_length = (file_size - seek) < 128 ? (file_size - seek) : max_data_length;
 					res = f_read(&file, data_out, max_data_length, &bw);
 					if (res == FR_OK) {
 						// Successfully read

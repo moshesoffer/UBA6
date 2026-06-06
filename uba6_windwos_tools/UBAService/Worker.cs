@@ -199,7 +199,7 @@ namespace UBAService {
             else {
                 ////_logger.LogInformation("Found {Count} UBA devices.", ubaDeviceDtos.Count);
                 foreach (var ubaDto in ubaDeviceDtos) {
-                    int cycle = 8;
+                    int cycle = 1;
 retry:
                     try {
 //logger.LogInformation("3. {Count}-UBAs channel {Channel} status {Status}", ubaDeviceDtos.Count, ubaDto.Channel, ubaDto.Status);
@@ -528,7 +528,7 @@ retry:
                         //if ((((RunningTestsController.Status)ubaDto.Status) & RunningTestsController.Status.IS_TEST_RUNNING) > 0) {
                         //if (!UBAs.Any(uba => uba.SerialNumber.Equals(ubaDto.UbaSN))) {
                             //update UBA running test
-                            int cycle = 8; 
+                            int cycle = 1; 
 retry:
                             
                             try {
@@ -540,8 +540,8 @@ retry:
                                 if (cycle > 0) {
                                     goto retry;
                                 }
-                                _logger.LogInformation($"Trying to update Running Tests for UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac} CH: {ubaDto.Channel} testName: {ubaDto.TestName}");
-                                _logger.LogError($"8-No Response from UBA Device on Port");
+                                //_logger.LogInformation($"Trying to update Running Tests for UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac} CH: {ubaDto.Channel} testName: {ubaDto.TestName}");
+                                //_logger.LogError($"8-No Response from UBA Device on Port");
                             }
                         //}
                         //}                     
@@ -561,7 +561,7 @@ retry:
                     foreach (var ubaDto in ubaDeviceDtos) {
                         //if (!UBAs.Any(uba => uba.SerialNumber.Equals(ubaDto.UbaSN))) {
                             //update UBA running test
-                            int cycle = 8;
+                            int cycle = 1;
 retry:
                             try {
                                 Message message = await UBAs.First().GetMessage(ubaDto.Channel.Equals("A") ? UBA_PROTO_QUERY.RECIPIENT.BptA : UBA_PROTO_QUERY.RECIPIENT.BptB);
@@ -572,8 +572,8 @@ retry:
                                 if (cycle > 0) {
                                     goto retry;
                                 }
-                                _logger.LogInformation($"Trying to update Running Tests for UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac} CH: {ubaDto.Channel} testName: {ubaDto.TestName}");
-                                _logger.LogError($"9-No Response from UBA Device on Port");
+                                //_logger.LogInformation($"Trying to update Running Tests for UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac} CH: {ubaDto.Channel} testName: {ubaDto.TestName}");
+                                //_logger.LogError($"9-No Response from UBA Device on Port");
                             }
                         //}                     
                     }
