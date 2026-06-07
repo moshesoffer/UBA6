@@ -19,6 +19,7 @@ const UNIT_VARIANTS = {
 	resistance: 'Ohm',
 }
 
+//total capacity (sum of energy - dicharge step)
 const getLastDischarges = (planByStepIndex) => {
 	let lastDischargesCapacity = 0;
 	let lastDischargesEnergy = 0;
@@ -99,7 +100,7 @@ const downloadReportsGraph = async (req, res) => {
 		reportSheet.cell(cells.chemistry).value(testData.chemistry);
 		reportSheet.cell(cells.noCellsInSerial).value(testData.noCellSerial);
 		reportSheet.cell(cells.noCellsInParallel).value(testData.noCellParallel);
-		reportSheet.cell(cells.ratedCapacity).value(testData.ratedBatteryCapacity);
+		reportSheet.cell(cells.ratedCapacity).value(testData.ratedBatteryCapacity / 1000/*[Ah]*/); 
 		reportSheet.cell(cells.cellPN).value(testData.cellPN);
 		reportSheet.cell(cells.cellBatchDateCode).value(testData.cellBatch);
 		reportSheet.cell(cells.cellSupplier).value(testData.cellSupplier);
@@ -147,11 +148,11 @@ const downloadReportsGraph = async (req, res) => {
 
 			planByStepIndex[currentStepIndex].timestampArr.push(testResult.timestamp);
 			planByStepIndex[currentStepIndex].currentArr.push(testResult.current);
-			planByStepIndex[currentStepIndex].voltageArr.push(testResult.voltage / 1000);
+			planByStepIndex[currentStepIndex].voltageArr.push(testResult.voltage / 1000/*[V]*/);
 			planByStepIndex[currentStepIndex].temperatureArr.push(testResult.temperature);
 			const deltaT = testResult.timestamp - previousTimestamp;
-			planByStepIndex[currentStepIndex].capacitySum += (testResult.current * deltaT);
-			planByStepIndex[currentStepIndex].energySum += (deltaT * (testResult.current / 1000) * testResult.voltage);
+			planByStepIndex[currentStepIndex].capacitySum += ((testResult.current / 1000/*[A]*/) * deltaT);
+			planByStepIndex[currentStepIndex].energySum += planByStepIndex[currentStepIndex].capacitySum * (testResult.voltage / 1000/*[V]*/);
 
 			previousTimestamp = testResult.timestamp;
 		});
@@ -264,8 +265,8 @@ const addChargeStepFromPlan = (stepIndex, planStepWrapper, testData, rowNumber, 
 	reportSheet.cell(`E${rowNumber}`).value(planStep.source).style("horizontalAlignment", "right");
 	reportSheet.cell(`H${rowNumber}`).value(generalConsts.chargeCapacity);
 	const chargeCapacity = planStepWrapper.capacitySum / 3600;
-	const chargeCapacityT = chargeCapacity > 1000 ? chargeCapacity / 1000 : chargeCapacity;
-	reportSheet.cell(`I${rowNumber}`).value(chargeCapacityT).style("horizontalAlignment", "right").style("numberFormat", "0.000");
+	//const chargeCapacityT = chargeCapacity > 1000 ? chargeCapacity / 1000 : chargeCapacity;
+	reportSheet.cell(`I${rowNumber}`).value(chargeCapacity).style("horizontalAlignment", "right").style("numberFormat", "0.0000");
 	//reportSheet.cell(`J${rowNumber}`).value(chargeCapacity > 1000 ? 'Ah' : 'mAh');
 	reportSheet.cell(`J${rowNumber}`).value('Ah');
 
@@ -281,7 +282,7 @@ const addChargeStepFromPlan = (stepIndex, planStepWrapper, testData, rowNumber, 
 	reportSheet.cell(`D${rowNumber}`).value(generalConsts.chargePerCell);
 	reportSheet.cell(`E${rowNumber}`).value(planStep.chargePerCell).style("horizontalAlignment", "right");
 	reportSheet.cell(`F${rowNumber}`).value('V');
-	reportSheet.cell(`I${rowNumber}`).value(((chargeCapacity / 1000) / testData.ratedBatteryCapacity) * 100).style("horizontalAlignment", "right").style("numberFormat", "0.000");
+	reportSheet.cell(`I${rowNumber}`).value((chargeCapacity / (testData.ratedBatteryCapacity / 1000/*[Ah]*/)) * 100).style("horizontalAlignment", "right").style("numberFormat", "0.000");
 	reportSheet.cell(`J${rowNumber}`).value('%');
 
 	rowNumber++;
@@ -355,8 +356,8 @@ const addDischargeStepFromPlan = (stepIndex, planStepWrapper, testData, rowNumbe
 	reportSheet.cell(`F${rowNumber}`).value(splitUnitVariants(planStep.dischargeCurrent).second);
 	reportSheet.cell(`H${rowNumber}`).value(generalConsts.dischargeCapacity);
 	const chargeCapacity = Math.abs(planStepWrapper.capacitySum / 3600);
-	const chargeCapacityT = chargeCapacity > 1000 ? chargeCapacity / 1000 : chargeCapacity;
-	reportSheet.cell(`I${rowNumber}`).value(Math.abs(chargeCapacityT)).style("horizontalAlignment", "right").style("numberFormat", "0.000");
+	//const chargeCapacityT = chargeCapacity > 1000 ? chargeCapacity / 1000 : chargeCapacity;
+	reportSheet.cell(`I${rowNumber}`).value(Math.abs(chargeCapacity)).style("horizontalAlignment", "right").style("numberFormat", "0.0000");
 	//reportSheet.cell(`J${rowNumber}`).value(Math.abs(chargeCapacity) > 1000 ? 'Ah' : 'mAh');
 	reportSheet.cell(`J${rowNumber}`).value('Ah');
 
@@ -369,7 +370,7 @@ const addDischargeStepFromPlan = (stepIndex, planStepWrapper, testData, rowNumbe
 	reportSheet.cell(`J${rowNumber}`).value('Wh');
 
 	rowNumber++;
-	reportSheet.cell(`I${rowNumber}`).value(((chargeCapacity / 1000) / testData.ratedBatteryCapacity) * 100).style("horizontalAlignment", "right").style("numberFormat", "0.000");
+	reportSheet.cell(`I${rowNumber}`).value((chargeCapacity / (testData.ratedBatteryCapacity / 1000/*[Ah]*/)) * 100).style("horizontalAlignment", "right").style("numberFormat", "0.000");
 	reportSheet.cell(`J${rowNumber}`).value('%');
 
 	rowNumber++;
@@ -430,7 +431,7 @@ const addSummary = (testData, lastDischarges, maxTemperature, rowNumber, reportS
 
 	rowNumber++;
 	reportSheet.cell(`D${rowNumber}`).value(generalConsts.fromRated);
-	reportSheet.cell(`E${rowNumber}`).value((lastDischarges.lastDischargesCapacity / testData.ratedBatteryCapacity) * 100).style("horizontalAlignment", "right").style("numberFormat", "0.000");
+	reportSheet.cell(`E${rowNumber}`).value((lastDischarges.lastDischargesCapacity / (testData.ratedBatteryCapacity / 1000/*[Ah]*/)) * 100).style("horizontalAlignment", "right").style("numberFormat", "0.000");
 	reportSheet.cell(`F${rowNumber}`).value('%');
 
 	rowNumber++;

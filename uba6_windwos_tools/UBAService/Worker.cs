@@ -244,7 +244,7 @@ retry:
         bool testInProgress = false;
         private async Task resolvePendingRunningTest(List<GETPendingTestResponseDTO>? pt) {
             try {
-                _logger.LogInformation("Resolving pending UBA Tests... {count}", pt.Count);
+                //_logger.LogInformation("Resolving pending UBA Tests... {count}", pt.Count);
                 if (pt == null || pt.Count == 0) {
                     _logger.LogInformation("No pending tests found.");
                     return;

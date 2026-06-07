@@ -239,5 +239,59 @@ namespace UBA6Library {
             }
             return logs;
         }
+        public static List<UBA_PROTO_DATA_LOG.data_log> DecodeDataLogMessages_NEW(byte[] data) {
+            List<UBA_PROTO_DATA_LOG.data_log> logs = new List<UBA_PROTO_DATA_LOG.data_log>();
+            using var ms = new MemoryStream(data);
+            ulong totlength = 0;
+            data_log dataLog;
+            while (ms.Position < ms.Length) {
+                // Decode varint (message length)
+                ulong length  =0;
+                try {
+                    length = DecodeVarint(ms);
+                } catch (Exception ex) {
+                    Console.WriteLine($"DecodeVarint exception: Pos={ms.Position}, Length={length}, Remaining={ms.Length - ms.Position}, TotLength={totlength}");
+                    continue;
+                }
+                if ((length == 0) || (ms.Position + (long)length > ms.Length)) {
+                    Console.WriteLine($"DecodeVarint break: Pos={ms.Position}, Length={length}, Remaining={ms.Length - ms.Position}, TotLength={totlength}");
+                    break;
+                }
+
+                // Read message bytes
+                long old_position = ms.Position;
+                byte[] msgBytes = new byte[length];
+                int bytesRead = ms.Read(msgBytes, 0, (int)length);
+                if (bytesRead != (int)length)
+                {
+                    Console.WriteLine($"Short read: expected {length}, got {bytesRead}");
+                    break;
+                }
+
+                // Parse protobuf message
+                try {
+                    dataLog = data_log.Parser.ParseFrom(msgBytes);
+
+                } catch (Exception ex) {
+                    Console.WriteLine($"exception: ParseFrom Length={msgBytes?.Length} TotLength={totlength}, ms.Position {old_position} {ms.Position} ms.Length {ms.Length} decodeLen {length}");
+                    //Console.WriteLine($"First bytes={BitConverter.ToString(msgBytes?.Take(64).ToArray())}");
+                    //Console.WriteLine(ex.ToString());
+                    ms.Position = old_position;
+                    continue;
+                }
+                
+                try {
+                    // Map to struct
+                    logs.Add(dataLog);
+                    //Console.WriteLine($"logs.Count= {logs.Count}");
+                } catch (Exception ex) {
+                    Console.WriteLine($"exception: logs.Add failed");
+                }
+
+                totlength += length;
+                //Console.WriteLine($"ParseFrom ms.Position={ms.Position} length={length} totlength={totlength}   ms.Length={ms.Length}");
+            }
+            return logs;
+        }
     }
 }
