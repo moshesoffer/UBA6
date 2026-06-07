@@ -342,6 +342,13 @@ void UBA_BPT_pause(UBA_BPT *bpt) {
 	UBA_BPT_set_cached_status_msg(bpt, /*start test=*/false);
 
 	UBA_channel_run(bpt->ch);
+
+	uint32_t curr_tick_ms = HAL_GetTick(); 
+	if (curr_tick_ms - bpt->log_tick_ms > bpt->log_intreval) {
+//UART_LOG(UBA_COMP, "run step: tick %d, ms %d delta %d, interval %d", curr_tick_ms, bpt->log_tick_ms, curr_tick_ms - bpt->log_tick_ms, bpt->log_intreval);
+		UBA_BPT_save_data_log(bpt);
+		bpt->log_tick_ms = curr_tick_ms;
+	}
 }
 
 void UBA_BPT_pause_exit(UBA_BPT *bpt) {
@@ -397,10 +404,10 @@ void UBA_BPT_run_step_enter(UBA_BPT *bpt) {
 		}
 		bpt->force_step_stop = false;
 
-		if (bpt->current_step == bpt->head_step) {
-			HAL_RTC_GetDate(&hrtc, &bpt->start_date_time.date, RTC_FORMAT_BIN);
-			HAL_RTC_GetTime(&hrtc, &bpt->start_date_time.time, RTC_FORMAT_BIN);
-		}
+//		if (bpt->current_step == bpt->head_step) {
+//			HAL_RTC_GetDate(&hrtc, &bpt->start_date_time.date, RTC_FORMAT_BIN);
+//			HAL_RTC_GetTime(&hrtc, &bpt->start_date_time.time, RTC_FORMAT_BIN);
+//		}
 
 	} else {
 		UART_LOG_CRITICAL(UBA_COMP, "enter step while the pointer in null");
@@ -796,6 +803,9 @@ UBA_STATUS_CODE UBA_BPT_begin(UBA_BPT *bpt, uint8_t list_index) {
 				((UBA_LCD_screen*)bpt->ch->current_screen)->tr = bpt->tr;
 				((UBA_LCD_screen*)bpt->ch->current_screen)->tr_list_select_index = bpt->TR_selected_index;
 			}
+
+			HAL_RTC_GetDate(&hrtc, &bpt->start_date_time.date, RTC_FORMAT_BIN);
+			HAL_RTC_GetTime(&hrtc, &bpt->start_date_time.time, RTC_FORMAT_BIN);
 
 			bpt->start_date_time.add_pause_seconds = 0;
 			return UBA_BPT_start(bpt); // start the test

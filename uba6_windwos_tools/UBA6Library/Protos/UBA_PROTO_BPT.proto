@@ -96,6 +96,7 @@ enum CMD_ID{
 	STOP= 2; /*stop bpt*/
 	PAUSED= 3; /*stop bpt*/
 	CLEAR= 4; /*Clear the BPT reset errro and set to STANDBY*/
+	STEP= 5; /*step bpt*/
 }
 
 message data_log_message{
