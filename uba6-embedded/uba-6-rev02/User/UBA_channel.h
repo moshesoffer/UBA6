@@ -60,7 +60,6 @@ typedef struct UBA_channel {
 		UBA_CHANNEL_STATE current;
 		UBA_CHANNEL_STATE next;
 	} state;
-	bool start_discharging;
 	UBA_line *lines_p[UBA_CHANNEL_MAX_LINES];
 	uint8_t line_size;
 	struct{

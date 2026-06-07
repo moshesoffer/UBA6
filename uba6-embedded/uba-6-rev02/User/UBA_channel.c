@@ -204,7 +204,6 @@ void UBA_channel_init_enter(UBA_channel *ch) {
 		UART_LOG_CRITICAL(ch->name, "init Failed , channel dose not have any connected lines");
 	}
 	ch->line_size = line_index;
-	ch->start_discharging = false;
 }
 
 void UBA_channel_init(UBA_channel *ch) {
@@ -301,7 +300,6 @@ void UBA_channel_discharging_enter(UBA_channel *ch) {
 	}
 	PID_init(&ch->target.pid, 2.0f, 0.2f, 0.2f, (float) ch->target.current);
 	ch->target.pid_tick = HAL_GetTick();
-	ch->start_discharging = true;
 }
 
 void UBA_channel_discharging(UBA_channel *ch) {

@@ -295,7 +295,7 @@ int UBA_FM_seek_read_data(char *folder, char *file_name, uint32_t seek, uint8_t 
 				res = f_lseek(&file, seek); // move seek to the correct position
 				if (res == FR_OK) {
 					uint32_t file_size = f_size(&file);
-					max_data_length = (file_size - seek) < 128 ? (file_size - seek) : max_data_length;
+					max_data_length = (file_size - seek) < 2048 ? (file_size - seek) : max_data_length;
 					res = f_read(&file, data_out, max_data_length, &bw);
 					if (res == FR_OK) {
 						// Successfully read
@@ -406,17 +406,6 @@ uint32_t UBA_FM_file_size(char *folder, char *file_name) {
 }
 
 int UBA_FM_transfer_chunk(char *folder, UBA_PROTO_FM_file_transfer *msg) {
-//	msg->data.size = 0;
-//	for (int index=0; index<8; index++) {
-//		int read = UBA_FM_read_chunk(UBA_FM_FOLDER_TEST_RESULTS, msg->filename, &msg->data.bytes[msg->data.size], 128, msg->chunk_index*8+index);
-//		msg->data.size += read; // the number if bytes read
-//		if (read < 128) {
-//			break;
-//		}
-//	}
-//	msg->total_size = UBA_FM_file_size(folder, msg->filename);
-//	return msg->data.size;
-
 	int read = UBA_FM_read_chunk(UBA_FM_FOLDER_TEST_RESULTS, msg->filename, msg->data.bytes, sizeof(msg->data.bytes), msg->chunk_index);
 	msg->data.size = read; // the number if bytes read
 	msg->total_size = UBA_FM_file_size(folder, msg->filename);

@@ -932,13 +932,6 @@ bool UBA_BPT_save_data_log(UBA_BPT *bpt) {
 	msg.plan_index = bpt->current_step->plan_index;
 	msg.current = UBA_channel_get_current(bpt->ch);
 	msg.voltage = UBA_channel_get_voltage(bpt->ch);
-	if ((bpt->ch->state.current == UBA_CHANNEL_STATE_DISCHARGE) &&
-		(bpt->ch->start_discharging == true)) {
-		if (bpt->current_step == bpt->head_step) {
-			msg.voltage = 0;
-			bpt->ch->start_discharging = false;
-		}
-	}
 	msg.temp = (int16_t) (UBA_channel_get_temperature(bpt->ch) * 100);
 	print_data_log(&msg);
 	status = pb_get_encoded_size(&message_size, UBA_PROTO_DATA_LOG_data_log_fields, &msg);
@@ -965,9 +958,9 @@ bool UBA_BPT_save_data_log(UBA_BPT *bpt) {
 		return false;
 	}
 
-	if (bpt->wr_from >= 8000) {
+	if (bpt->wr_from >= WR_BUFFER_LEN) {
 UART_LOG(UBA_COMP, "save log: length %d [%s]", bpt->wr_from, bpt->filename);
-//		UBA_FM_apppned_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
+		UBA_FM_apppned_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
 		bpt->wr_from = 0;
 	}
 	return true;
@@ -1016,13 +1009,13 @@ void UBA_BPT_save_log(UBA_BPT *bpt) {
 #define LOG_BUF_SIZE 4096
 
 	if (UBA_BPT_isRunning(bpt) == false) {
-		uint32_t chunck_length = LOG_BUF_SIZE;
+		uint32_t chunk_length = LOG_BUF_SIZE;
 
 		if (bpt->wr_from > 0) {
-			chunck_length = bpt->wr_from > chunck_length ? chunck_length : bpt->wr_from;
-UART_LOG_BPT_INFO(UBA_COMP, "==> last step complete exit: bpt->wr_from %d [%s]", chunck_length, bpt->filename);
-			UBA_FM_apppned_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, chunck_length); 
-			bpt->wr_from -= chunck_length;
+			chunk_length = bpt->wr_from > chunk_length ? chunk_length : bpt->wr_from;
+UART_LOG_BPT_INFO(UBA_COMP, "==> last step complete exit: bpt->wr_from %d [%s]", chunk_length, bpt->filename);
+			UBA_FM_apppned_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, chunk_length); 
+			bpt->wr_from -= chunk_length;
 		}
 	}
 }

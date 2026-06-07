@@ -24,8 +24,7 @@ typedef struct _UBA_PROTO_FM_command {
     uint32_t chunk_index; /* the requested chank or the channle index */
 } UBA_PROTO_FM_command;
 
-//typedef PB_BYTES_ARRAY_T(2048) UBA_PROTO_FM_file_transfer_data_t;
-typedef PB_BYTES_ARRAY_T(128) UBA_PROTO_FM_file_transfer_data_t;
+typedef PB_BYTES_ARRAY_T(2048) UBA_PROTO_FM_file_transfer_data_t;
 typedef struct _UBA_PROTO_FM_file_transfer {
     char filename[64]; /* the name of the file */
     uint32_t total_size;
