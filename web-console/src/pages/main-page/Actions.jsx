@@ -256,7 +256,7 @@ const showWizardsZero = (selectedRow, ubaDevicesDispatch) => {
 const handleStopTest = (selectedRow, authDispatch, ubaDevicesDispatch) => {
     let choice = true;//confirm('Confirm Stop Run');
     if(choice === true) {
-    console.log('==> handleStopTest');
+    //console.log('==> handleStopTest');
         stopRunningTest(authDispatch, ubaDevicesDispatch, selectedRow?.runningTestID, selectedRow?.ubaSN, selectedRow?.testRoutineChannels);
         return true;
     }
@@ -266,7 +266,7 @@ const handleStopTest = (selectedRow, authDispatch, ubaDevicesDispatch) => {
 const handleForceStopTest = (selectedRow, authDispatch, ubaDevicesDispatch) => {
     let choice = true;//confirm('Confirm Stop Run');
     if(choice === true) {
-    console.log('==> handleForceStopTest');
+    //console.log('==> handleForceStopTest');
         forceStopRunningTest(authDispatch, ubaDevicesDispatch, selectedRow?.runningTestID, selectedRow?.ubaSN, selectedRow?.testRoutineChannels);
         return true;
     }

@@ -164,6 +164,8 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
             //_logger.LogInformation($"==> voltage: {msg.ChannelStatus.Data.Voltage}");
             //Moshe
             uint timestamp = msg.StartTime;
+//_logger.LogInformation($"==> timestamp: {timestamp} msg.State: {msg.State}");
+
             DateTime dateTime = timestamp == 0
                 ? DateTime.MinValue
                 : DateTimeOffset.FromUnixTimeSeconds(timestamp).DateTime;
@@ -178,8 +180,8 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
             }
             instantTestResultsDTO.TestCurrentStep =(int) msg.CurrentStep;
             
-//            _logger.LogInformation($"==> date: {instantTestResultsDTO.Timestamp} state: {instantTestResultsDTO.TestState}");
-//            _logger.LogInformation($"==> volt: {msg.ChannelStatus.Data.Voltage}, crnt: {msg.ChannelStatus.Data.Current}, temp: {msg.ChannelStatus.Data.Temperature}, cap: {msg.ChannelStatus.Data.Capacity}");
+            //_logger.LogInformation($"==> date: {instantTestResultsDTO.Timestamp} state: {instantTestResultsDTO.TestState}");
+            //_logger.LogInformation($"==> volt: {msg.ChannelStatus.Data.Voltage}, crnt: {msg.ChannelStatus.Data.Current}, temp: {msg.ChannelStatus.Data.Temperature}, cap: {msg.ChannelStatus.Data.Capacity}");
             instantTestResultsDTO.Voltage = msg.ChannelStatus.Data.Voltage;
             instantTestResultsDTO.Current = msg.ChannelStatus.Data.Current/1000.0f;
             instantTestResultsDTO.Temp = msg.ChannelStatus.Data.Temperature;

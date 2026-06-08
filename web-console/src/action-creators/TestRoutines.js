@@ -112,7 +112,7 @@ export const deleteTestRoutine = async (authDispatch, testRoutinesDispatch, id) 
 
 export const getGraphData = async (authDispatch, testRoutinesDispatch, runningTestID) => {
 	try {
-		const response = await postData(authDispatch, `instant-test-results/${runningTestID}`, 'GET'); //No tomeout!
+		const response = await postData(authDispatch, `instant-test-results/${runningTestID}`, 'GET'); //No timeout!
 		if (!validateArray(response, false)) {
 			throw new Error('Invalid response. Graph Data is missing.');
 		}
@@ -149,9 +149,9 @@ export const stopRunningTest = async (authDispatch, ubaDevicesDispatch, runningT
 	};
 
 	try {
-		await postData(null, 'change-running-test-status', 'PATCH', data); //No tomeout!
+		await postData(null, 'change-running-test-status', 'PATCH', data); //No timeout!
 		getUbaDevices(authDispatch, ubaDevicesDispatch, true);
-console.log('==> stopRunningTest afrer post');
+//console.log('==> stopRunningTest afrer post');
 	} catch (error) {
 		const preparedMessage = handleRequestError(error);
 		authDispatch(setNotification({message: preparedMessage,}));
@@ -167,7 +167,7 @@ export const forceStopRunningTest = async (authDispatch, ubaDevicesDispatch, run
 	};
 
 	try {
-		await postData(null, 'change-running-test-status', 'PATCH', data); //No tomeout!
+		await postData(null, 'change-running-test-status', 'PATCH', data); //No timeout!
 		getUbaDevices(authDispatch, ubaDevicesDispatch, true);
 
 	} catch (error) {
@@ -185,7 +185,7 @@ export const pauseRunningTest = async (authDispatch, ubaDevicesDispatch, running
 	};
 
 	try {
-		await postData(null, 'change-running-test-status', 'PATCH', data); //No tomeout!
+		await postData(null, 'change-running-test-status', 'PATCH', data); //No timeout!
 		getUbaDevices(authDispatch, ubaDevicesDispatch, true);
 	} catch (error) {
 		const preparedMessage = handleRequestError(error);
@@ -202,7 +202,7 @@ export const resumeRunningTest = async (authDispatch, ubaDevicesDispatch, runnin
 	};
 
 	try {
-		await postData(null, 'change-running-test-status', 'PATCH', data); //No tomeout!
+		await postData(null, 'change-running-test-status', 'PATCH', data); //No timeout!
 		getUbaDevices(authDispatch, ubaDevicesDispatch, true);
 	} catch (error) {
 		const preparedMessage = handleRequestError(error);
@@ -219,7 +219,7 @@ export const confirmRunningTest = async (authDispatch, ubaDevicesDispatch, runni
 	};
 
 	try {
-		await postData(null, 'change-running-test-status', 'PATCH', data); //No tomeout!
+		await postData(null, 'change-running-test-status', 'PATCH', data); //No timeout!
 		getUbaDevices(authDispatch, ubaDevicesDispatch, true);
 
 		setTimeout(() => {
@@ -241,7 +241,7 @@ export const nextStepRunningTest = async (authDispatch, ubaDevicesDispatch, runn
 	};
 
 	try {
-		await postData(null, 'change-running-test-status', 'PATCH', data); //No tomeout!
+		await postData(null, 'change-running-test-status', 'PATCH', data); //No timeout!
 		getUbaDevices(authDispatch, ubaDevicesDispatch, true);
 	} catch (error) {
 		const preparedMessage = handleRequestError(error);
