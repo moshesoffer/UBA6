@@ -159,7 +159,9 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
                 CultureInfo.InvariantCulture,
                 out var v) ? v : null;
             switch (DischargeType) { 
-                case UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.Absolute:
+                case UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.AbsoluteA:
+                    return ret;
+                case UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.AbsoluteMa:
                     return ret;
                 case UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.Power: // in Watts AH
                     return ret ; 
@@ -179,8 +181,8 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
                 return null;
 
             return parts[1].ToLowerInvariant() switch {
-                "absolutema" => UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.Absolute,
-                "absolutea" => UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.Absolute,
+                "absolutema" => UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.AbsoluteMa,
+                "absolutea" => UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.AbsoluteA,
                 "power" => UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.Power,
                 "resistance" => UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.Resistance,
                 _ => null
@@ -366,7 +368,7 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
             }
             return ProtoHelper.CreateDischargeStep(UBA_PROTO_BPT.SOURCE.Internal,
                 (int)(ps.DischargeValue ?? 1 ) ,
-                ps.DischargeType?? UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.Absolute,
+                ps.DischargeType?? UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.AbsoluteMa,
                 plan2DischargeSC(ps, noCellSerial, noCellParallel),
                 ps.MinTemp ?? -273.15f);
         }

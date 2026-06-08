@@ -29,10 +29,11 @@ enum SOURCE {
 	SOURCE_MAX = 2;
 }
  enum DISCHARGE_CURRENT_TYPE {
-	ABSOLUTE = 0;	
+	ABSOLUTE_MA = 0;	
 	POWER = 1; 
 	RESISTANCE = 2; 
 	TYPE_MAX = 3;
+	ABSOLUTE_A = 4;	
 }
 enum STATE {
 	INIT = 0;

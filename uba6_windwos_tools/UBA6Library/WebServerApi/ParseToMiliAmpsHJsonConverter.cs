@@ -112,8 +112,8 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
             var unit = parts[1].Trim().ToLowerInvariant();
 
             return unit switch {
-                "absolutea" => UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.Absolute,
-                "absolutema" => UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.Absolute,
+                "absolutea" => UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.AbsoluteA,
+                "absolutema" => UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.AbsoluteMa,
                 "power" => UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.Power,
                 "resistance" => UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.Resistance,
                 _ => throw new JsonException($"Unsupported unit: '{unit}'")
@@ -131,7 +131,8 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
 
             // Write canonical string format
             var unit = value.Value switch {
-                UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.Absolute => "absolutemA",
+                UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.AbsoluteA => "absolutea",
+                UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.AbsoluteMa => "absolutemA",
                 UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.Power => "power",
                 UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.Resistance => "resistance",
                 _ => throw new JsonException($"Unsupported value: {value}")
@@ -161,9 +162,9 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
 
             switch (unit) {
                 case "absolutea":
-                    return UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.Absolute;
+                    return UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.AbsoluteA;
                 case "absolutema":
-                    return UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.Absolute;                    
+                    return UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.AbsoluteMa;                    
                 case "power":
                     return UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.Power;
                 case "resistance":

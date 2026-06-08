@@ -86,7 +86,7 @@ namespace UBA6Library {
                 throw new ValidationException("Min Temp must be greater than -273.0f");
             }
             UBA_PROTO_BPT.charge cs = new UBA_PROTO_BPT.charge() { Source = source, Current = current, Voltage = voltage, MinTemperature = minTemp, Sc = sc };
-////            Console.WriteLine($"Create Charge Step: {cs.Source} {cs.Current} mA {cs.Voltage} mV {cs.MinTemperature} C");
+            Console.WriteLine($"==> Create Charge Step: {cs.Source} {cs.Current} mA {cs.Voltage} mV {cs.MinTemperature} C");
             return cs;
         }
 
@@ -120,6 +120,20 @@ namespace UBA6Library {
             }
             if (minTemp < -273.0f) {
                 throw new ValidationException("Min Temp must be greater than -273.0f");
+            }
+            switch (type) { 
+                case UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.AbsoluteA:
+                    current = current * 1000;
+                    type = UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.AbsoluteMa;
+                    break;
+                case UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.AbsoluteMa:
+                    break;
+                case UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.Power: // in Watts AH
+                    break; 
+                case UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.Resistance: // in Ohms
+                    break; 
+                default:
+                    break;
             }
             UBA_PROTO_BPT.discharge cs = new UBA_PROTO_BPT.discharge() {
                 Source = source,
