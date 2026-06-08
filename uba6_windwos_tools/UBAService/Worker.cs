@@ -78,7 +78,7 @@ namespace UBAService {
                                 //if (cycle1++ % 1 == 0) {
                                 //    //Change Running test status (uba.Status) - done manually by user (confirm click)
                                 //    if (pt?.PendingRunningTests?.Count == 0 && pt?.PendingConnectionUbaDevices?.Count == 0) {
-                                //        await refreshChannleReading(stoppingToken);
+                                //        await refreshChannleReading();
                                 //    }
                                 //    cycle1 = 0;
                                 //}
@@ -86,12 +86,6 @@ namespace UBAService {
                                     if (testInProgress == false) {
                                         //update RunningTestsController.Status change (UBA_PROTO_QUERY from UBA) - STANDBY,RUNNING,PAUSED,.. 
                                         updateRunningTestStatus(pt?.PendingRunningTests);
-//
-                                //    } else {
-                                //        //Change Running test status (uba.Status) - done manually by user (confirm click)
-                                //        if (pt?.PendingRunningTests?.Count == 0 && pt?.PendingConnectionUbaDevices?.Count == 0) {
-                                //            await refreshChannleReading(stoppingToken);
-                                //        }                                        
                                     }
                                     cycle2 = 0;
                                 }
@@ -135,7 +129,11 @@ namespace UBAService {
                 while (await timer.WaitForNextTickAsync(_cts1sec.Token)) {
                     GETPendingTasksDTO pt = await wcs.GetPendingTasks();
                     if (pt != null) {
+                        //query message to UBA for running test data - instantTestResults (state, startTime, step, voltage, current, temp, capacity, ..)
                         await updateRunningTestData(pt?.PendingRunningTests);
+
+                        //Change Running test status (uba.Status) - done manually by user (confirm click)
+                        await refreshChannleReading();
                     }
                 }
             } catch (OperationCanceledException) {
@@ -190,7 +188,7 @@ namespace UBAService {
             return existingUba;            
         }
 
-        private async Task refreshChannleReading(CancellationToken stoppingToken) {
+        private async Task refreshChannleReading() {
             ////_logger.LogInformation("refreshChannleReading: Refresh UBA Channel");
             List<UbaDeviceDto> ubaDeviceDtos = await wcs.GetStationUBAs();
             if (ubaDeviceDtos == null || ubaDeviceDtos.Count == 0) {
