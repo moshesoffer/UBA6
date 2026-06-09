@@ -355,7 +355,7 @@ void UBA_LCD_screen_load_channel(UBA_LCD_channel *lcd_ch, UBA_channel *ch) {
 				sprintf(lcd_ch->status.elemnt.status.text, CHANNEL_DISPALY_STATUS, "   INIT   ");
 				break;
 			case UBA_CHANNEL_STATE_DELAY:
-				lcd_ch->status.effect = UBA_GFX_EFFECT_BLINK_SLOW;
+				//lcd_ch->status.effect = UBA_GFX_EFFECT_BLINK_SLOW;
 				lcd_ch->status.elemnt.status.color_fill = UBA_GFX_COLOR_DELAY;
 				sprintf(lcd_ch->status.elemnt.status.text, CHANNEL_DISPALY_STATUS, "   DELAY  ");
 				break;
@@ -365,17 +365,17 @@ void UBA_LCD_screen_load_channel(UBA_LCD_channel *lcd_ch, UBA_channel *ch) {
 				sprintf(lcd_ch->status.elemnt.status.text, CHANNEL_DISPALY_STATUS, "  STANDBY ");
 				break;
 			case UBA_CHANNEL_STATE_CHARGE:
-				lcd_ch->status.effect = UBA_GFX_EFFECT_BLINK_SLOW;
+				//lcd_ch->status.effect = UBA_GFX_EFFECT_BLINK_SLOW;
 				lcd_ch->status.elemnt.status.color_fill = UBA_GFX_COLOR_RUN;
-				sprintf(lcd_ch->status.elemnt.status.text, "%-10s", " CHARGING ");
+				sprintf(lcd_ch->status.elemnt.status.text, "%-10s", " CHARGE ");
 				break;
 			case UBA_CHANNEL_STATE_DISCHARGE:
-				lcd_ch->status.effect = UBA_GFX_EFFECT_BLINK_SLOW;
+				//lcd_ch->status.effect = UBA_GFX_EFFECT_BLINK_SLOW;
 				lcd_ch->status.elemnt.status.color_fill = UBA_GFX_COLOR_RUN;
 				sprintf(lcd_ch->status.elemnt.status.text, "%-10s", " DISCHARGE");
 				break;
 			case UBA_CHANNEL_STATE_OFF:
-				lcd_ch->status.effect = UBA_GFX_EFFECT_BLINK_SLOW;
+				//lcd_ch->status.effect = UBA_GFX_EFFECT_BLINK_SLOW;
 				lcd_ch->status.elemnt.status.color_fill = UBA_GFX_COLOR_OFF;
 				sprintf(lcd_ch->status.elemnt.status.text, "%-10s", "N/A");
 				break;
@@ -515,7 +515,7 @@ void UBA_LCD_screen_draw_channel(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt
 			//TODO: add EWI
 			sprintf(screen->pages.channel.EWI_msg.elemnt.text.text, "Error:%x", ch->error);
 		} else {
-			sprintf(screen->pages.channel.EWI_msg.elemnt.text.text, "                   ");
+			sprintf(screen->pages.channel.EWI_msg.elemnt.text.text, "        ");
 		}
 
 		//update shadow
@@ -807,13 +807,13 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 					lcd_bpt->EWI_msg.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
 					lcd_bpt->EWI_msg.elemnt.text.color_text = UBA_GFX_COLOR_GREEN;
 					lcd_bpt->EWI_msg.effect = UBA_GFX_EFFECT_SOLID;
-					snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, "Completed");
+					snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, " Completed ");
 				}
-			}																		     
+			}
 			else if (screen->bpt->state.current == UBA_BPT_STATE_TEST_FAILED) {
 				lcd_bpt->EWI_msg.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
 				lcd_bpt->EWI_msg.elemnt.text.color_text = UBA_GFX_COLOR_RED;
-				snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, "Failed");
+				snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, " Failed ");
 			}
 			else {
 				if (screen->refresh_msg) {
@@ -879,9 +879,9 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 	//if (lcd_bpt_shadow->current_state != channel_test->state.current) {
 		switch (screen->bpt->state.current) {
 			case UBA_BPT_STATE_PAUSE:
-				sprintf(lcd_bpt->channel.status.elemnt.status.text, "PAUSED");
+				sprintf(lcd_bpt->channel.status.elemnt.status.text, "PAUSE");
 				lcd_bpt->channel.status.elemnt.status.color_fill = UBA_GFX_COLOR_YELLOW;
-				lcd_bpt->channel.status.effect = UBA_GFX_EFFECT_BLINK_SLOW;
+				//lcd_bpt->channel.status.effect = UBA_GFX_EFFECT_BLINK_SLOW;
 				ch->shadow.state = UBA_CHANNEL_STATE_INIT;
 				break;
 			case UBA_BPT_STATE_TEST_FAILED:
@@ -1097,10 +1097,10 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 			UBA_GFX_draw_text(&lcd_bpt->EWI_msg);
 			memset(lcd_bpt->EWI_msg.elemnt.text.text, ' ', UBA_GFX_TEXT_MAX_LENGTH-8);
 		}
-		if (strlen (screen->bpt->complete_reason) > 0) {
-			snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, screen->bpt->complete_reason);
-		}
 	}
+	//if (strlen (screen->bpt->complete_reason) > 0) {
+	//	snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, screen->bpt->complete_reason);
+	//}
 
 	if ((rt & UBA_LCD_REFRESH_TYPE_UI) == UBA_LCD_REFRESH_TYPE_UI) {
 		if ((strcmp(lcd_bpt_shadow->btn_back_stop.text, lcd_bpt->btn_back_stop.elemnt.button.text) != 0) ||

@@ -34,7 +34,7 @@ extern void peripheralsInit();
 #if (UBA_LOG_LEVEL_BPT <= UART_LOG_LEVEL_INFO)
 #define UART_LOG_BPT_INFO(...) UART_LOG_INFO(UBA_COMP,##__VA_ARGS__)
 #else
-#define UART_LOG_BPT_INFO(...) 
+#define UART_LOG_BPT_INFO(...)
 #endif
 
 #if UBA_LOG_LEVEL_BPT <= UART_LOG_LEVEL_DEBUG
@@ -254,8 +254,7 @@ bool UBA_BPT_isStep_completed(UBA_BPT *bpt) {
 				}
 
 				if ((abs((int) UBA_channel_get_capacity(bpt->ch)) > ((int) bpt->current_step->type.discharge.stop_condition.charge_limit))) {
-					UART_LOG_WARNNING(UBA_COMP, "Cut-off Capacity");
-					strcpy (bpt->complete_reason, "Cut-Off Capacity");
+					UART_LOG_WARNNING(UBA_COMP, "Cut-Off Capacity");
 					isCompleted = true;
 				}
 
@@ -271,8 +270,8 @@ bool UBA_BPT_isStep_completed(UBA_BPT *bpt) {
 				break;
 
 			default:
-				UART_LOG_CRITICAL(UBA_COMP, "invalid step id 0x%x", bpt->current_step->type_id);
 				strcpy (bpt->complete_reason, "invalid Step Id");
+				UART_LOG_CRITICAL(UBA_COMP, "invalid step id 0x%x", bpt->current_step->type_id);
 				isCompleted |= true;
 		}
 
@@ -321,12 +320,9 @@ void UBA_BPT_init_exit(UBA_BPT *bpt) {
 }
 
 void UBA_BPT_standby_enter(UBA_BPT *bpt) {
+	memset(bpt->complete_reason, ' ', UBA_GFX_TEXT_MAX_LENGTH);
 	UBA_BPT_update_state(bpt);
 	UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_INIT);
-
-	bpt->complete_reason[0] = '\0';
-	UBA_LCD_screen *current_screen = (UBA_LCD_screen *)bpt->ch->current_screen;
-	memset(current_screen->pages.screen_bpt.EWI_msg.elemnt.text.text, ' ', UBA_GFX_TEXT_MAX_LENGTH-8);
 }
 
 void UBA_BPT_standby(UBA_BPT *bpt) {
@@ -486,8 +482,6 @@ void UBA_BPT_step_complete_enter(UBA_BPT *bpt) {
 	UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_STANDBY);
 	UBA_channel_run(bpt->ch);
 	bpt->current_step->timing.step_completed = HAL_GetTick();
-
-	UBA_6_fan_on(&UBA_6_device_g, false);
 }
 
 void UBA_BPT_step_complete(UBA_BPT *bpt) {
@@ -505,8 +499,7 @@ void UBA_BPT_step_complete(UBA_BPT *bpt) {
 		UBA_BPT_set_cached_status_msg(bpt, /*start test=*/false);
 		
 		UBA_LCD_screen_update(bpt->ch->current_screen);
-
-	} 
+	}
 }
 
 void UBA_BPT_step_complete_exit(UBA_BPT *bpt) {
@@ -533,6 +526,8 @@ void UBA_BPT_complete_enter(UBA_BPT *bpt) {
 	UBA_BPT_update_state(bpt);
 	UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_STANDBY);
 	UBA_buzzer_play_melody(&buzzer_g, UBA_BUZZER_BUZZ_COMPLETE);
+
+	UBA_6_fan_on(&UBA_6_device_g, false);
 }
 
 void UBA_BPT_complete(UBA_BPT *bpt) {
@@ -543,7 +538,7 @@ void UBA_BPT_complete(UBA_BPT *bpt) {
 }
 
 void UBA_BPT_complete_exit(UBA_BPT *bpt) {
-	bpt->complete_reason[0] = '\0';
+	memset(bpt->complete_reason, ' ', UBA_GFX_TEXT_MAX_LENGTH);
 }
 
 //=================================================public  functions========================================================//
@@ -968,6 +963,7 @@ bool UBA_BPT_save_data_log(UBA_BPT *bpt) {
 	}
 	//if (message_size > sizeof(buffer)) {
 	if (message_size > (WR_BUFFER_LEN - bpt->wr_from)) {
+	//	UART_LOG_ERROR(UBA_COMP, "Message Size:%u is to Big to the buffer:%u", message_size, sizeof(buffer));
 		UART_LOG_ERROR(UBA_COMP, "Message Size:%u is to Big to the buffer:%u", message_size, (WR_BUFFER_LEN - bpt->wr_from));
 		return false;
 	}

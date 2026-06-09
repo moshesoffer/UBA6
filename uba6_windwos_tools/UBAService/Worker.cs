@@ -125,17 +125,23 @@ namespace UBAService {
         //periodic query message to UBA for running test data - instantTestResults (state, startTime, step, voltage, current, temp, capacity, ..)
         public async Task StartPeriodicRunningTestUpdate() {
             _cts1sec = new CancellationTokenSource();
-            var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+            var timer = new PeriodicTimer(TimeSpan.FromMicroseconds(1000));
+            var cycle = 0; //200*5 = 1000 [1Sec}]
 
             try {
                 while (await timer.WaitForNextTickAsync(_cts1sec.Token)) {
                     GETPendingTasksDTO pt = await wcs.GetPendingTasks();
                     if (pt != null) {
-                        //query message to UBA for running test data - instantTestResults (state, startTime, step, voltage, current, temp, capacity, ..)
-                        await updateRunningTestData(pt?.PendingRunningTests);
+                        if (cycle++ % 1 == 0) {
+                             //query message to UBA for running test data - instantTestResults (state, startTime, step, voltage, current, temp, capacity, ..)
+                            await updateRunningTestData(pt?.PendingRunningTests);
+                            cycle = 0;
+                        }
 
-                        //Change Running test status (uba.Status) - done manually in web-console (confirm click)
-                        await refreshChannelReading();
+                        if (cycle++ % 1 == 0) {
+                            //Change Running test status (uba.Status) - done manually in web-console (confirm click)
+                            await refreshChannelReading();
+                        }
                     }
                 }
             } catch (OperationCanceledException) {
