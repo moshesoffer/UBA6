@@ -515,7 +515,7 @@ void UBA_LCD_screen_draw_channel(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt
 			//TODO: add EWI
 			sprintf(screen->pages.channel.EWI_msg.elemnt.text.text, "Error:%x", ch->error);
 		} else {
-			sprintf(screen->pages.channel.EWI_msg.elemnt.text.text, "        ");
+			sprintf(screen->pages.channel.EWI_msg.elemnt.text.text, "                   ");
 		}
 
 		//update shadow
@@ -793,25 +793,27 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 			lcd_bpt->EWI_msg.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
 			lcd_bpt->EWI_msg.elemnt.text.color_text = UBA_GFX_COLOR_RED;
 			lcd_bpt->EWI_msg.effect = UBA_GFX_EFFECT_SOLID;
-			snprintf(lcd_bpt->EWI_msg.elemnt.text.text, 10, "ERR:%04u", screen->bpt->error);
+			snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, "ERR:%04u", screen->bpt->error);
 		} else if (screen->bpt->error & UBA_BPT_WARNNING)  {
 			lcd_bpt->EWI_msg.elemnt.text.color_bg = UBA_GFX_COLOR_YELLOW;
 			lcd_bpt->EWI_msg.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
 			lcd_bpt->EWI_msg.effect = UBA_GFX_EFFECT_SOLID;
-			snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_EWI_MAX_LINE_CHAR_SIZE, "WARN:%04u", screen->bpt->error);
+			snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, "WARN:%04u", screen->bpt->error);
 
 		} else {
 
 			if (screen->bpt->state.current == UBA_BPT_STATE_TEST_COMPLETE) {
-				lcd_bpt->EWI_msg.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
-				lcd_bpt->EWI_msg.elemnt.text.color_text = UBA_GFX_COLOR_GREEN;
-				lcd_bpt->EWI_msg.effect = UBA_GFX_EFFECT_SOLID;
-				snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_EWI_MAX_LINE_CHAR_SIZE, " Completed ");
-			}
+				if (strlen (lcd_bpt->EWI_msg.elemnt.text.text) == 0) {
+					lcd_bpt->EWI_msg.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
+					lcd_bpt->EWI_msg.elemnt.text.color_text = UBA_GFX_COLOR_GREEN;
+					lcd_bpt->EWI_msg.effect = UBA_GFX_EFFECT_SOLID;
+					snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, "Completed");
+				}
+			}																		     
 			else if (screen->bpt->state.current == UBA_BPT_STATE_TEST_FAILED) {
 				lcd_bpt->EWI_msg.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
 				lcd_bpt->EWI_msg.elemnt.text.color_text = UBA_GFX_COLOR_RED;
-				snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_EWI_MAX_LINE_CHAR_SIZE, " Failed ");
+				snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, "Failed");
 			}
 			else {
 				if (screen->refresh_msg) {
@@ -842,10 +844,16 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 				} else {
 					screen->bpt->error &= (~UBA_PROTO_UBA6_ERROR_LINE_NOT_CONNECTED);
 				}
+
 				if ((screen->bpt->error & UBA_PROTO_UBA6_ERROR_LINE_NOT_CONNECTED) == UBA_PROTO_UBA6_ERROR_LINE_NOT_CONNECTED) {
 					lcd_bpt->EWI_msg.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
 					lcd_bpt->EWI_msg.elemnt.text.color_text = UBA_GFX_COLOR_RED;
 					snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, "Battery Disconnected");
+
+				} else if (strlen (screen->bpt->complete_reason) > 0) {
+					lcd_bpt->EWI_msg.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
+					lcd_bpt->EWI_msg.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
+					snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, screen->bpt->complete_reason);
 				}
 			}
 		}
@@ -1088,6 +1096,9 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 		if (strlen (lcd_bpt->EWI_msg.elemnt.text.text)) {
 			UBA_GFX_draw_text(&lcd_bpt->EWI_msg);
 			memset(lcd_bpt->EWI_msg.elemnt.text.text, ' ', UBA_GFX_TEXT_MAX_LENGTH-8);
+		}
+		if (strlen (screen->bpt->complete_reason) > 0) {
+			snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, screen->bpt->complete_reason);
 		}
 	}
 

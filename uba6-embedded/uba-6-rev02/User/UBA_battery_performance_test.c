@@ -34,7 +34,7 @@ extern void peripheralsInit();
 #if (UBA_LOG_LEVEL_BPT <= UART_LOG_LEVEL_INFO)
 #define UART_LOG_BPT_INFO(...) UART_LOG_INFO(UBA_COMP,##__VA_ARGS__)
 #else
-#define UART_LOG_BPT_INFO(...)
+#define UART_LOG_BPT_INFO(...) 
 #endif
 
 #if UBA_LOG_LEVEL_BPT <= UART_LOG_LEVEL_DEBUG
@@ -173,6 +173,8 @@ bool UBA_BPT_isStep_timeout(UBA_BPT *bpt, uint32_t timeout_sec) {
 	uint32_t action_time = UBA_BPT_step_action_time(bpt) /1000;
 	bool ret = (action_time > timeout_sec);
 	if (ret) {
+		strcpy (bpt->complete_reason, "Reach Max Time");
+
 		UART_LOG_BPT_INFO("=======Step reach timeout of :%lu[S] > (%lu)[S]========", timeout_sec, action_time);
 	}
 	return ret;
@@ -185,8 +187,7 @@ bool UBA_BPT_isStop_condition_met_charge_current(UBA_BPT *bpt) {
 	ret = (((int32_t) (UBA_channel_get_current(bpt->ch)) < bpt->current_step->type.charge.stop_condition.cut_off_current)
 			&& (((int32_t)UBA_channel_get_voltage(bpt->ch)) >= (bpt->current_step->type.charge.voltage * ((TR_Test_Routine *)bpt->tr)->battery.num_cells_in_serial)));
 	if (ret) {
-		//Moshe
-		sprintf (current_screen->pages.channel.EWI_msg.elemnt.text.text, "cut off current in %s", bpt->ch->name);
+		strcpy (bpt->complete_reason, "Cut-Off Current");
 
 		UART_LOG_BPT_INFO("!!!!Cut off current has met: %05lu mA < %05lu mA ; %u mV >= %05lu mV; numCells %d ch-name %s TR-name %s %s", 
 				UBA_channel_get_current(bpt->ch),
@@ -204,6 +205,8 @@ bool UBA_BPT_isStop_condition_met_charge_capacity(UBA_BPT *bpt) {
 	bool ret = false;
 	ret = (UBA_channel_get_capacity(bpt->ch) > bpt->current_step->type.charge.stop_condition.charge_limit);
 	if (ret) {
+		strcpy (bpt->complete_reason, "Reach Charge Limit");
+
 		UART_LOG_BPT_INFO("!!!!!Charge capacity has met: %05f <%05lu ", 
 				UBA_channel_get_capacity(bpt->ch),
 				bpt->current_step->type.charge.stop_condition.charge_limit);
@@ -214,6 +217,8 @@ bool UBA_BPT_isStop_condition_met_charge_temp(UBA_BPT *bpt) {
 	bool ret = false;
 	ret = (UBA_channel_get_temperature(bpt->ch) > bpt->current_step->type.charge.stop_condition.max_emperature);
 	if (ret) {
+		strcpy (bpt->complete_reason, "Reach Temp Limit");
+
 		UART_LOG_BPT_INFO("!!!!!Temp Stop condition has met: %05f > %05f ", 
 				UBA_channel_get_temperature(bpt->ch),
 				bpt->current_step->type.charge.stop_condition.max_emperature);
@@ -244,11 +249,13 @@ bool UBA_BPT_isStep_completed(UBA_BPT *bpt) {
 					(voltage < bpt->current_step->type.discharge.stop_condition.cut_off_voltage)) {
 					UART_LOG_WARNNING(UBA_COMP, "Reach Cut of Voltage : %u < %d", UBA_channel_get_voltage(bpt->ch),
 							bpt->current_step->type.discharge.stop_condition.cut_off_voltage);
+					strcpy (bpt->complete_reason, "Cut-Off Voltage");
 					isCompleted = true;
 				}
 
 				if ((abs((int) UBA_channel_get_capacity(bpt->ch)) > ((int) bpt->current_step->type.discharge.stop_condition.charge_limit))) {
-					UART_LOG_WARNNING(UBA_COMP, "Reach cut of discharge capacity");
+					UART_LOG_WARNNING(UBA_COMP, "Cut-off Capacity");
+					strcpy (bpt->complete_reason, "Cut-Off Capacity");
 					isCompleted = true;
 				}
 
@@ -265,6 +272,7 @@ bool UBA_BPT_isStep_completed(UBA_BPT *bpt) {
 
 			default:
 				UART_LOG_CRITICAL(UBA_COMP, "invalid step id 0x%x", bpt->current_step->type_id);
+				strcpy (bpt->complete_reason, "invalid Step Id");
 				isCompleted |= true;
 		}
 
@@ -315,6 +323,10 @@ void UBA_BPT_init_exit(UBA_BPT *bpt) {
 void UBA_BPT_standby_enter(UBA_BPT *bpt) {
 	UBA_BPT_update_state(bpt);
 	UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_INIT);
+
+	bpt->complete_reason[0] = '\0';
+	UBA_LCD_screen *current_screen = (UBA_LCD_screen *)bpt->ch->current_screen;
+	memset(current_screen->pages.screen_bpt.EWI_msg.elemnt.text.text, ' ', UBA_GFX_TEXT_MAX_LENGTH-8);
 }
 
 void UBA_BPT_standby(UBA_BPT *bpt) {
@@ -474,6 +486,8 @@ void UBA_BPT_step_complete_enter(UBA_BPT *bpt) {
 	UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_STANDBY);
 	UBA_channel_run(bpt->ch);
 	bpt->current_step->timing.step_completed = HAL_GetTick();
+
+	UBA_6_fan_on(&UBA_6_device_g, false);
 }
 
 void UBA_BPT_step_complete(UBA_BPT *bpt) {
@@ -491,7 +505,8 @@ void UBA_BPT_step_complete(UBA_BPT *bpt) {
 		UBA_BPT_set_cached_status_msg(bpt, /*start test=*/false);
 		
 		UBA_LCD_screen_update(bpt->ch->current_screen);
-	}
+
+	} 
 }
 
 void UBA_BPT_step_complete_exit(UBA_BPT *bpt) {
@@ -518,7 +533,6 @@ void UBA_BPT_complete_enter(UBA_BPT *bpt) {
 	UBA_BPT_update_state(bpt);
 	UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_STANDBY);
 	UBA_buzzer_play_melody(&buzzer_g, UBA_BUZZER_BUZZ_COMPLETE);
-
 }
 
 void UBA_BPT_complete(UBA_BPT *bpt) {
@@ -529,6 +543,7 @@ void UBA_BPT_complete(UBA_BPT *bpt) {
 }
 
 void UBA_BPT_complete_exit(UBA_BPT *bpt) {
+	bpt->complete_reason[0] = '\0';
 }
 
 //=================================================public  functions========================================================//
@@ -953,7 +968,6 @@ bool UBA_BPT_save_data_log(UBA_BPT *bpt) {
 	}
 	//if (message_size > sizeof(buffer)) {
 	if (message_size > (WR_BUFFER_LEN - bpt->wr_from)) {
-	//	UART_LOG_ERROR(UBA_COMP, "Message Size:%u is to Big to the buffer:%u", message_size, sizeof(buffer));
 		UART_LOG_ERROR(UBA_COMP, "Message Size:%u is to Big to the buffer:%u", message_size, (WR_BUFFER_LEN - bpt->wr_from));
 		return false;
 	}
