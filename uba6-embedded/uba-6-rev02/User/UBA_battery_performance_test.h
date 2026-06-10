@@ -213,6 +213,7 @@ typedef struct UBA_BPT {
 	struct {
 		RTC_DateTypeDef date;
 		RTC_TimeTypeDef time;
+		RTC_TimeTypeDef ref_run_time;
 		bool update_pause_seconds;
 		uint32_t add_pause_seconds;
 	} start_date_time;
@@ -225,7 +226,7 @@ typedef struct UBA_BPT {
 	bool set_start_msg;
 	bool get_start_msg;
 
-#define WR_BUFFER_LEN 8192
+#define WR_BUFFER_LEN (1024 * 16)
 	uint8_t buffer[WR_BUFFER_LEN];
 	uint32_t wr_from;
 

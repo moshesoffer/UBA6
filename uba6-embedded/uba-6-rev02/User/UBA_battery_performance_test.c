@@ -412,10 +412,10 @@ void UBA_BPT_run_step_enter(UBA_BPT *bpt) {
 		}
 		bpt->force_step_stop = false;
 
-//		if (bpt->current_step == bpt->head_step) {
+		if (bpt->current_step == bpt->head_step) {
 //			HAL_RTC_GetDate(&hrtc, &bpt->start_date_time.date, RTC_FORMAT_BIN);
-//			HAL_RTC_GetTime(&hrtc, &bpt->start_date_time.time, RTC_FORMAT_BIN);
-//		}
+			HAL_RTC_GetTime(&hrtc, &bpt->start_date_time.ref_run_time, RTC_FORMAT_BIN);
+		}
 
 	} else {
 		UART_LOG_CRITICAL(UBA_COMP, "enter step while the pointer in null");

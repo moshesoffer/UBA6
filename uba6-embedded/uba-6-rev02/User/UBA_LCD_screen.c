@@ -270,7 +270,7 @@ void UBA_LCD_screen_getRunTime(UBA_BPT *bpt, RTC_TimeTypeDef *time) {
 		HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
 		lcd_bpt->time.effect = UBA_GFX_EFFECT_SOLID;
-		time1_seconds = TimeToSeconds(&screen->bpt->start_date_time.time);
+		time1_seconds = TimeToSeconds(&screen->bpt->start_date_time.ref_run_time);
 		time2_seconds = TimeToSeconds(&sTime);
 		if (time2_seconds >= time1_seconds) {
 			diff_seconds = time2_seconds - time1_seconds;
@@ -291,7 +291,7 @@ void UBA_LCD_screen_getRunTime(UBA_BPT *bpt, RTC_TimeTypeDef *time) {
 			HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
 			lcd_bpt->time.effect = UBA_GFX_EFFECT_SOLID;
-			time1_seconds = TimeToSeconds(&screen->bpt->start_date_time.time);
+			time1_seconds = TimeToSeconds(&screen->bpt->start_date_time.ref_run_time);
 			time2_seconds = TimeToSeconds(&sTime);
 			if (time2_seconds >= time1_seconds) {
 				diff_seconds = time2_seconds - time1_seconds;
@@ -562,7 +562,7 @@ void UBA_LCD_screen_draw_channel(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt
 			measure[i].pos.x = screen->pages.channel.channel.volt.pos.x;
 			measure[i].pos.y = screen->pages.channel.channel.volt.pos.y-2;
 			//clean measure title
-			sprintf(measure[i].elemnt.text.text, "                       ");
+			sprintf(measure[i].elemnt.text.text, "            ");
 			UBA_GFX_draw_text(&measure[i]);
 			//draw measure title
 			sprintf(measure[i].elemnt.text.text, "  voltage:");
@@ -607,7 +607,7 @@ void UBA_LCD_screen_draw_channel(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt
 			measure[i].pos.x = screen->pages.channel.channel.temp.pos.x;
 			measure[i].pos.y = screen->pages.channel.channel.temp.pos.y+22;
 			//clean measure title
-			sprintf(measure[i].elemnt.text.text, "                       ");
+			sprintf(measure[i].elemnt.text.text, "            ");
 			UBA_GFX_draw_text(&measure[i]);
 			//draw measure title
 			sprintf(measure[i].elemnt.text.text, "  temperature:");
@@ -1095,7 +1095,7 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 	if ((rt & UBA_LCD_REFRESH_TYPE_EWI) == UBA_LCD_REFRESH_TYPE_EWI) {
 		if (strlen (lcd_bpt->EWI_msg.elemnt.text.text)) {
 			UBA_GFX_draw_text(&lcd_bpt->EWI_msg);
-			memset(lcd_bpt->EWI_msg.elemnt.text.text, ' ', UBA_GFX_TEXT_MAX_LENGTH-8);
+			memset(lcd_bpt->EWI_msg.elemnt.text.text, ' ', 16);//UBA_GFX_TEXT_MAX_LENGTH-8);
 		}
 	}
 	//if (strlen (screen->bpt->complete_reason) > 0) {
@@ -1338,7 +1338,7 @@ void UBA_LCD_screen_display_test_select_refresh(UBA_LCD_page_test_list_select *l
 			//clean eol
 			eol.pos.x = lcd_test_select->test_name_list[i].pos.x;
 			eol.pos.y = lcd_test_select->test_name_list[i].pos.y + 17;
-			sprintf(eol.elemnt.text.text, "                       ");
+			sprintf(eol.elemnt.text.text, "            ");
 			UBA_GFX_draw_text(&eol);
 #endif//eol
 			lcd_test_select->test_name_list[i].pos.y += y_add;
@@ -2532,7 +2532,7 @@ void UBA_LCD_screen_display_test_step_enter(UBA_LCD_screen *screen) {
 		screen->pages.test_info.test_info[i].elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
 		screen->pages.test_info.test_info[i].elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
 //		sprintf(screen->pages.test_info.test_info[i].elemnt.text.text, "info[%d]", i);
-		sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "              ");
+		sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "            ");
 	}
 
 #define MAX_CHARGE 0x7ffffff

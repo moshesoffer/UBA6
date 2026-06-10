@@ -104,7 +104,7 @@ export default function UbaCard({row}) {
 												row?.[channelIndex]?.testState === null ? `${getKeyByValue(statusCodes, statusCodes.RUNNING)}`.toUpperCase() :
 													`${row?.[channelIndex]?.testState}`.toUpperCase() :
 											 (rowStatus & ~statusCodes.PENDING) & (statusCodes.STOPPED | statusCodes.FINISHED | statusCodes.SAVED) ?
-												`${getKeyByValue(statusCodes, statusCodes.PENDING)}`.toUpperCase() :
+												`${getKeyByValue(statusCodes, statusCodes.STOPPED)}`.toUpperCase() :
 
 												`${getKeyByValue(statusCodes, statusCodes.STANDBY)}`.toUpperCase()
 											}							
