@@ -58,7 +58,6 @@ FIL cached_file;
 #define UBA_FM_SD_CARD_MOUNT_OPT (1)
 
 bool UBA_FM_SD_mount(void) {
-//return true;
 	bool ret = is_SD_card_mount;
 	if (is_SD_card_mount == false) {
 		res = f_mount(&fs, "", UBA_FM_SD_CARD_MOUNT_OPT);
@@ -75,7 +74,6 @@ bool UBA_FM_SD_mount(void) {
 }
 
 bool UBA_FM_SD_unmount(void) {
-//return true;
 	bool ret = !is_SD_card_mount;
 	if (is_SD_card_mount) {
 		res = f_mount(NULL, "", UBA_FM_SD_CARD_MOUNT_OPT);

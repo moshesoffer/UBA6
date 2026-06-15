@@ -353,7 +353,7 @@ void UBA_BPT_pause(UBA_BPT *bpt) {
 
 	uint32_t curr_tick_ms = HAL_GetTick(); 
 	if (curr_tick_ms - bpt->log_tick_ms > bpt->log_intreval) {
-//UART_LOG(UBA_COMP, "run step: tick %d, ms %d delta %d, interval %d", curr_tick_ms, bpt->log_tick_ms, curr_tick_ms - bpt->log_tick_ms, bpt->log_intreval);
+//UART_LOG(UBA_COMP, "pause: tick %d, ms %d delta %d, interval %d", curr_tick_ms, bpt->log_tick_ms, curr_tick_ms - bpt->log_tick_ms, bpt->log_intreval);
 		UBA_BPT_save_data_log(bpt);
 		bpt->log_tick_ms = curr_tick_ms;
 	}

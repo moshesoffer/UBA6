@@ -143,10 +143,7 @@ int main(void)
 	HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_RESET);
 	UBA_line_init_local_lines();
 	HAL_Delay(10);
-  //UBA_FM_SD_mount();
-  //f_mount(&fs, "", 1/*UBA_FM_SD_CARD_MOUNT_OPT*/);
-	HAL_Delay(10);
-	UBA_TR_demo_init();
+  UBA_TR_demo_init();
 	file_logger_print();
 	UBA_UART_comm_init();
 	PLI74HC166_init(&buttons_driver_g);
