@@ -32,7 +32,7 @@ static bool is_SD_card_mount = false;
 
 #define UBA_FM_SD_CARD (1)
 #define UBA_FM_MAX_FILE_NAMEPATH (128)
-#define UBA_FM_MAX_FILE_PER_FOLDER (4)
+#define UBA_FM_MAX_FILE_PER_FOLDER (16)
 static char filepath[UBA_FM_MAX_FILE_NAMEPATH];
 
 char cached_filepath[UBA_FM_MAX_FILE_NAMEPATH];

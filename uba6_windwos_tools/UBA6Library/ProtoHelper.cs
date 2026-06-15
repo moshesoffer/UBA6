@@ -225,7 +225,6 @@ namespace UBA6Library {
                 long startPos = ms.Position;
                 ulong length = DecodeVarint(ms);                
                 if (length == 0 ||
-                    length < 10 || length > 36 ||
                     ms.Position + (long)length > ms.Length)
                 {
                     //Console.WriteLine($"Bad length={length}");
