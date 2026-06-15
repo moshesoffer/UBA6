@@ -279,9 +279,10 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
                 reportPatchDTO.TestResults = new List<TestResultDataPointDTO>();
                 List<UBA_PROTO_DATA_LOG.data_log> logs = ProtoHelper.DecodeDataLogMessages(file);
                 foreach (UBA_PROTO_DATA_LOG.data_log log in logs) {
+                    //_logger.LogDebug($"Log Entry {logs.Count} - Time: {log.Time}, Voltage: {log.Voltage}, Current: {log.Current}, Temp: {log.Temp}, PlanIndex: {log.PlanIndex}, StepIndex: {log.StepIndex}");
                     reportPatchDTO.TestResults.Add(new TestResultDataPointDTO(log));
-                    //_logger.LogDebug($"Log Entry - Time: {log.Time}, Voltage: {log.Voltage}, Current: {log.Current}, Temp: {log.Temp}, PlanIndex: {log.PlanIndex}, StepIndex: {log.StepIndex}");
                 }
+
                 try {
                     await ReportsController.Reports.Patch<object, ReportPatchDTO>(Client, report_id.ToString(), reportPatchDTO);
                 } catch (Exception ex) {

@@ -133,7 +133,7 @@ namespace UBA6Library {
                     fileData.AddRange(m.File.Data.ToByteArray());
                     index++;
                     done = false;
-                    retry = 5;
+                    retry = 1;
                     totlaSize = m?.File.TotalSize;
                 } else if (m == null) {
                     if (retry-- <= 0) {

@@ -222,27 +222,34 @@ namespace UBA6Library {
             data_log dataLog;
             while (ms.Position < ms.Length) {
                 // Decode varint (message length)
-                ulong length = DecodeVarint(ms);
-                if (length == 0 || ms.Position + (long)length > ms.Length)
-                    break;
+                long startPos = ms.Position;
+                ulong length = DecodeVarint(ms);                
+                if (length == 0 ||
+                    length < 10 || length > 36 ||
+                    ms.Position + (long)length > ms.Length)
+                {
+                    //Console.WriteLine($"Bad length={length}");
+                    Console.WriteLine($"bad length: ParseFrom length={length} TotLength={totlength}; Position={ms.Position} Length={ms.Length}");
+                    if (ms.Position >= ms.Length) {
+                        break;
+                    } else {
+                        ms.Position = startPos + 1;
+                        continue; 
+                    }                       
+                }
 
                 // Read message bytes
                 byte[] msgBytes = new byte[length];
                 ms.Read(msgBytes, 0, (int)length);
 
-                totlength += length;
-                //Console.WriteLine($"ParseFrom ms.Position={ms.Position} length={length} totlength={totlength}   ms.Length={ms.Length}");
-                
                 // Parse protobuf message
                 try {
                     data_log dataLogTmp = data_log.Parser.ParseFrom(msgBytes);
-                    //Console.WriteLine($"..");
-
                     dataLog = dataLogTmp;
+
                 } catch (Exception ex) {
-                    totlength -= length;
-                    Console.WriteLine($"exception: ParseFrom Length={msgBytes?.Length} TotLength={totlength}");
-                    //Console.WriteLine($"First bytes={BitConverter.ToString(msgBytes?.Take(64).ToArray())}");
+                    ms.Position = startPos + 1;
+                    Console.WriteLine($"exception: ParseFrom Length={msgBytes?.Length} TotLength={totlength}; Position={ms.Position} Length={ms.Length}");
                     //Console.WriteLine(ex.ToString());
                     continue;
                 }
@@ -250,6 +257,9 @@ namespace UBA6Library {
                 // Map to struct
                 logs.Add(dataLog);
                 //Console.WriteLine($"logs.Count= {logs.Count}");
+            
+                totlength += length;
+//Console.WriteLine($"ParseFrom Length={msgBytes?.Length} TotLength={totlength}; Position={ms.Position} Length={ms.Length}");
             }
             return logs;
         }
@@ -260,7 +270,7 @@ namespace UBA6Library {
             data_log dataLog;
             while (ms.Position < ms.Length) {
                 // Decode varint (message length)
-                ulong length  =0;
+                ulong length = 0;
                 try {
                     length = DecodeVarint(ms);
                 } catch (Exception ex) {
@@ -268,7 +278,7 @@ namespace UBA6Library {
                     continue;
                 }
                 if ((length == 0) || (ms.Position + (long)length > ms.Length)) {
-                    Console.WriteLine($"DecodeVarint break: Pos={ms.Position}, Length={length}, Remaining={ms.Length - ms.Position}, TotLength={totlength}");
+                    //Console.WriteLine($"DecodeVarint break: msPosition={ms.Position}, msLength={ms.Length}, Length={length}, TotLength={totlength}");
                     break;
                 }
 
@@ -287,7 +297,7 @@ namespace UBA6Library {
                     dataLog = data_log.Parser.ParseFrom(msgBytes);
 
                 } catch (Exception ex) {
-                    Console.WriteLine($"exception: ParseFrom Length={msgBytes?.Length} TotLength={totlength}, ms.Position {old_position} {ms.Position} ms.Length {ms.Length} decodeLen {length}");
+                    Console.WriteLine($"exception_NEW: ParseFrom Length={msgBytes?.Length} TotLength={totlength}, ms.Position {old_position} {ms.Position} ms.Length {ms.Length} decodeLen {length}");
                     //Console.WriteLine($"First bytes={BitConverter.ToString(msgBytes?.Take(64).ToArray())}");
                     //Console.WriteLine(ex.ToString());
                     ms.Position = old_position;

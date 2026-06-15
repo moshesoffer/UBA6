@@ -592,6 +592,7 @@ private void ReadLoop(CancellationToken token)
           
             var tcs = new TaskCompletionSource<Message?>();
             EventHandler<ProtoMessageEventArg>? handler = null;
+            timeout = 3 * 60 * 1000; //3 min
             CancellationTokenSource timeoutCts = new(timeout);
             handler = (sender, args) => {
                 if (checkFileListMessage(message, args.Msg)) {

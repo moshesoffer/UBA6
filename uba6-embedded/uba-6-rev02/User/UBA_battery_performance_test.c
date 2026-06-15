@@ -453,7 +453,7 @@ void UBA_BPT_run_step(UBA_BPT *bpt) {
 
 		if (bpt->wr_from > 0) {
 UART_LOG(UBA_COMP, "run step err exit: bpt->wr_from %d [%s]", bpt->wr_from, bpt->filename);
-			UBA_FM_apppned_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
+			UBA_FM_apppend_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
 			bpt->wr_from = 0;
 		}
 
@@ -463,7 +463,7 @@ UART_LOG(UBA_COMP, "run step err exit: bpt->wr_from %d [%s]", bpt->wr_from, bpt-
 
 		if (bpt->wr_from > 0) {
 UART_LOG(UBA_COMP, "run step disconnected exit: bpt->wr_from %d [%s]", bpt->wr_from, bpt->filename);
-			UBA_FM_apppned_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
+			UBA_FM_apppend_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
 			bpt->wr_from = 0;
 		}
 	}
@@ -607,7 +607,7 @@ bool UBA_BPT_stop(UBA_BPT *bpt) {
 
 //		if (bpt->wr_from > 0) {
 //UART_LOG(UBA_COMP, "last step complete exit: bpt->wr_from %d [%s]", bpt->wr_from, bpt->filename);
-//			UBA_FM_apppned_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
+//			UBA_FM_apppend_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
 //			bpt->wr_from = 0;
 //		}
 		//UBA_BPT_test_result_filename(bpt);
@@ -948,6 +948,7 @@ bool UBA_BPT_save_data_log(UBA_BPT *bpt) {
 	UBA_PROTO_DATA_LOG_data_log msg = UBA_PROTO_DATA_LOG_data_log_init_zero;
 
 	msg.time = get_RTC_unix_timestamp() - RTC_datetime2unix_timestamp(&bpt->start_date_time.date, &bpt->start_date_time.time); // store only the time from start of the test
+	//msg.time =  diff_seconds;// store only the time from start of the test
 	msg.step_index = bpt->current_step->step_index;
 	msg.plan_index = bpt->current_step->plan_index;
 	msg.current = UBA_channel_get_current(bpt->ch);
@@ -980,7 +981,7 @@ bool UBA_BPT_save_data_log(UBA_BPT *bpt) {
 
 	if (bpt->wr_from >= WR_BUFFER_LEN) {
 UART_LOG(UBA_COMP, "save log: length %d [%s]", bpt->wr_from, bpt->filename);
-		UBA_FM_apppned_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
+		UBA_FM_apppend_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
 		bpt->wr_from = 0;
 	}
 	return true;
@@ -1026,7 +1027,7 @@ void UBA_BPT_get_cached_status_msg(UBA_BPT *bpt, UBA_PROTO_BPT_status_message *m
 }
 
 void UBA_BPT_save_log(UBA_BPT *bpt) {	
-#define LOG_BUF_SIZE 4096
+#define LOG_BUF_SIZE WR_BUFFER_LEN
 
 	if (UBA_BPT_isRunning(bpt) == false) {
 		uint32_t chunk_length = LOG_BUF_SIZE;
@@ -1034,7 +1035,7 @@ void UBA_BPT_save_log(UBA_BPT *bpt) {
 		if (bpt->wr_from > 0) {
 			chunk_length = bpt->wr_from > chunk_length ? chunk_length : bpt->wr_from;
 UART_LOG_BPT_INFO(UBA_COMP, "==> last step complete exit: bpt->wr_from %d [%s]", chunk_length, bpt->filename);
-			UBA_FM_apppned_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, chunk_length); 
+			UBA_FM_apppend_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, chunk_length); 
 			bpt->wr_from -= chunk_length;
 		}
 	}

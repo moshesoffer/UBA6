@@ -22,7 +22,8 @@
 
 
 bool UBA_FM_create_file(char *folder, char *file_name) ;
-bool UBA_FM_apppned_data(char* folder,char* file_name,uint8_t * data, uint32_t data_length);
+bool UBA_FM_delete_file(char *filepath) ;
+bool UBA_FM_apppend_data(char* folder,char* file_name,uint8_t * data, uint32_t data_length);
 bool UBA_FM_store_data(char* folder,char* file_name,uint8_t * data, uint32_t data_length); // create file then / overwrite
 int UBA_FM_read_data(char* folder,char* file_name,uint8_t * data_out, uint32_t max_data_length);
 int UBA_FM_seek_read_data(char *folder, char *file_name, uint32_t seek, uint8_t *data_out, uint32_t max_data_length);

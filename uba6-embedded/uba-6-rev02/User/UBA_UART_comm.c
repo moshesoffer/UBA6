@@ -14,6 +14,7 @@
 #include "uart_log.h"
 #include "stm32g4xx_hal.h"
 #include "string.h"
+#include "ff.h"
 
 #include "UBA_6.h"
 #include "UBA_test_routine.h"
@@ -256,8 +257,8 @@ int UBA_UART_comm_init()
 
 int process_message(MSG_Message *message) {
 	if ((message->head.target_address & UBA_6_device_g.settings.address) != UBA_6_device_g.settings.address) {
-		UART_LOG_ERROR(COMP, "this is not my message (0x%08x) target is 0x%08x", UBA_6_device_g.settings.address, message->head.target_address);
-		return -1;
+//Moshe		UART_LOG_ERROR(COMP, "this is not my message (0x%08x) target is 0x%08x", UBA_6_device_g.settings.address, message->head.target_address);
+//		return -1;
 	}
 	switch (message->which_pyload) {
 		case MSG_Message_query_tag:
@@ -486,39 +487,48 @@ void UBA_UART_query_response_message(UBA_UART_QUERY_RECIPIENT id) {
 		clear_id = UBA_UART_QUERY_RECIPIENT_DEVICE;
 		UBA_UART_query_device(&message.pyload.query_response.status.device);
 		message.pyload.query_response.which_status = UBA_PROTO_QUERY_query_response_message_device_tag;
+
 	} else if ((id & UBA_UART_QUERY_RECIPIENT_LINE_A) == UBA_UART_QUERY_RECIPIENT_LINE_A) {
 		clear_id = UBA_UART_QUERY_RECIPIENT_LINE_A;
 		UBA_UART_query_line(&message.pyload.query_response.status.line, clear_id);
 		message.pyload.query_response.which_status = UBA_PROTO_QUERY_query_response_message_line_tag;
+
 	} else if ((id & UBA_UART_QUERY_RECIPIENT_LINE_B) == UBA_UART_QUERY_RECIPIENT_LINE_B) {
 		clear_id = UBA_UART_QUERY_RECIPIENT_LINE_B;
 		UBA_UART_query_line(&message.pyload.query_response.status.line, clear_id);
 		message.pyload.query_response.which_status = UBA_PROTO_QUERY_query_response_message_line_tag;
+
 	} else if ((id & UBA_UART_QUERY_RECIPIENT_CHANNEL_A) == UBA_UART_QUERY_RECIPIENT_CHANNEL_A) {
 		clear_id = UBA_UART_QUERY_RECIPIENT_CHANNEL_A;
 		UBA_UART_query_channel(&message.pyload.query_response.status.channel, clear_id);
 		message.pyload.query_response.which_status = UBA_PROTO_QUERY_query_response_message_channel_tag;
+
 	} else if ((id & UBA_UART_QUERY_RECIPIENT_CHANNEL_B) == UBA_UART_QUERY_RECIPIENT_CHANNEL_B) {
 		clear_id = UBA_UART_QUERY_RECIPIENT_CHANNEL_B;
 		UBA_UART_query_channel(&message.pyload.query_response.status.channel, clear_id);
 		message.pyload.query_response.which_status = UBA_PROTO_QUERY_query_response_message_channel_tag;
+
 	} else if ((id & UBA_UART_QUERY_RECIPIENT_CHANNEL_AB) == UBA_UART_QUERY_RECIPIENT_CHANNEL_AB) {
 		clear_id = UBA_UART_QUERY_RECIPIENT_CHANNEL_AB;
 		UBA_UART_query_channel(&message.pyload.query_response.status.channel, clear_id);
 		message.pyload.query_response.which_status = UBA_PROTO_QUERY_query_response_message_channel_tag;
+
 	} else if ((id & UBA_UART_QUERY_RECIPIENT_BPT_A) == UBA_UART_QUERY_RECIPIENT_BPT_A) {
 		clear_id = UBA_UART_QUERY_RECIPIENT_BPT_A;
 		UBA_UART_query_BPT(&message.pyload.query_response.status.bpt, clear_id);
 		message.pyload.query_response.which_status = UBA_PROTO_QUERY_query_response_message_bpt_tag;
+
 	} else if ((id & UBA_UART_QUERY_RECIPIENT_BPT_B) == UBA_UART_QUERY_RECIPIENT_BPT_B) {
 		clear_id = UBA_UART_QUERY_RECIPIENT_BPT_B;
 		UBA_UART_query_BPT(&message.pyload.query_response.status.bpt, clear_id);
 		message.pyload.query_response.which_status = UBA_PROTO_QUERY_query_response_message_bpt_tag;
+
 	} else if ((id & UBA_UART_QUERY_RECIPIENT_BPT_AB) == UBA_UART_QUERY_RECIPIENT_BPT_AB) {
 		clear_id = UBA_UART_QUERY_RECIPIENT_BPT_AB;
 		UBA_UART_query_BPT(&message.pyload.query_response.status.bpt, clear_id);
-		message.pyload.query_response.which_status = UBA_PROTO_QUERY_query_response_message_bpt_tag;
+		message.pyload.query_response.which_status = UBA_PROTO_QUERY_query_response_message_bpt_tag;		
 	}
+	
 	if (clear_id != UBA_UART_QUERY_RECIPIENT_NONE) {
 		message.pyload.query_response.recipient = clear_id;
 		message.pyload.query_response.response_id = query_pending_id;
@@ -545,10 +555,41 @@ void UBA_UART_transfer_file(char *folder, char *filename, uint32_t chunk_index) 
 	}
 }
 
+static FATFS fs;
 void UBA_UART_transfer_file_list(char *folder, uint16_t skip) {
+	char filepath [64];
+	FRESULT res;
 	MSG_Message message = { 0 };
+#if 0
+	f_mount(&fs, "", 1);
+	res = f_unlink (folder);
+	if (res == FR_OK) {
+		UART_LOG(COMP, "f_unlink %s", folder);
+	} else {
+		UART_LOG(COMP, "f_unlink %s failed, res %d", folder, res); 
+	}
+	f_mount(NULL, "", 1);
+#endif
+#if 0
+while (true) {
+	UBA_FM_file_list(folder, &message.pyload.fm_list, 0);//skip);
+	UART_LOG(COMP, "==> File List (%u/%u): folder [%s] ", message.pyload.fm_list.filenames_count, message.pyload.fm_list.total_files, folder);
+	f_mount(&fs, "", 1);
+	for (int i=0; i<message.pyload.fm_list.filenames_count; i++) {
+		sprintf(filepath, "%s/%s", folder, message.pyload.fm_list.filenames[i]);
+		res = f_unlink (filepath);
+		if (res == FR_OK) {
+			UART_LOG(COMP, "f_unlink %s", filepath);
+		} else {
+			UART_LOG(COMP, "f_unlink %s failed, res %d", filepath, res);
+			break;
+		}
+	}
+	f_mount(NULL, "", 1);
+}
+#endif
 	UBA_FM_file_list(folder, &message.pyload.fm_list, skip);
-	UART_LOG(COMP, "==> File List (%u/%u): Was Sent, folder [%s] ", message.pyload.fm_list.filenames_count, message.pyload.fm_list.total_files, folder);
+	UART_LOG(COMP, "==> File List (%u/%u): folder [%s] ", message.pyload.fm_list.filenames_count, message.pyload.fm_list.total_files, folder);
 	if (UBA_UART_sent_message(&message, MSG_Message_fm_list_tag)) {
 		UART_LOG_WARNNING(COMP, "File List (%u/%u): Was Sent ", message.pyload.fm_list.filenames_count, message.pyload.fm_list.total_files);
 	}
@@ -562,6 +603,5 @@ void UBA_UART_transfer_single_file_name(uint8_t *filename) {
 	if (UBA_UART_sent_message(&message, MSG_Message_fm_list_tag)) {
 		UART_LOG_WARNNING(COMP, "File List (%u/%u): Was Sent ", message.pyload.fm_list.filenames_count, message.pyload.fm_list.total_files);
 	}
-
 }
 

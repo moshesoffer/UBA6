@@ -121,7 +121,7 @@ void file_logger_print(void) {
 	FATFS fs;
 	UART_LOG_INFO(COMPONENT, "File Logger Print");
 	// Mount the filesystem
-	if (f_mount(&fs, "", 1) == FR_OK) {
+	if (UBA_FM_SD_mount() == FR_OK) {
 		// Create a folder and file
 		create_folder_and_file("/NEW", "new_file.txt", "Hello, world!");
 
@@ -133,7 +133,7 @@ void file_logger_print(void) {
 	}
 
 	// Unmount the filesystem
-	f_mount(NULL, "", 0);
+	UBA_FM_SD_unmount();
 }
 
 int flie_logger_overwite(uint8_t *file_name, uint8_t *data, uint8_t data_length) {
@@ -141,8 +141,7 @@ int flie_logger_overwite(uint8_t *file_name, uint8_t *data, uint8_t data_length)
 	FIL file;           // File object
 	FRESULT fr;         // FatFs function common result code
 	UINT bw;            // File write count
-	fr = f_mount(&fs, "", 1);
-	if (fr != FR_OK) {
+	if (!UBA_FM_SD_mount()) {
 		// Handle mount error
 		UART_LOG_CRITICAL(COMPONENT, "Failed to Mount: %02x", fr);
 		return -1;
@@ -151,7 +150,7 @@ int flie_logger_overwite(uint8_t *file_name, uint8_t *data, uint8_t data_length)
 	if (fr != FR_OK) {
 		// Handle open error
 		UART_LOG_CRITICAL(COMPONENT, "Failed to Open: %02x", fr);
-		f_mount(NULL, "", 1); // Unmount on failure
+		UBA_FM_SD_unmount(); // Unmount on failure
 		return -1;
 	}
 	fr = f_write(&file, data, data_length, &bw);
@@ -159,13 +158,13 @@ int flie_logger_overwite(uint8_t *file_name, uint8_t *data, uint8_t data_length)
 		// Handle write error
 		UART_LOG_CRITICAL(COMPONENT, "Failed to write: %02x", fr);
 		f_close(&file);
-		f_mount(NULL, "", 1); // Unmount on failure
+		UBA_FM_SD_unmount(); // Unmount on failure
 		return -1;
 	}
 	f_close(&file);
 
 	// Unmount filesystem
-	f_mount(NULL, "", 1);
+	UBA_FM_SD_unmount();
 	return 0;
 }
 
@@ -174,8 +173,8 @@ int flie_logger_read(uint8_t *file_name, uint8_t *buffer, uint32_t buffer_length
 	FIL file;
 	FRESULT fr;
 	UINT bytesRead;
-	fr = f_mount(&fs, "", 1);
-	if (fr != FR_OK) {
+
+	if (!UBA_FM_SD_mount()) {
 		// Handle mount error
 		UART_LOG_CRITICAL(COMPONENT, "Failed to Mount: %02x", fr);
 		return -1;
@@ -184,7 +183,7 @@ int flie_logger_read(uint8_t *file_name, uint8_t *buffer, uint32_t buffer_length
 	if (fr != FR_OK) {
 		// Handle open error
 		UART_LOG_CRITICAL(COMPONENT, "Failed to Open: %02x", fr);
-		f_mount(NULL, "", 1); // Unmount on failure
+		UBA_FM_SD_unmount(); // Unmount on failure
 		return -1;
 	}
 	// Get file size
@@ -194,7 +193,7 @@ int flie_logger_read(uint8_t *file_name, uint8_t *buffer, uint32_t buffer_length
 	fr = f_read(&file, buffer, buffer_length, &bytesRead);
 	if (fr != FR_OK) {
 		f_close(&file);
-		f_mount(NULL, "", 1);
+		UBA_FM_SD_unmount();
 		UART_LOG_CRITICAL(COMPONENT, "Failed to read file: %02x", fr);
 		return -1;
 	}
@@ -202,7 +201,7 @@ int flie_logger_read(uint8_t *file_name, uint8_t *buffer, uint32_t buffer_length
 	f_close(&file);
 
 	// Unmount filesystem
-	f_mount(NULL, "", 1);
+	UBA_FM_SD_unmount();
 	return bytesRead;
 
 }
@@ -214,8 +213,7 @@ int file_logger_append(uint8_t *file_name, bpt_data_log *log) {
 	UINT bw;            // File write count
 
 	// Mount the filesystem
-	fr = f_mount(&fs, "", 1);
-	if (fr != FR_OK) {
+	if (!UBA_FM_SD_mount()) {
 		// Handle mount error
 		UART_LOG_CRITICAL(COMPONENT, "Failed to Mount: %02x", fr);
 		return -1;
@@ -225,7 +223,7 @@ int file_logger_append(uint8_t *file_name, bpt_data_log *log) {
 	fr = f_open(&file, (char*)file_name, FA_OPEN_APPEND | FA_WRITE);
 	if (fr != FR_OK) {
 		// Handle open error
-		f_mount(NULL, "", 1); // Unmount on failure
+		UBA_FM_SD_unmount(); // Unmount on failure
 		return -1;
 	}
 	// Prepare CSV line
@@ -243,7 +241,7 @@ int file_logger_append(uint8_t *file_name, bpt_data_log *log) {
 	f_close(&file);
 
 	// Unmount filesystem
-	f_mount(NULL, "", 1);
+	UBA_FM_SD_unmount();
 	return 0;
 }
 
