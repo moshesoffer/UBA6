@@ -217,6 +217,10 @@ typedef struct UBA_BPT {
 		bool update_pause_seconds;
 		uint32_t add_pause_seconds;
 	} start_date_time;
+	struct {
+		RTC_DateTypeDef date;
+		RTC_TimeTypeDef time;
+	} last_get_runtime;
 	uint8_t filename[UBA_BPT_FILENAME_MAX_SIZE]; /*the file name that the data will be store at*/
 	uint8_t TR_selected_index;
 

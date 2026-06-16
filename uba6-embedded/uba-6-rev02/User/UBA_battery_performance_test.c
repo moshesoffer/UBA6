@@ -913,7 +913,8 @@ void UBA_BPT_update_message(UBA_BPT *bpt, UBA_PROTO_BPT_status_message *msg) {
 	UBA_LCD_screen_getRunTime(bpt, &time);
 	//UART_LOG_INFO("====> (msgUpdate) ch: %s, time: %d:%d:%d", bpt->ch->name, time.Hours, time.Minutes, time.Seconds);
 	//msg->start_time = RTC_datetime2unix_timestamp(&bpt->start_date_time.date, &time);
-	msg->start_time = time.Seconds;
+//	msg->start_time = time.Seconds;
+	msg->start_time = bpt->start_date_time.time.Seconds + 60 * bpt->start_date_time.time.Minutes + 3600 * bpt->start_date_time.time.Hours;
 
 	//update step
 	if (((UBA_LCD_screen*)bpt->ch->current_screen)->ch_control == UBA_CHANNLE_ID_AB) {
@@ -948,6 +949,8 @@ bool UBA_BPT_save_data_log(UBA_BPT *bpt) {
 	UBA_PROTO_DATA_LOG_data_log msg = UBA_PROTO_DATA_LOG_data_log_init_zero;
 
 	msg.time = get_RTC_unix_timestamp() - RTC_datetime2unix_timestamp(&bpt->start_date_time.date, &bpt->start_date_time.time); // store only the time from start of the test
+//	msg.time = RTC_datetime2unix_timestamp(&bpt->last_get_runtime.date, &bpt->last_get_runtime.time) - 
+//			   RTC_datetime2unix_timestamp(&bpt->start_date_time.date, &bpt->start_date_time.time); // store only the time from start of the test
 	//msg.time =  diff_seconds;// store only the time from start of the test
 	msg.step_index = bpt->current_step->step_index;
 	msg.plan_index = bpt->current_step->plan_index;

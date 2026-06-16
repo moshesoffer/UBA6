@@ -265,20 +265,28 @@ void UBA_LCD_screen_getRunTime(UBA_BPT *bpt, RTC_TimeTypeDef *time) {
 	uint32_t diff_seconds;
 	uint8_t hours, minutes, seconds;
 
-	if (bpt->state.current == UBA_BPT_STATE_RUN_STEP) {
-		HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-		HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+	HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+	HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
-		lcd_bpt->time.effect = UBA_GFX_EFFECT_SOLID;
-		time1_seconds = TimeToSeconds(&screen->bpt->start_date_time.ref_run_time);
-		time2_seconds = TimeToSeconds(&sTime);
-		if (time2_seconds >= time1_seconds) {
-			diff_seconds = time2_seconds - time1_seconds;
-		} else {
-			// Assuming the difference is within 24 hours, account for crossing midnight
-			diff_seconds = (24 * 3600) - (time1_seconds - time2_seconds);
-		}
-	
+	lcd_bpt->time.effect = UBA_GFX_EFFECT_SOLID;
+	time1_seconds = TimeToSeconds(&screen->bpt->start_date_time.ref_run_time);
+	time2_seconds = TimeToSeconds(&sTime);
+	if (time2_seconds >= time1_seconds) {
+		diff_seconds = time2_seconds - time1_seconds;
+	} else {
+		// Assuming the difference is within 24 hours, account for crossing midnight
+		diff_seconds = (24 * 3600) - (time1_seconds - time2_seconds);
+	}
+	//screen->bpt->last_get_runtime.date.WeekDay = sDate.WeekDay;
+	//screen->bpt->last_get_runtime.date.Month   = sDate.Month;
+	//screen->bpt->last_get_runtime.date.Date    = sDate.Date;
+	//screen->bpt->last_get_runtime.date.Year    = sDate.Year;
+
+	screen->bpt->last_get_runtime.time.Hours   =  diff_seconds / 3600;
+	screen->bpt->last_get_runtime.time.Minutes = (diff_seconds % 3600) / 60;
+	screen->bpt->last_get_runtime.time.Seconds =  diff_seconds % 60;
+
+	if (bpt->state.current == UBA_BPT_STATE_RUN_STEP) {
 		diff_seconds += screen->bpt->start_date_time.add_pause_seconds;
 
 		hours   =  diff_seconds / 3600;
@@ -287,19 +295,6 @@ void UBA_LCD_screen_getRunTime(UBA_BPT *bpt, RTC_TimeTypeDef *time) {
 
 	} else if (bpt->state.current == UBA_BPT_STATE_PAUSE) {
 		if (screen->bpt->start_date_time.update_pause_seconds == true) {
-			HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-			HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
-
-			lcd_bpt->time.effect = UBA_GFX_EFFECT_SOLID;
-			time1_seconds = TimeToSeconds(&screen->bpt->start_date_time.ref_run_time);
-			time2_seconds = TimeToSeconds(&sTime);
-			if (time2_seconds >= time1_seconds) {
-				diff_seconds = time2_seconds - time1_seconds;
-			} else {
-				// Assuming the difference is within 24 hours, account for crossing midnight
-				diff_seconds = (24 * 3600) - (time1_seconds - time2_seconds);
-			}
-		
 			screen->bpt->start_date_time.add_pause_seconds += diff_seconds;
 			screen->bpt->start_date_time.update_pause_seconds = false;
 		}
