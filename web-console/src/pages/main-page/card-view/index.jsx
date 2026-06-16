@@ -16,7 +16,7 @@ import {getUbaDevices,} from 'src/action-creators/UbaDevices';
 import {useAuthDispatch, useAuth} from 'src/store/AuthProvider';
 import { setSecondaryNotification } from 'src/actions/Auth';
 
-const POLLING_INTERVAL = 300;
+const POLLING_INTERVAL = 200;
 
 export default function CardView() {
 

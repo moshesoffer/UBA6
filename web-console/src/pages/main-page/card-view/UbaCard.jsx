@@ -20,12 +20,15 @@ import {useTestRoutines,} from 'src/store/TestRoutinesProvider';
 import {useEffect, useRef,} from 'react';
 import {getUbaDevices,} from 'src/action-creators/UbaDevices';
 
+const POLLING_INTERVAL = 200;
+
 export default function UbaCard({row}) {
 
 	const authDispatch = useAuthDispatch();
 	const ubaDevicesDispatch = useUbaDevicesDispatch();
 	const testRoutinesDispatch = useTestRoutinesDispatch();
 	const {testData,} = useTestRoutines();
+	const pollingRef = useRef(null);
 
 	useEffect(() => {
 	console.log (`==> testData.noCellSerial: ${testData?.noCellSerial?.toString()}`);
@@ -44,6 +47,15 @@ export default function UbaCard({row}) {
 			return '';
 		}
 	}
+
+	useEffect(() => {
+		clearInterval(pollingRef.current);
+		pollingRef.current = setInterval(() => getUbaDevices(authDispatch, ubaDevicesDispatch, true), POLLING_INTERVAL);
+
+		return () => {
+			clearInterval(pollingRef.current);
+		}
+	}, []);
 
 	const formatTime = (seconds) => {
 	  if (!seconds) return "00:00:00";
