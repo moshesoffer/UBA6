@@ -12,19 +12,12 @@
 
 /* Struct definitions */
 typedef struct _UBA_PROTO_DATA_LOG_data_log {
-//    uint32_t time; /* the time in ms of the log for the start of the test */
-//    uint8_t step_index; /* the index of the step in the BPT */
-//    uint8_t plan_index; /* the index of the plan in the TR */
-//    int16_t current; /* the current in mA negative for discharge and postive for charge */
-//    uint16_t voltage; /* the voltage in mV */
-//    int16_t temp; /* the temp of the battery in centi C */
-
     uint32_t time; /* the time in ms of the log for the start of the test */
-    uint32_t step_index; /* the index of the step in the BPT */
-    uint32_t plan_index; /* the index of the plan in the TR */
-    int32_t current; /* the current in mA negative for discharge and postive for charge */
-    uint32_t voltage; /* the voltage in mV */
-    int32_t temp; /* the temp of the battery in centi C */
+    uint8_t step_index; /* the index of the step in the BPT */
+    uint8_t plan_index; /* the index of the plan in the TR */
+    int16_t current; /* the current in mA negative for discharge and postive for charge */
+    uint16_t voltage; /* the voltage in mV */
+    int16_t temp; /* the temp of the battery in centi C */
 } UBA_PROTO_DATA_LOG_data_log;
 
 

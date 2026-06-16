@@ -964,9 +964,11 @@ bool UBA_BPT_save_data_log(UBA_BPT *bpt) {
 	}
 	//if (message_size > sizeof(buffer)) {
 	if (message_size > (WR_BUFFER_LEN - bpt->wr_from)) {
-	//	UART_LOG_ERROR(UBA_COMP, "Message Size:%u is to Big to the buffer:%u", message_size, sizeof(buffer));
 		UART_LOG_ERROR(UBA_COMP, "Message Size:%u is to Big to the buffer:%u", message_size, (WR_BUFFER_LEN - bpt->wr_from));
-		return false;
+
+UART_LOG(UBA_COMP, "save log: length %d [%s]", bpt->wr_from, bpt->filename);
+		UBA_FM_apppend_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
+		bpt->wr_from = 0;
 	}
 
 	index = UBA_PROTO_helper_encode_varint(message_size, &bpt->buffer[bpt->wr_from]);
