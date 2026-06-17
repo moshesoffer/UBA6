@@ -565,12 +565,13 @@ void UBA_line_external_chrage_control(UBA_line *line, bool currnt_control) {
 		target_current = target_current_new;
 	}
 
-	UART_LOG_LINE_INFO(line->name, "External Charge (cc=%d) - current:%04d/%04d (%04d) DAC:%04d", currnt_control, line->data.charge_current, target_current, line->target.current, line->data_write.dac_ex);
+	UART_LOG(line->name, "External Charge (cc=%d) - current:%04d/%04d (%04d) DAC:%04d", currnt_control, line->data.charge_current, target_current, line->target.current, line->data_write.dac_ex);
 	if (currnt_control) {
 
 		if (UBA_IN_RANGE_HYST(line->data.charge_current,target_current ,UBA_LINE_CHARGE_CURRENT_HYST_MA_FACTOR) == false) {
 			diff = target_current - line->data.charge_current;
-			dac = UBA_LINE_CHARGE_DAC_MA2DAC(abs(diff)); // get the difference in dac value
+			//dac = UBA_LINE_CHARGE_DAC_MA2DAC(abs(diff)); // get the difference in dac value
+			dac = UBA_LINE_CHARGE_DAC_MA2DAC(diff); // get the difference in dac value
 			UART_LOG_LINE_INFO(line->name, "Current(%d mA) not on Target(%d mA) Difference:%d mA ,DAC diff : %d", line->data.charge_current, target_current,
 					diff,
 					dac);
@@ -581,11 +582,11 @@ void UBA_line_external_chrage_control(UBA_line *line, bool currnt_control) {
 
 			} else {
 				if (diff < 0) {
-					UART_LOG_LINE_INFO(line->name, "decrease current: %d", (dac / UBA_LINE_CHARGE_CURRENT_HYST_DIV) - 1);
+					UART_LOG(line->name, "decrease current: %d", (dac / UBA_LINE_CHARGE_CURRENT_HYST_DIV) - 1);
 					UBA_line_decrease_charge_current(line, (dac / UBA_LINE_CHARGE_CURRENT_HYST_DIV) - 1);
 
 				} else if (diff > 0) {
-					UART_LOG_LINE_INFO(line->name, "increase current: %d", (dac / UBA_LINE_CHARGE_CURRENT_HYST_DIV) + 1);
+					UART_LOG(line->name, "increase current: %d", (dac / UBA_LINE_CHARGE_CURRENT_HYST_DIV) + 1);
 					UBA_line_increase_charge_current(line, (dac / UBA_LINE_CHARGE_CURRENT_HYST_DIV) + 1);
 
 				} else {

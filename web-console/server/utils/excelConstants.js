@@ -1,5 +1,6 @@
 const generalConsts = {
 	excelTemplateFilePath: '../assets/excel_template.xlsx',
+	pdfTemplateFilePath: '../assets/pdf_template.xlsx',
 	DataSheetName: 'Data',
 	reportSheetName: 'Report',
 

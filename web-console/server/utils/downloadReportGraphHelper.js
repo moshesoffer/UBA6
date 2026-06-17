@@ -65,8 +65,13 @@ const downloadReportsGraph = async (req, res) => {
 		const planArr = testData.plan;
 		if(!validateArray(testResults) || !validateArray(planArr)) return returnErrorCode(res, 404, 'Test results or plan not found.');
 
+		let templatePath = path.join(__dirname, generalConsts.excelTemplateFilePath);
+		if(exportType === 'XSLX'){
+			templatePath = path.join(__dirname, generalConsts.excelTemplateFilePath);
+		} else { //if(exportType === 'PDF')
+			templatePath = path.join(__dirname, generalConsts.pdfTemplateFilePath);
+		}
 
-		const templatePath = path.join(__dirname, generalConsts.excelTemplateFilePath);
 		const workbook = await XlsxPopulate.fromFileAsync(templatePath);
 		const dataSheet = workbook.sheet(generalConsts.DataSheetName);
 		const reportSheet = workbook.sheet(generalConsts.reportSheetName);
