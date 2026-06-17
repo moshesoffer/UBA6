@@ -33,6 +33,7 @@ export default function Charge(props) {
 			delete refCell.current.minTemp;
 			delete refCell.current.maxTemp;
 
+			//console.log ('==> min/maxTemp (def): ', {minTemp}, {maxTemp});
 			if (minTemp === null) {
 				handleInputChange(testRoutinesDispatch, id, 'minTemp', refCell.current?.minTempDefault, true);
 			}
@@ -59,6 +60,7 @@ export default function Charge(props) {
 		
 		const chargeCurrentType = chargeCurrent?.split(':')?.[1];
 		let cRate;
+		//console.log ('==> c current: ', {chargeCurrentValue}, {chargeCurrentType}, {ratedBatteryCapacity});
 		if(chargeCurrentType === 'absoluteMa'){
 			cRate = chargeCurrentValue / ratedBatteryCapacity;
 		} else if(chargeCurrentType === 'absoluteA'){
@@ -66,6 +68,7 @@ export default function Charge(props) {
 		} else if (chargeCurrentType === 'relative'){//in case of relative, cRate is actually equals to relative value. and this calculation is actually Current
 			cRate = chargeCurrentValue * ratedBatteryCapacity;
 		}
+		//console.log ('==> ', {cRate});
 
 		cRate = cRate.toFixed(2);
 		// Avoid 0.0 value.

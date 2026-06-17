@@ -48,6 +48,7 @@ export default function Discharge(props) {
 			const chosenCellPN = cells.find(cell => cell.itemPN === testData.cellPN);
 			const minVoltage = chosenCellPN?.minVoltage;
 
+			//console.log ('==> co voltage', {cutOffVoltage});
 			if (validateNumber(minVoltage) && minVoltage > 0 && cutOffVoltage === null) {
 				const cutOffVoltage =  minVoltage;
 				handleInputChange(testRoutinesDispatch, id, 'cutOffVoltage', cutOffVoltage, true);
@@ -62,9 +63,9 @@ export default function Discharge(props) {
 		if (!validateNumber(dischargeCurrentValue) || !validateNumber(ratedBatteryCapacity)) {
 			return;
 		}
-		//console.log('ratedBatteryCapacity', ratedBatteryCapacity);
 		const dischargeCurrentType = dischargeCurrent?.split(':')?.[1];
 		let cRate;
+		//console.log ('==> dc current: ', {dischargeCurrentValue}, {dischargeCurrentType});
 		if(dischargeCurrentType === 'absoluteMa'){
 			cRate = dischargeCurrentValue / ratedBatteryCapacity;
 		} else if(dischargeCurrentType === 'absoluteA'){
@@ -77,6 +78,7 @@ export default function Discharge(props) {
 			handleInputChange(testRoutinesDispatch, id, 'cRate', null, true);
 			return;//resistance is not used in cRate calculation
 		}
+		//console.log ('==> ', {cRate});
 
 		cRate = cRate.toFixed(2);
 		// Avoid 0.0 value.

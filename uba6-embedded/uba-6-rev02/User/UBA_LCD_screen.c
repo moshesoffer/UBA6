@@ -414,7 +414,7 @@ void UBA_LCD_screen_load_channel(UBA_LCD_channel *lcd_ch, UBA_channel *ch) {
 		data_vaiue = UBA_channel_get_current(ch);
 	}
 	if (data_vaiue != lcd_ch->shadow.current_vlaue) {
-		if (abs(data_vaiue) >= 2000.0f) {
+		if (abs(data_vaiue) >= 1000.0f) {
 			data_vaiue /= 1000.0f;
 			//sprintf(buffer, "%.5f %-3s", data_vaiue, "A");
 			sprintf(buffer, "%.2f %-3s", data_vaiue, "A");

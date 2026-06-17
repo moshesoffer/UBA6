@@ -143,7 +143,7 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
         public bool IsIgnoreLimits { get; set; }
 
         [JsonIgnore]
-        public double? DischargeValue => ParseValue();
+        public float? DischargeValue => (float) ParseValue();
 
         [JsonIgnore]
         public UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE? DischargeType => ParseType();
@@ -366,11 +366,25 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
             if (ps.Type != "discharge") {
                 throw new Exception("Invalid step type for discharge conversion");
             }
-            return ProtoHelper.CreateDischargeStep(UBA_PROTO_BPT.SOURCE.Internal,
-                (int)(ps.DischargeValue ?? 1 ) ,
-                ps.DischargeType?? UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.AbsoluteMa,
+            var dischargeValue =
+                ps.DischargeType == UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.AbsoluteMa
+                    ? (ps.DischargeValue ?? 0)
+                    : (ps.DischargeValue ?? 0) * 1000.0f;
+            var dischargeType = UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.AbsoluteMa;
+
+            return ProtoHelper.CreateDischargeStep(
+                UBA_PROTO_BPT.SOURCE.Internal,
+                (int)dischargeValue,
+                dischargeType,
                 plan2DischargeSC(ps, noCellSerial, noCellParallel),
                 ps.MinTemp ?? -273.15f);
+//old version
+//            return ProtoHelper.CreateDischargeStep(
+//                UBA_PROTO_BPT.SOURCE.Internal,
+//                ps.DischargeType == UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.AbsoluteMa ? (ps.DischargeValue ?? 0) : (ps.DischargeValue ?? 0)*1000.0f ,
+//                ps.DischargeType?? UBA_PROTO_BPT.DISCHARGE_CURRENT_TYPE.AbsoluteMa,
+//                plan2DischargeSC(ps, noCellSerial, noCellParallel),
+//                ps.MinTemp ?? -273.15f);
         }
         protected static UBA_PROTO_BPT.delay plan2DelayStep(PlanStepDTO ps) {
             UBA_PROTO_BPT.delay msg = new UBA_PROTO_BPT.delay();

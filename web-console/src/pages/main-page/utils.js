@@ -210,14 +210,14 @@ export const getVoltage = voltage => {
 }
 
 export const getChargeCurrent = chargeCurrent => {
-	//console.log ('==> ', {chargeCurrent});
+	//console.log ('==> ', {chargeCurrent}, '[A]'); //input here is in [A]
 	if (chargeCurrent === null) {
 		return getText('common.NOT_APPLICABLE');
 	}
-	if(chargeCurrent > 1000){
+	if(chargeCurrent > 1){
 		return `${Number(chargeCurrent).toFixed(5)} A`;
 	}
-	return `${Number(chargeCurrent*1000).toFixed(2)} mA`;
+	return `${Number(chargeCurrent * 1000).toFixed(2)} mA`;
 }
 
 export const getTemperature = temperature => {
@@ -232,11 +232,15 @@ export const getTemperature = temperature => {
 }
 
 export const getCapacity = capacity => {
+	//console.log ('==> ', {capacity}, '[Ah]'); //input here is in [mAh]
 	if (capacity === null) {
 		return getText('common.NOT_APPLICABLE');
 	}
 	
 	//return `${Number(capacity / 1000).toFixed(5)} Ah`;
+	if(capacity > 1000){
+		return `${Number(capacity/1000).toFixed(3)} Ah`;
+	}
 	return `${Number(capacity).toFixed(3)} mAh`;
 }
 
