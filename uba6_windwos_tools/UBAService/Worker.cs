@@ -82,9 +82,9 @@ namespace UBAService {
                             if (pt != null) {
                                 //if (cycle1++ % 1 == 0) {
                                 //    //Change Running test status (uba.Status) - done manually by user (confirm click)
-                                //    if (pt?.PendingRunningTests?.Count == 0 && pt?.PendingConnectionUbaDevices?.Count == 0) {
-                                //        await refreshChannelReading();
-                                //    }
+                                    if (pt?.PendingRunningTests?.Count == 0 && pt?.PendingConnectionUbaDevices?.Count == 0) {
+                                        await refreshChannelReading();
+                                    }
                                 //    cycle1 = 0;
                                 //}
                                 if (cycle2++ % 1 == 0) {

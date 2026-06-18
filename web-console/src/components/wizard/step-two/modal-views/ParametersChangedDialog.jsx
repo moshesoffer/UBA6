@@ -25,7 +25,7 @@ export default function ParametersChangedDialog(props) {
 	return (
 		<Dialog open={open}>
 			<DialogTitle>
-				{isRunOption ? 'Save/Run:' : 'Save TR:'}
+				{isRunOption ? 'Save Changes and/or Run:' : 'Save TR:'}
 			</DialogTitle>
 
 			<DialogActions>

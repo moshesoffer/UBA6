@@ -125,7 +125,8 @@ export const getTestRuntime = ubaDevice => {
     if (ubaDevice.channel === 'A') {
         if (
             testState === 'Charge' ||
-            testState === 'Discharge'
+            testState === 'Discharge' ||
+			testState === 'Pause'
         ) {
         	if (startTimeA === -1) {
             	startTimeA = lastInstantTimestamp;
@@ -133,9 +134,9 @@ export const getTestRuntime = ubaDevice => {
 			currTime = getRuntime(lastInstantTimestamp, startTimeA);
             rundateChnlA = currTime - pausedateChnlA;
  			//console.log (`==> rundateChnlA: ${rundateChnlA}, currTime=${currTime}, pause=${pausedateChnlA},    now=${lastInstantTimestamp} start=${startTimeA}`);
-        } else if (testState === 'Pause') {
-			currTime = getRuntime(lastInstantTimestamp, startTimeA);
-            pausedateChnlA = currTime - rundateChnlA;
+//        } else if (testState === 'Pause') {
+//			currTime = getRuntime(lastInstantTimestamp, startTimeA);
+//            pausedateChnlA = currTime - rundateChnlA;
         } else if (testState === 'Standby') {
             runtimeChnlA = 0;
             startTimeA = -1;
@@ -214,8 +215,8 @@ export const getChargeCurrent = chargeCurrent => {
 	if (chargeCurrent === null) {
 		return getText('common.NOT_APPLICABLE');
 	}
-	if(chargeCurrent > 1){
-		return `${Number(chargeCurrent).toFixed(5)} A`;
+	if(Math.abs(chargeCurrent) > 1){
+		return `${Number(chargeCurrent).toFixed(3)} A`;
 	}
 	return `${Number(chargeCurrent * 1000).toFixed(2)} mA`;
 }
@@ -238,7 +239,7 @@ export const getCapacity = capacity => {
 	}
 	
 	//return `${Number(capacity / 1000).toFixed(5)} Ah`;
-	if(capacity > 1000){
+	if(Math.abs(capacity) > 1000){
 		return `${Number(capacity/1000).toFixed(3)} Ah`;
 	}
 	return `${Number(capacity).toFixed(3)} mAh`;
