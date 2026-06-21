@@ -269,7 +269,7 @@ void UBA_LCD_screen_getRunTime(UBA_BPT *bpt, RTC_TimeTypeDef *time) {
 	HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
 	lcd_bpt->time.effect = UBA_GFX_EFFECT_SOLID;
-	time1_seconds = TimeToSeconds(&screen->bpt->start_date_time.ref_run_time);
+	time1_seconds = TimeToSeconds(&screen->bpt->start_date_time.time);//ref_run_time);
 	time2_seconds = TimeToSeconds(&sTime);
 	if (time2_seconds >= time1_seconds) {
 		diff_seconds = time2_seconds - time1_seconds;
@@ -286,22 +286,23 @@ void UBA_LCD_screen_getRunTime(UBA_BPT *bpt, RTC_TimeTypeDef *time) {
 	screen->bpt->last_get_runtime.time.Minutes = (diff_seconds % 3600) / 60;
 	screen->bpt->last_get_runtime.time.Seconds =  diff_seconds % 60;
 
-	if (bpt->state.current == UBA_BPT_STATE_RUN_STEP) {
+	if ((bpt->state.current == UBA_BPT_STATE_RUN_STEP) ||
+		(bpt->state.current == UBA_BPT_STATE_PAUSE)) {
 		diff_seconds += screen->bpt->start_date_time.add_pause_seconds;
 
 		hours   =  diff_seconds / 3600;
 		minutes = (diff_seconds % 3600) / 60;
 		seconds =  diff_seconds % 60;
 
-	} else if (bpt->state.current == UBA_BPT_STATE_PAUSE) {
-		if (screen->bpt->start_date_time.update_pause_seconds == true) {
-			screen->bpt->start_date_time.add_pause_seconds += diff_seconds;
-			screen->bpt->start_date_time.update_pause_seconds = false;
-		}
-
-		hours   =  screen->bpt->start_date_time.add_pause_seconds / 3600;
-		minutes = (screen->bpt->start_date_time.add_pause_seconds % 3600) / 60;
-		seconds =  screen->bpt->start_date_time.add_pause_seconds % 60;
+//	} else if (bpt->state.current == UBA_BPT_STATE_PAUSE) {
+//		if (screen->bpt->start_date_time.update_pause_seconds == true) {
+//			screen->bpt->start_date_time.add_pause_seconds += diff_seconds;
+//			screen->bpt->start_date_time.update_pause_seconds = false;
+//		}
+//
+//		hours   =  screen->bpt->start_date_time.add_pause_seconds / 3600;
+//		minutes = (screen->bpt->start_date_time.add_pause_seconds % 3600) / 60;
+//		seconds =  screen->bpt->start_date_time.add_pause_seconds % 60;
 
 	} else {
 		UART_LOG_SCREEN_INFO("====> ch %s, state %x, time=0", bpt->ch->name, bpt->state.current);
@@ -357,17 +358,22 @@ void UBA_LCD_screen_load_channel(UBA_LCD_channel *lcd_ch, UBA_channel *ch) {
 			case UBA_CHANNEL_STATE_STANDBY:
 				lcd_ch->status.effect = UBA_GFX_EFFECT_SOLID;
 				lcd_ch->status.elemnt.status.color_fill = UBA_GFX_COLOR_STANDBY;
+if (ch->id != UBA_PROTO_CHANNEL_ID_B) {
 				sprintf(lcd_ch->status.elemnt.status.text, CHANNEL_DISPALY_STATUS, "  STANDBY ");
+}
 				break;
 			case UBA_CHANNEL_STATE_CHARGE:
 				//lcd_ch->status.effect = UBA_GFX_EFFECT_BLINK_SLOW;
 				lcd_ch->status.elemnt.status.color_fill = UBA_GFX_COLOR_RUN;
 				sprintf(lcd_ch->status.elemnt.status.text, "%-10s", " CHARGE ");
 				break;
+
 			case UBA_CHANNEL_STATE_DISCHARGE:
 				//lcd_ch->status.effect = UBA_GFX_EFFECT_BLINK_SLOW;
 				lcd_ch->status.elemnt.status.color_fill = UBA_GFX_COLOR_RUN;
+if (ch->id == UBA_PROTO_CHANNEL_ID_A) {
 				sprintf(lcd_ch->status.elemnt.status.text, "%-10s", " DISCHARGE");
+}
 				break;
 			case UBA_CHANNEL_STATE_OFF:
 				//lcd_ch->status.effect = UBA_GFX_EFFECT_BLINK_SLOW;
@@ -536,7 +542,7 @@ void UBA_LCD_screen_draw_channel(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt
 		//if (lcd_bpt_shadow->current_state != ch->state.current) {
 			UBA_GFX_draw_status(&screen->pages.channel.channel.status);
 			//update shadow
-			lcd_bpt_shadow->current_state = ch->state.current;
+		//	lcd_bpt_shadow->current_state = ch->state.current;
 		//}
 	}
 
@@ -617,7 +623,7 @@ void UBA_LCD_screen_draw_channel(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt
 	}
 
 	if ((rt & UBA_LCD_REFRESH_TYPE_EWI) == UBA_LCD_REFRESH_TYPE_EWI) {
-		if (lcd_bpt_shadow->current_state != ch->state.current) {
+		//if (lcd_bpt_shadow->current_state != ch->state.current) {
 			if (lcd_bpt_shadow->error != screen->bpt->error) {
 				//screen->pages.channel.EWI_msg.pos.y += 32;
 				UBA_GFX_draw_text_center(&screen->pages.channel.EWI_msg);
@@ -625,7 +631,8 @@ void UBA_LCD_screen_draw_channel(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt
 				//update shadow
 				lcd_bpt_shadow->error = screen->bpt->error;
 			}
-		}
+		//	lcd_bpt_shadow->current_state = ch->state.current;
+		//}
 	}
 
 	if ((rt & UBA_LCD_REFRESH_TYPE_UI) == UBA_LCD_REFRESH_TYPE_UI) {
@@ -861,9 +868,6 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 			UBA_LCD_g.screen_ch_B.pages.screen_bpt.EWI_msg.elemnt.text.color_text = lcd_bpt->EWI_msg.elemnt.text.color_text;
 			sprintf(UBA_LCD_g.screen_ch_B.pages.screen_bpt.EWI_msg.elemnt.text.text, lcd_bpt->EWI_msg.elemnt.text.text);
 		}
-
-		//update shadow - will be done later
-		//lcd_bpt_shadow->current_state = channel_test->state.current;
 	}
 
 	//Status
@@ -991,7 +995,7 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 	}
 
 	if ((rt & UBA_LCD_REFRESH_TYPE_STATUS) == UBA_LCD_REFRESH_TYPE_STATUS) {
-		if ((lcd_bpt_shadow->current_state != channel_test->state.current) || (LCD_screen_force_draw == true)) {
+		//if ((lcd_bpt_shadow->current_state != channel_test->state.current) || (LCD_screen_force_draw == true)) {
 			UBA_GFX_draw_status(&lcd_bpt->channel.status);
 			if (lcd_bpt->test_step.effect != UBA_GFX_EFFECT_INVISIBLE) {
 				UBA_GFX_draw_text(&lcd_bpt->test_step);
@@ -1000,7 +1004,7 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 			}
 			//update shadow - will be done later
 			//lcd_bpt_shadow->current_state = channel_test->state.current;
-		}
+		//}
 	}
 
 	int i;
@@ -1142,7 +1146,7 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 	}
 
 	//update shadow
-	lcd_bpt_shadow->current_state = channel_test->state.current;
+	//lcd_bpt_shadow->current_state = channel_test->state.current;
 	lcd_bpt_shadow->error = screen->bpt->error;
 }
 
