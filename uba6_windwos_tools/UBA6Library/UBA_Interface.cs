@@ -81,8 +81,10 @@ namespace UBA6Library {
             } catch (Exception ex) {
                 _logger.LogError($"Initializing COM port {portName}: {ex.Message}");
             }
+            ClearQueueMessage();
             StartProcessing();
         }
+
         public void SwitchCom(string newComPort, bool overwite = false) {
             if (string.IsNullOrEmpty(newComPort)) {
                 _logger.LogError("Cannot switch to an empty COM port.");
@@ -118,48 +120,53 @@ namespace UBA6Library {
             }
         }
 
-private readonly object _portLock = new();
+        private readonly object _portLock = new();
 
-private void SafeReset()
-{
-    lock (_portLock)
-    {
-        try
+        private void SafeReset()
         {
-            if (sp == null)
-                return;
-
-            _logger.LogWarning("Resetting serial port...");
-
-            if (sp.IsOpen)
-                sp.Close();
-
-            Thread.Sleep(300);
-
-            sp.Dispose();
-
-            sp = new SerialPort(sp.PortName, 115200)
+            lock (_portLock)
             {
-                ReadBufferSize = 2048,
-                Parity = Parity.None,
-                ReadTimeout = 3000,
-                WriteTimeout = 300
-            };
+                try
+                {
+                    if (sp == null)
+                        return;
 
-            sp.Open();
+                    _logger.LogWarning("Resetting serial port...");
+
+                    if (sp.IsOpen)
+                        sp.Close();
+
+                    Thread.Sleep(300);
+
+                    sp.Dispose();
+
+                    sp = new SerialPort(sp.PortName, 115200)
+                    {
+                        ReadBufferSize = 2048,
+                        Parity = Parity.None,
+                        ReadTimeout = 3000,
+                        WriteTimeout = 300
+                    };
+
+                    sp.Open();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Reset failed");
+                }
+            }
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Reset failed");
-        }
-    }
-}
+
         public void EnqueueMessage(Message message, MessagePriority priority = MessagePriority.DEFUALT) {
             if (message == null) {
                 throw new ArgumentNullException(nameof(message));
             }
             _logger.LogDebug($"Enqueuing message: {message} with priority {priority}");
             messageQueue.Enqueue(message, (int)priority);
+        }
+
+        public void ClearQueueMessage() {
+            messageQueue.Clear();
         }
 
 //        public void StartProcessing() {
@@ -208,107 +215,107 @@ private void SafeReset()
 
         private readonly object _serialReadLock = new object();
 
-public void StartProcessing()
-{
-    if (_processingTask != null && !_processingTask.IsCompleted)
-    {
-        _logger.LogDebug("Queue processing already running.");
-        return;
-    }
-
-    _cts = new CancellationTokenSource();
-
-    _processingTask = Task.Run(() => ProcessQueueAsync(_cts.Token));
-
-    // NEW: start serial reader
-    _readerTask = Task.Run(() => ReadLoop(_cts.Token));
-}
-private void ReadExact(Stream stream, byte[] buffer, int count)
-{
-    int offset = 0;
-    int stallCounter = 0;
-
-    while (offset < count)
-    {
-        int read = stream.Read(buffer, offset, count - offset);
-
-        if (read > 0)
+        public void StartProcessing()
         {
-            offset += read;
-            stallCounter = 0;
-        }
-        else
-        {
-            stallCounter++;
-
-            if (stallCounter > 50)
-                throw new IOException("Serial stalled mid-message");
-        }
-    }
-}
-private void ReadLoop(CancellationToken token)
-{
-    var parser = new MessageParser<Message>(() => new Message());
-
-    while (!token.IsCancellationRequested)
-    {
-        try
-        {
-            if (sp == null || !sp.IsOpen)
+            if (_processingTask != null && !_processingTask.IsCompleted)
             {
-                Thread.Sleep(200);
-                continue;
+                _logger.LogDebug("Queue processing already running.");
+                return;
             }
 
-            // 1. Read protobuf length prefix
-            ulong length = DecodeVarint(sp.BaseStream);
+            _cts = new CancellationTokenSource();
 
-            if (length == 0)
-                continue;
+            _processingTask = Task.Run(() => ProcessQueueAsync(_cts.Token));
 
-            if (length == 0 || length > 10_000_000)
+            // NEW: start serial reader
+            _readerTask = Task.Run(() => ReadLoop(_cts.Token));
+        }
+        private void ReadExact(Stream stream, byte[] buffer, int count)
+        {
+            int offset = 0;
+            int stallCounter = 0;
+
+            while (offset < count)
             {
-                _logger.LogError($"Invalid length: {length}");
-                continue;
-            }
-            if (length > 10_000_000)
-                throw new InvalidDataException($"Invalid length: {length}");
+                int read = stream.Read(buffer, offset, count - offset);
 
-            byte[] buffer = new byte[(int)length];
+                if (read > 0)
+                {
+                    offset += read;
+                    stallCounter = 0;
+                }
+                else
+                {
+                    stallCounter++;
 
-            // 2. Read full payload
-            ReadExact(sp.BaseStream, buffer, (int)length);
-
-            // 3. Parse protobuf
-            try {
-            Message msg = parser.ParseFrom(buffer);
-
-            _logger.LogDebug($"RX Message: {msg}");
-
-            // 4. Raise event
-            MessageReceived?.Invoke(this, new ProtoMessageEventArg(msg));
-
-            } catch {
-                _logger.LogDebug($"ParseFrom: scan for next valid varint");
-                continue;
+                    if (stallCounter > 50)
+                        throw new IOException("Serial stalled mid-message");
+                }
             }
         }
-        catch (TimeoutException)
+        private void ReadLoop(CancellationToken token)
         {
-            // ignore read timeouts
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Serial failure - restarting reader");
+            var parser = new MessageParser<Message>(() => new Message());
 
-            Task.Run(() =>
+            while (!token.IsCancellationRequested)
             {
-                Thread.Sleep(500);
-                SafeReset();
-            });
+                try
+                {
+                    if (sp == null || !sp.IsOpen)
+                    {
+                        Thread.Sleep(200);
+                        continue;
+                    }
+
+                    // 1. Read protobuf length prefix
+                    ulong length = DecodeVarint(sp.BaseStream);
+
+                    if (length == 0)
+                        continue;
+
+                    if (length == 0 || length > 10_000_000)
+                    {
+                        _logger.LogError($"Invalid length: {length}");
+                        continue;
+                    }
+                    if (length > 10_000_000)
+                        throw new InvalidDataException($"Invalid length: {length}");
+
+                    byte[] buffer = new byte[(int)length];
+
+                    // 2. Read full payload
+                    ReadExact(sp.BaseStream, buffer, (int)length);
+
+                    // 3. Parse protobuf
+                    try {
+                    Message msg = parser.ParseFrom(buffer);
+
+                    _logger.LogDebug($"RX Message: {msg}");
+
+                    // 4. Raise event
+                    MessageReceived?.Invoke(this, new ProtoMessageEventArg(msg));
+
+                    } catch {
+                        _logger.LogDebug($"ParseFrom: scan for next valid varint");
+                        continue;
+                    }
+                }
+                catch (TimeoutException)
+                {
+                    // ignore read timeouts
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Serial failure - restarting reader");
+
+                    Task.Run(() =>
+                    {
+                        Thread.Sleep(500);
+                        SafeReset();
+                    });
+                }
+            }
         }
-    }
-}
 
 
         private List<byte> message2byteArry(Message? msg = null) {

@@ -128,7 +128,7 @@ namespace UBAService {
         //periodic query message to UBA for running test data - instantTestResults (state, startTime, step, voltage, current, temp, capacity, ..)
         public async Task StartPeriodicRunningTestUpdate() {
             _cts1sec = new CancellationTokenSource();
-            var timer = new PeriodicTimer(TimeSpan.FromMicroseconds(1000));
+            var timer = new PeriodicTimer(TimeSpan.FromMicroseconds(950)); //instaed of 1000 mSec, remaining time for execeution
             var cycle1 = 0;
             var cycle2 = 0;
 
