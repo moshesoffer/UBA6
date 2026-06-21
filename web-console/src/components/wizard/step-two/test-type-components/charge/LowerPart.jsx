@@ -311,22 +311,22 @@ export default function LowerPart(props) {
 					</FormHelperText>
 				</FormControl>
 			</Grid>
-			
-			<Grid item lg={8} >
-				<Stack direction="row" alignItems="center" spacing={1}>
-					<FormControlLabel
-						label={getText('mainPage.wizardTwo.IGNORE_LIMITS')}
-						control={
-							<Checkbox
-								onChange={event => handleInputChange(testRoutinesDispatch, id, 'isIgnoreLimits', event.target.checked)}
-								sx={{pl: 0,}}
-							/>
-						}
-						disabled={!!testData?.isLocked && validateObject(currentUba, true)}
-					/>
-				</Stack>
-			</Grid>
 
 		</Grid>
 	);
 }
+			
+//			<Grid item lg={8} >
+//				<Stack direction="row" alignItems="center" spacing={1}>
+//					<FormControlLabel
+//						label={getText('mainPage.wizardTwo.IGNORE_LIMITS')}
+//						control={
+//							<Checkbox
+//								onChange={event => handleInputChange(testRoutinesDispatch, id, 'isIgnoreLimits', event.target.checked)}
+//								sx={{pl: 0,}}
+//							/>
+//						}
+//						disabled={!!testData?.isLocked && validateObject(currentUba, true)}
+//					/>
+//				</Stack>
+//			</Grid>

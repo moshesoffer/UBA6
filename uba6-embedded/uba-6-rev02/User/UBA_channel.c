@@ -419,6 +419,14 @@ int32_t UBA_channel_get_current(UBA_channel *ch) {
 	return current;
 }
 
+void UBA_channel_reset_current(UBA_channel *ch) {
+	for (int index = 0; index < ch->line_size; index++) {
+		ch->lines_p[index]->data.charge_current = 0;
+		ch->lines_p[index]->data.discharge_current = 0;
+	}
+	ch->charge_current  = 0;
+}
+
 void UBA_channel_reset_capacity(UBA_channel *ch) {
 	for (int index = 0; index < ch->line_size; index++) {
 		ch->lines_p[index]->data.capacity = 0;

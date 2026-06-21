@@ -182,28 +182,49 @@ bool UBA_BPT_isStep_timeout(UBA_BPT *bpt, uint32_t timeout_sec) {
 
 bool UBA_BPT_isStop_condition_met_charge_current(UBA_BPT *bpt) {
 	bool ret = false;
-	//Moshe
-	UBA_LCD_screen *current_screen = (UBA_LCD_screen *)bpt->ch->current_screen;
-	ret = (((int32_t) (UBA_channel_get_current(bpt->ch)) < bpt->current_step->type.charge.stop_condition.cut_off_current)
-			&& (((int32_t)UBA_channel_get_voltage(bpt->ch)) >= (bpt->current_step->type.charge.voltage * ((TR_Test_Routine *)bpt->tr)->battery.num_cells_in_serial)));
-	if (ret) {
-		strcpy (bpt->complete_reason, "Cut-Off Current");
+	bool charge_current_decreasing = false;
 
-		UART_LOG_BPT_INFO("!!!!Cut off current has met: %05lu mA < %05lu mA ; %u mV >= %05lu mV; numCells %d ch-name %s TR-name %s %s", 
-				UBA_channel_get_current(bpt->ch),
-				bpt->current_step->type.charge.stop_condition.cut_off_current, 
-				UBA_channel_get_voltage(bpt->ch),
-				bpt->current_step->type.charge.voltage,
-				((TR_Test_Routine *)bpt->tr)->battery.num_cells_in_serial,
-				bpt->ch->name,
-				((TR_Test_Routine *)bpt->tr)->name, current_screen->tr->name
-			);
+	UBA_LCD_screen *current_screen = (UBA_LCD_screen *)bpt->ch->current_screen;
+	int32_t current = UBA_channel_get_current(bpt->ch);
+	int32_t voltage = UBA_channel_get_voltage(bpt->ch);
+	charge_current_decreasing = bpt->ch->charge_current > (float)current ? true : false;
+
+	if (bpt->current_step->type_id == UBA_BPT_STEP_TYPE_CHARGE) {
+		   		//current decrease after reaching charge limit
+		ret = ((charge_current_decreasing == true) &&
+			   (current <   bpt->current_step->type.charge.stop_condition.cut_off_current)) 
+			   || 
+			   //volatge reach max charge voltage
+			   (voltage >= (bpt->current_step->type.charge.voltage * ((TR_Test_Routine *)bpt->tr)->battery.num_cells_in_serial));
+		if (ret) {
+			strcpy (bpt->complete_reason, "Cut-Off Current");
+		}
+		bpt->ch->capacity = (float)current;
+
+	} else if (bpt->current_step->type_id == UBA_BPT_STEP_TYPE_DISCHARGE) {
+		   	   //volatge reach max charge voltage
+		ret =  voltage > 0 &&
+			   voltage < bpt->current_step->type.discharge.stop_condition.cut_off_voltage;
+		if (ret) {
+			strcpy (bpt->complete_reason, "Cut-Off Voltage");
+		}
+
+	} else {
+		return ret;
 	}
+
+//if (bpt->ch->id == UBA_PROTO_CHANNEL_ID_A) {
+//	UART_LOG("BPT", "==>  %d dec %s, cut_off_current %d;  voltage %d per-cell %d", 
+//		current, charge_current_decreasing ? "true" : "false", bpt->current_step->type.charge.stop_condition.cut_off_current, 
+//		voltage, bpt->current_step->type.charge.voltage);
+//}
 	return ret;
 }
+
 bool UBA_BPT_isStop_condition_met_charge_capacity(UBA_BPT *bpt) {
 	bool ret = false;
-	ret = (UBA_channel_get_capacity(bpt->ch) > bpt->current_step->type.charge.stop_condition.charge_limit);
+	float capacity = UBA_channel_get_capacity(bpt->ch);
+	ret = (capacity * 1000/*[mAh]*/ > (float)bpt->current_step->type.charge.stop_condition.charge_limit);
 	if (ret) {
 		strcpy (bpt->complete_reason, "Reach Charge Limit");
 
@@ -215,13 +236,14 @@ bool UBA_BPT_isStop_condition_met_charge_capacity(UBA_BPT *bpt) {
 }
 bool UBA_BPT_isStop_condition_met_charge_temp(UBA_BPT *bpt) {
 	bool ret = false;
-	ret = (UBA_channel_get_temperature(bpt->ch) > bpt->current_step->type.charge.stop_condition.max_emperature);
+	float temperature = UBA_channel_get_temperature(bpt->ch);
+	ret = (temperature > bpt->current_step->type.charge.stop_condition.max_temperature);
 	if (ret) {
 		strcpy (bpt->complete_reason, "Reach Temp Limit");
 
 		UART_LOG_BPT_INFO("!!!!!Temp Stop condition has met: %05f > %05f ", 
 				UBA_channel_get_temperature(bpt->ch),
-				bpt->current_step->type.charge.stop_condition.max_emperature);
+				bpt->current_step->type.charge.stop_condition.max_temperature);
 	}
 	return ret;
 }
@@ -244,28 +266,16 @@ bool UBA_BPT_isStep_completed(UBA_BPT *bpt) {
 				break;
 
 			case UBA_BPT_STEP_TYPE_DISCHARGE:
-				int32_t voltage = UBA_channel_get_voltage(bpt->ch);
-				if ((voltage > 0) &&
-					(voltage < bpt->current_step->type.discharge.stop_condition.cut_off_voltage)) {
-					UART_LOG_WARNNING(UBA_COMP, "Reach Cut of Voltage : %u < %d", UBA_channel_get_voltage(bpt->ch),
-							bpt->current_step->type.discharge.stop_condition.cut_off_voltage);
-					strcpy (bpt->complete_reason, "Cut-Off Voltage");
-					isCompleted = true;
-				}
-
-				if ((abs((int) UBA_channel_get_capacity(bpt->ch)) > ((int) bpt->current_step->type.discharge.stop_condition.charge_limit))) {
-					UART_LOG_WARNNING(UBA_COMP, "Cut-Off Capacity");
-					isCompleted = true;
-				}
-
-				if (UBA_BPT_isStep_timeout(bpt, bpt->current_step->type.discharge.stop_condition.max_time)) {
-					UART_LOG_WARNNING(UBA_COMP, "Reach Max Time");
-					isCompleted = true;
+				if (UBA_channel_isDischarging (bpt->ch)) {
+					isCompleted |= UBA_BPT_isStop_condition_met_charge_current(bpt);
+					isCompleted |= UBA_BPT_isStop_condition_met_charge_capacity(bpt);
+					isCompleted |= UBA_BPT_isStop_condition_met_charge_temp(bpt);
+					isCompleted |= UBA_BPT_isStep_timeout(bpt, bpt->current_step->type.charge.stop_condition.max_time);
 				}
 				break;
 
 			case UBA_BPT_STEP_TYPE_DELAY:
-				isCompleted |= (UBA_channel_get_temperature(bpt->ch) < bpt->current_step->type.delay.cool_down_emperature);
+				isCompleted |= UBA_channel_get_temperature(bpt->ch) < bpt->current_step->type.delay.cool_down_temperature;
 				isCompleted |= UBA_BPT_isStep_timeout(bpt, bpt->current_step->type.delay.delay_time);
 				break;
 
@@ -320,7 +330,7 @@ void UBA_BPT_init_exit(UBA_BPT *bpt) {
 }
 
 void UBA_BPT_standby_enter(UBA_BPT *bpt) {
-	memset(bpt->complete_reason, ' ', UBA_GFX_TEXT_MAX_LENGTH);
+	memset(bpt->complete_reason, ' ', 20);//UBA_GFX_TEXT_MAX_LENGTH);
 	UBA_BPT_update_state(bpt);
 	UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_INIT);
 }
@@ -386,6 +396,7 @@ void UBA_BPT_run_step_enter(UBA_BPT *bpt) {
 	if (bpt->current_step != NULL) {
 		bpt->current_step->timing.step_start = HAL_GetTick();
 		bpt->current_step->timing.step_action_start = 0;
+		UBA_channel_reset_current(bpt->ch);
 		UBA_channel_reset_capacity(bpt->ch);
 
 		switch (bpt->current_step->type_id) {
@@ -416,6 +427,8 @@ void UBA_BPT_run_step_enter(UBA_BPT *bpt) {
 //			HAL_RTC_GetDate(&hrtc, &bpt->start_date_time.date, RTC_FORMAT_BIN);
 			HAL_RTC_GetTime(&hrtc, &bpt->start_date_time.ref_run_time, RTC_FORMAT_BIN);
 		}
+
+		memset(bpt->complete_reason, ' ', 20);//UBA_GFX_TEXT_MAX_LENGTH);
 
 	} else {
 		UART_LOG_CRITICAL(UBA_COMP, "enter step while the pointer in null");
@@ -538,7 +551,7 @@ void UBA_BPT_complete(UBA_BPT *bpt) {
 }
 
 void UBA_BPT_complete_exit(UBA_BPT *bpt) {
-	memset(bpt->complete_reason, ' ', UBA_GFX_TEXT_MAX_LENGTH);
+	memset(bpt->complete_reason, ' ', 20);//UBA_GFX_TEXT_MAX_LENGTH);
 }
 
 //=================================================public  functions========================================================//

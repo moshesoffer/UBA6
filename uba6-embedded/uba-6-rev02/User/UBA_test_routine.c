@@ -113,7 +113,7 @@ bool UBA_TR_set_step_and_validate(UBA_BPT_step *step, TR_config_step *step_confi
 					break;
 				case UBA_BPT_STEP_TYPE_DELAY:
 					memcpy(&step->type.delay, &step_config->type.delay, sizeof(UBA_BPT_delay));
-					if ((step->type.delay.delay_time == 0) && (step->type.delay.cool_down_emperature > 60)) {
+					if ((step->type.delay.delay_time == 0) && (step->type.delay.cool_down_temperature > 60)) {
 						ret = false;
 					} else {
 						ret = true;

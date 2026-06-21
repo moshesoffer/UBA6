@@ -48,7 +48,7 @@ typedef struct UBA_BPT_charge {
 	int32_t voltage;
 	float min_temperature;
 	struct {
-		float max_emperature; /*the max temp in c*/
+		float max_temperature; /*the max temp in c*/
 		uint32_t max_time; /*the max time in ms*/
 		int32_t cut_off_current; /*the current of charge that below it the step will end*/
 		int32_t charge_limit; /*the capacity in mAh that above it the step will end*/
@@ -90,7 +90,7 @@ typedef struct UBA_BPT_discharge {
 	UBA_PROTO_BPT_discharge_current current;
 	float min_temperature;
 	struct {
-		float max_emperature;
+		float max_temperature;
 		uint32_t max_time;
 		int32_t cut_off_voltage;
 		int32_t charge_limit; /*the capacity in mAh that above it the step will end*/
@@ -114,7 +114,7 @@ typedef struct UBA_BPT_discharge {
 
 typedef struct UBA_BPT_delay {
 	uint32_t delay_time;
-	float cool_down_emperature;
+	float cool_down_temperature;
 } UBA_BPT_delay;
 
 typedef struct UBA_BPT_step {

@@ -516,7 +516,7 @@ void UBA_LCD_screen_draw_channel(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt
 			//TODO: add EWI
 			sprintf(screen->pages.channel.EWI_msg.elemnt.text.text, "Error:%x", ch->error);
 		} else {
-			sprintf(screen->pages.channel.EWI_msg.elemnt.text.text, "        ");
+			memset(screen->pages.channel.EWI_msg.elemnt.text.text, ' ', 20);//UBA_GFX_TEXT_MAX_LENGTH);
 		}
 
 		//update shadow

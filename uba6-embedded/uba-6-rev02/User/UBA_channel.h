@@ -70,6 +70,7 @@ typedef struct UBA_channel {
 		uint32_t pid_tick;
 	}target;
 	float capacity;
+	int32_t charge_current;
 
 	void *current_screen;
 	UBA_channel_shadow shadow;
@@ -80,6 +81,7 @@ float UBA_channel_get_temperature(UBA_channel *ch);
 uint32_t UBA_channel_get_charge_current(UBA_channel *ch);
 uint32_t UBA_channel_get_discharge_current(UBA_channel *ch);
 int32_t UBA_channel_get_current(UBA_channel *ch);
+void UBA_channel_reset_current(UBA_channel *ch);
 void UBA_channel_reset_capacity(UBA_channel *ch);
 float UBA_channel_get_capacity(UBA_channel *ch);
 
