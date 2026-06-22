@@ -192,7 +192,7 @@ bool UBA_BPT_isStop_condition_met_charge_current(UBA_BPT *bpt) {
 	if (bpt->current_step->type_id == UBA_BPT_STEP_TYPE_CHARGE) {
 		   		//current decrease after reaching charge limit
 		ret = ((charge_current_decreasing == true) &&
-			   (current <   bpt->current_step->type.charge.stop_condition.cut_off_current)) 
+			   (current <=  bpt->current_step->type.charge.stop_condition.cut_off_current)) 
 			   || 
 			   //volatge reach max charge voltage
 			   (voltage >= (bpt->current_step->type.charge.voltage * ((TR_Test_Routine *)bpt->tr)->battery.num_cells_in_serial));
@@ -203,8 +203,11 @@ bool UBA_BPT_isStop_condition_met_charge_current(UBA_BPT *bpt) {
 
 	} else if (bpt->current_step->type_id == UBA_BPT_STEP_TYPE_DISCHARGE) {
 		   	   //volatge reach max charge voltage
-		ret =  voltage > 0 &&
-			   voltage < bpt->current_step->type.discharge.stop_condition.cut_off_voltage;
+//		UART_LOG("BPT", "voltage %d, cutoff %d (%d * %d)", voltage, 
+//			bpt->current_step->type.discharge.stop_condition.cut_off_voltage * ((TR_Test_Routine *)bpt->tr)->battery.num_cells_in_serial,
+//			bpt->current_step->type.discharge.stop_condition.cut_off_voltage, ((TR_Test_Routine *)bpt->tr)->battery.num_cells_in_serial); 
+		ret =  voltage >= 0 &&
+			   voltage <= bpt->current_step->type.discharge.stop_condition.cut_off_voltage * ((TR_Test_Routine *)bpt->tr)->battery.num_cells_in_serial;
 		if (ret) {
 			strcpy (bpt->complete_reason, "Cut-Off Voltage");
 		}
