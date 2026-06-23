@@ -69,7 +69,7 @@ void UBA_BPT_complete_enter(UBA_BPT *bpt);
 void UBA_BPT_complete(UBA_BPT *bpt);
 void UBA_BPT_complete_exit(UBA_BPT *bpt);
 
-bool UBA_BPT_save_data_log(UBA_BPT *bpt);
+bool UBA_BPT_save_data_log(UBA_BPT *bpt, bool is_first);
 bool UBA_BPT_isChannelState(UBA_channel *ch, UBA_CHANNEL_STATE state);
 
 typedef void (*step_cb_t)(UBA_BPT *screen);
@@ -367,7 +367,7 @@ void UBA_BPT_pause(UBA_BPT *bpt) {
 	uint32_t curr_tick_ms = HAL_GetTick(); 
 	if (curr_tick_ms - bpt->log_tick_ms > bpt->log_intreval) {
 //UART_LOG(UBA_COMP, "pause: tick %d, ms %d delta %d, interval %d", curr_tick_ms, bpt->log_tick_ms, curr_tick_ms - bpt->log_tick_ms, bpt->log_intreval);
-		UBA_BPT_save_data_log(bpt);
+		UBA_BPT_save_data_log(bpt, /*is_first=*/false);
 		bpt->log_tick_ms = curr_tick_ms;
 	}
 }
@@ -433,17 +433,21 @@ void UBA_BPT_run_step_enter(UBA_BPT *bpt) {
 
 		memset(bpt->complete_reason, ' ', 20);//UBA_GFX_TEXT_MAX_LENGTH);
 
+		//init cache status message
+		UBA_BPT_init_cached_status_msg(bpt);
+
+		//init stablization error mechanism
+		bpt->ch->num_consecutive_errors = 0;
+
+		if (bpt->current_step == bpt->head_step) {
+			//first test measurements
+			UBA_BPT_save_data_log(bpt, /*is_first=*/true);
+		}
+
 	} else {
 		UART_LOG_CRITICAL(UBA_COMP, "enter step while the pointer in null");
 		bpt->state.next = UBA_BPT_STATE_TEST_FAILED;
 	}
-
-	//init cache status message
-	UBA_BPT_init_cached_status_msg(bpt);
-
-	//init stablization error mechanism
-	bpt->ch->num_consecutive_errors = 0;
-
 }
 
 void UBA_BPT_run_step(UBA_BPT *bpt) {
@@ -452,7 +456,7 @@ void UBA_BPT_run_step(UBA_BPT *bpt) {
 	uint32_t curr_tick_ms = HAL_GetTick(); 
 	if (curr_tick_ms - bpt->log_tick_ms > bpt->log_intreval) {
 //UART_LOG(UBA_COMP, "run step: tick %d, ms %d delta %d, interval %d", curr_tick_ms, bpt->log_tick_ms, curr_tick_ms - bpt->log_tick_ms, bpt->log_intreval);
-		UBA_BPT_save_data_log(bpt);
+		UBA_BPT_save_data_log(bpt, /*is_first=*/false);
 		bpt->log_tick_ms = curr_tick_ms;
 	}
 
@@ -957,7 +961,7 @@ void UBA_BPT_update_message(UBA_BPT *bpt, UBA_PROTO_BPT_status_message *msg) {
 	}
 }
 
-bool UBA_BPT_save_data_log(UBA_BPT *bpt) {
+bool UBA_BPT_save_data_log(UBA_BPT *bpt, bool is_first) {
 	//uint8_t buffer[UBA_PROTO_DATA_LOG_data_log_size + 1];
 	size_t message_size = 0;
 	size_t index;
@@ -973,7 +977,13 @@ bool UBA_BPT_save_data_log(UBA_BPT *bpt) {
 	msg.current = UBA_channel_get_current(bpt->ch);
 	msg.voltage = UBA_channel_get_voltage(bpt->ch);
 	msg.temp = (int16_t) (UBA_channel_get_temperature(bpt->ch) * 100);
+	if (is_first == true)
+	{
+		msg.time = 0;
+		msg.voltage = 0;
+	}
 	print_data_log(&msg);
+
 	status = pb_get_encoded_size(&message_size, UBA_PROTO_DATA_LOG_data_log_fields, &msg);
 	if (status) {
 		UART_LOG_BPT_DEBUG("Encoded size: %u bytes", message_size);
