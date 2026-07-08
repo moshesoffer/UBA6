@@ -111,7 +111,9 @@ export const getTestRuntime = ubaDevice => {
 	let currTime;
 
 	const instant = ubaDevice.instantTestResults || [];
-//console.log('instantTestResults:', instant);
+	const runningTests = ubaDevice.runningTests || [];
+//console.log('instant:', instant.length);
+//console.log('runningTests:', runningTests.length);
 	const lastInstantTimestamp =
     	instant.length > 0
     	    ? instant[instant.length - 1].lastInstantResultsTimestamp
@@ -129,9 +131,10 @@ export const getTestRuntime = ubaDevice => {
 			testState === 'Pause'
         ) {
         	if (startTimeA === -1) {
-            	startTimeA = lastInstantTimestamp;
+            	startTimeA = ubaDevice.lastInstantResultsTimestamp;
         	}
-			currTime = getRuntime(lastInstantTimestamp, startTimeA);
+//console.log('timestamp:', ubaDevice.lastInstantResultsTimestamp, startTimeA);
+			currTime = getRuntime(ubaDevice.lastInstantResultsTimestamp, startTimeA);
             rundateChnlA = currTime - pausedateChnlA;
  			//console.log (`==> rundateChnlA: ${rundateChnlA}, currTime=${currTime}, pause=${pausedateChnlA},    now=${lastInstantTimestamp} start=${startTimeA}`);
 //        } else if (testState === 'Pause') {
@@ -151,10 +154,14 @@ export const getTestRuntime = ubaDevice => {
             testState === 'Charge' ||
             testState === 'Discharge'
         ) {
-			currTime = getRuntime(lastInstantTimestamp, startTimeB);
+        	if (startTimeB === -1) {
+            	startTimeB = ubaDevice.lastInstantResultsTimestamp;
+        	}
+//console.log('timestamp:', ubaDevice.lastInstantResultsTimestamp, startTimeB);
+			currTime = getRuntime(ubaDevice.lastInstantResultsTimestamp, startTimeB);
             rundateChnlB = currTime - pausedateChnlB;
         } else if (testState === 'Pause') {
-			currTime = getRuntime(lastInstantTimestamp, startTimeB);
+			currTime = getRuntime(ubaDevice.lastInstantResultsTimestamp, startTimeB);
             pausedateChnlB = currTime - rundateChnlB;
         } else if (testState === 'Standby') {
             runtimeChnlB = 0;
