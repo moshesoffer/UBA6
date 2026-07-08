@@ -170,9 +170,9 @@ static const char *name_g[UBA_LCD_SCREEN_STATE_MAX] ={
 void UBA_LCD_screen_update_state(UBA_LCD_screen *screen) {
 	
 	if ((screen->state.current < UBA_LCD_SCREEN_STATE_MAX) && (screen->state.current < UBA_LCD_SCREEN_STATE_MAX)) {
-		UART_LOG(UBA_COMP, "(screen %d)update state %s ---> %s", screen->bpt->ch->id, name_g[screen->state.current], name_g[screen->state.next]);
+		UART_LOG(UBA_COMP, "(screen)update state %s ---> %s", name_g[screen->state.current], name_g[screen->state.next]);
 	} else {
-		UART_LOG(UBA_COMP, "(screen %d)update state %u ---> %u", screen->bpt->ch->id, screen->state.current, screen->state.next);
+		UART_LOG(UBA_COMP, "(screen)update state %u ---> %u", screen->state.current, screen->state.next);
 	}
 	screen->state.pre = screen->state.current;
 	screen->state.current = screen->state.next;

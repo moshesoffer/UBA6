@@ -88,7 +88,6 @@ namespace UBA6Library {
         }
 
         public void StopBPT(UBA_PROTO_CHANNEL.ID ch) {
-            _logger.LogInformation($"==> StopBPT");    
             SentMessage(UBA_Message_Factory.CreateMessage(this.Address,
                 ProtoHelper.CreateBPTCommand(UBA_PROTO_BPT.CMD_ID.Stop, ch)), MessagePriority.BPT_STOP);
         }
@@ -122,12 +121,12 @@ namespace UBA6Library {
             List<byte> fileData = new List<byte>();
             Message? m;
             UInt32 index = 0;
-            UInt32 retry = 1;
+            UInt32 retry = 5;
             bool done = false;
             uint? totlaSize = uint.MaxValue;
 
             do {
-_logger.LogInformation("==> get message 10");
+//_logger.LogInformation("==> get message 10");
                 m = await UBA_Interface.GetMessage(UBA_Message_Factory.CreateMessage(Address, ProtoHelper.CreateFileCommand(UBA_PROTO_FM.CMD_ID.ChunkRequest, filename, index)), 8000);
                 if (m?.File?.Data.Length > 0) {
                     _logger.LogDebug($"Received file chunk {index} with size {m.File.Data.Length} bytes.");
@@ -160,7 +159,7 @@ _logger.LogInformation("==> get message 10");
                 if (totlaSize.HasValue && fileData.Count >= totlaSize) {
                     done = true;
                 }                
-            } while (done == false);
+            } while (done ==false);
             byte[] file = fileData.ToArray();
             System.IO.File.WriteAllBytes(filename, file);
             return file;
