@@ -65,7 +65,7 @@ static UBA_PROTO_CMD_command_message cmd_pending_msg[64];
 
 // ===================== private functions declarations =====================
 void UBA_UART_query_response_message(UBA_UART_QUERY_RECIPIENT id);
-void process_uart_data(uint8_t *data, uint16_t len);
+uint32_t process_uart_data(uint8_t *data, uint16_t len);
 
 //===================== public functions functions =====================
 void UBA_UART_qeury_pending_post(UBA_UART_QUERY_RECIPIENT new_query_request, uint32_t query_id) {
@@ -321,7 +321,7 @@ uint32_t decode_varint(uint8_t *data, uint16_t len, uint8_t *varint_index) {
 	return result;
 }
 
-void process_uart_data(uint8_t *data, uint16_t len) {
+uint32_t process_uart_data(uint8_t *data, uint16_t len) {
 	uint8_t message_index;
 	UART_LOG_COMM_INFO("process uart data len:%u", len);
 	UART_LOG_COMM_DEBUG("process uart data len:%u", len);
@@ -333,10 +333,13 @@ void process_uart_data(uint8_t *data, uint16_t len) {
 		UART_LOG_COMM_DEBUG("Successfully decoded! (%u)", message_size);
 		process_message(&message);
 		// Successfully decoded!
+		return 0;
 	} else {
+		UART_LOG(COMP, "process uart data len:%u", len);
 		UART_LOG_ERROR(COMP, "Decoding failed: %s", PB_GET_ERROR(&stream));
 		UBA_util_print_buffer(data, len);
 		// Error
+		return 1;
 	}
 }
 
@@ -345,6 +348,7 @@ void UBA_UART_Idle_callback(UART_HandleTypeDef *huart) {
 	uint16_t data_len;
 	uint8_t temp_buff[UART_RX_BUFFER_SIZE];
 	uint16_t DMA_counter = __HAL_DMA_GET_COUNTER(huart->hdmarx);
+	uint32_t err = 0;
 
 	UART_LOG_COMM_DEBUG("DMA counter:%04u new pos:%04u old pos:%04u", DMA_counter, new_pos, old_pos);
 	if (new_pos != old_pos) {
@@ -352,7 +356,7 @@ void UBA_UART_Idle_callback(UART_HandleTypeDef *huart) {
 		__disable_irq();
 		if (new_pos > old_pos) {
 			data_len = new_pos - old_pos;
-			process_uart_data(&uart_rx_dma_buffer[old_pos], data_len);
+			err = process_uart_data(&uart_rx_dma_buffer[old_pos], data_len);
 		} else {
 			// Wrapped around
 			data_len = UART_RX_BUFFER_SIZE - old_pos;
@@ -363,7 +367,10 @@ void UBA_UART_Idle_callback(UART_HandleTypeDef *huart) {
 //				process_uart_data(&uart_rx_dma_buffer[0], new_pos);
 				memcpy(&temp_buff[data_len], &uart_rx_dma_buffer[0], new_pos);
 			}
-			process_uart_data(temp_buff, new_pos + data_len);
+			err = process_uart_data(temp_buff, new_pos + data_len);
+		}
+		if (err != 0) {
+			//pre_pos, new_pos = UART_RX_BUFFER_SIZE - __HAL_DMA_GET_COUNTER(huart->hdmarx);
 		}
 		old_pos = new_pos;
 		if (old_pos == UART_RX_BUFFER_SIZE) {

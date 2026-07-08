@@ -355,7 +355,14 @@ void UBA_BPT_pause_enter(UBA_BPT *bpt) {
 	UBA_BPT_update_state(bpt);
 	UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_STANDBY);
 
-	UBA_6_fan_on(&UBA_6_device_g, false);
+	UART_LOG(UBA_COMP, "id %d: A: %d, B %d, AB %d", bpt->ch->id, UBA_BPT_isRunning(&UBA_6_device_g.BPT_A), UBA_BPT_isRunning(&UBA_6_device_g.BPT_B), UBA_BPT_isRunning(&UBA_6_device_g.BPT_AB));
+	if ((bpt == &UBA_6_device_g.BPT_A) && !UBA_BPT_isRunning(&UBA_6_device_g.BPT_B)) {
+		UBA_6_fan_on(&UBA_6_device_g, false);
+	} else if ((bpt == &UBA_6_device_g.BPT_B) && !UBA_BPT_isRunning(&UBA_6_device_g.BPT_A)) {
+		UBA_6_fan_on(&UBA_6_device_g, false);		
+	} else if (bpt->ch->id == UBA_CHANNLE_ID_AB) {
+		UBA_6_fan_on(&UBA_6_device_g, false);
+	}
 }
 
 void UBA_BPT_pause(UBA_BPT *bpt) {
@@ -547,7 +554,14 @@ void UBA_BPT_complete_enter(UBA_BPT *bpt) {
 	UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_STANDBY);
 	UBA_buzzer_play_melody(&buzzer_g, UBA_BUZZER_BUZZ_COMPLETE);
 
-	UBA_6_fan_on(&UBA_6_device_g, false);
+	UART_LOG(UBA_COMP, "id %d: A: %d, B %d, AB %d", bpt->ch->id, UBA_BPT_isRunning(&UBA_6_device_g.BPT_A), UBA_BPT_isRunning(&UBA_6_device_g.BPT_B), UBA_BPT_isRunning(&UBA_6_device_g.BPT_AB));
+	if ((bpt == &UBA_6_device_g.BPT_A) && !UBA_BPT_isRunning(&UBA_6_device_g.BPT_B) ) {
+		UBA_6_fan_on(&UBA_6_device_g, false);
+	} else if ((bpt == &UBA_6_device_g.BPT_B) && !UBA_BPT_isRunning(&UBA_6_device_g.BPT_A)) {
+		UBA_6_fan_on(&UBA_6_device_g, false);		
+	} else if (bpt->ch->id == UBA_CHANNLE_ID_AB) {
+		UBA_6_fan_on(&UBA_6_device_g, false);
+	}
 }
 
 void UBA_BPT_complete(UBA_BPT *bpt) {
@@ -623,7 +637,14 @@ bool UBA_BPT_stop(UBA_BPT *bpt) {
 		bpt->state.next = UBA_BPT_STATE_STANDBY;//UBA_BPT_STATE_STEP_COMPLETE
 		bpt->current_step = bpt->head_step;
 
-		UBA_6_fan_on(&UBA_6_device_g, false);
+		UART_LOG(UBA_COMP, "id %d: A: %d, B %d, AB %d", bpt->ch->id, UBA_BPT_isRunning(&UBA_6_device_g.BPT_A), UBA_BPT_isRunning(&UBA_6_device_g.BPT_B), UBA_BPT_isRunning(&UBA_6_device_g.BPT_AB));
+		if ((bpt == &UBA_6_device_g.BPT_A) && !UBA_BPT_isRunning(&UBA_6_device_g.BPT_B)) {
+			UBA_6_fan_on(&UBA_6_device_g, false);
+		} else if ((bpt == &UBA_6_device_g.BPT_B) && !UBA_BPT_isRunning(&UBA_6_device_g.BPT_A)) {
+			UBA_6_fan_on(&UBA_6_device_g, false);		
+		} else if (bpt->ch->id == UBA_CHANNLE_ID_AB) {
+			UBA_6_fan_on(&UBA_6_device_g, false);
+		}
 
 //		if (bpt->wr_from > 0) {
 //UART_LOG(UBA_COMP, "last step complete exit: bpt->wr_from %d [%s]", bpt->wr_from, bpt->filename);
