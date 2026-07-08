@@ -360,7 +360,7 @@ void UBA_BPT_pause_enter(UBA_BPT *bpt) {
 		UBA_6_fan_on(&UBA_6_device_g, false);
 	} else if ((bpt == &UBA_6_device_g.BPT_B) && !UBA_BPT_isRunning(&UBA_6_device_g.BPT_A)) {
 		UBA_6_fan_on(&UBA_6_device_g, false);		
-	} else if (bpt->ch->id == UBA_CHANNLE_ID_AB) {
+	} else if (TR_file.list[bpt->TR_selected_index].mode == UBA_PROTO_BPT_MODE_DUAL_CHANNEL) {
 		UBA_6_fan_on(&UBA_6_device_g, false);
 	}
 }
@@ -559,7 +559,7 @@ void UBA_BPT_complete_enter(UBA_BPT *bpt) {
 		UBA_6_fan_on(&UBA_6_device_g, false);
 	} else if ((bpt == &UBA_6_device_g.BPT_B) && !UBA_BPT_isRunning(&UBA_6_device_g.BPT_A)) {
 		UBA_6_fan_on(&UBA_6_device_g, false);		
-	} else if (bpt->ch->id == UBA_CHANNLE_ID_AB) {
+	} else if (TR_file.list[bpt->TR_selected_index].mode == UBA_PROTO_BPT_MODE_DUAL_CHANNEL) {
 		UBA_6_fan_on(&UBA_6_device_g, false);
 	}
 }
@@ -642,7 +642,7 @@ bool UBA_BPT_stop(UBA_BPT *bpt) {
 			UBA_6_fan_on(&UBA_6_device_g, false);
 		} else if ((bpt == &UBA_6_device_g.BPT_B) && !UBA_BPT_isRunning(&UBA_6_device_g.BPT_A)) {
 			UBA_6_fan_on(&UBA_6_device_g, false);		
-		} else if (bpt->ch->id == UBA_CHANNLE_ID_AB) {
+		} else if (TR_file.list[bpt->TR_selected_index].mode == UBA_PROTO_BPT_MODE_DUAL_CHANNEL) {
 			UBA_6_fan_on(&UBA_6_device_g, false);
 		}
 
