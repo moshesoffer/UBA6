@@ -229,6 +229,7 @@ typedef struct UBA_BPT {
 	UBA_PROTO_BPT_status_message next_status_msg;
 	bool set_start_msg;
 	bool get_start_msg;
+	bool start_bpt;
 
 #define WR_BUFFER_LEN (1024 * 16)
 	uint8_t buffer[WR_BUFFER_LEN];

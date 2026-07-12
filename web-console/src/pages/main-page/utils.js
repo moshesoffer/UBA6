@@ -152,7 +152,8 @@ export const getTestRuntime = ubaDevice => {
     if (ubaDevice.channel === 'B') {
         if (
             testState === 'Charge' ||
-            testState === 'Discharge'
+            testState === 'Discharge' ||
+			testState === 'Pause'
         ) {
         	if (startTimeB === -1) {
             	startTimeB = ubaDevice.lastInstantResultsTimestamp;
@@ -160,9 +161,9 @@ export const getTestRuntime = ubaDevice => {
 //console.log('timestamp:', ubaDevice.lastInstantResultsTimestamp, startTimeB);
 			currTime = getRuntime(ubaDevice.lastInstantResultsTimestamp, startTimeB);
             rundateChnlB = currTime - pausedateChnlB;
-        } else if (testState === 'Pause') {
-			currTime = getRuntime(ubaDevice.lastInstantResultsTimestamp, startTimeB);
-            pausedateChnlB = currTime - rundateChnlB;
+//        } else if (testState === 'Pause') {
+//			currTime = getRuntime(ubaDevice.lastInstantResultsTimestamp, startTimeB);
+//            pausedateChnlB = currTime - rundateChnlB;
         } else if (testState === 'Standby') {
             runtimeChnlB = 0;
             startTimeB = -1;

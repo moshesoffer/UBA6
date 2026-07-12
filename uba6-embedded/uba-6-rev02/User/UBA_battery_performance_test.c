@@ -326,6 +326,8 @@ void UBA_BPT_init(UBA_BPT *bpt) {
 	} else {
 		UART_LOG_BPT_INFO(UBA_COMP, "(bpt)update state %u ---> %u", bpt->state.current, bpt->state.next);
 	}
+
+	bpt->start_bpt = false;
 }
 
 void UBA_BPT_init_exit(UBA_BPT *bpt) {
@@ -858,6 +860,7 @@ UBA_STATUS_CODE UBA_BPT_begin(UBA_BPT *bpt, uint8_t list_index) {
 			HAL_RTC_GetDate(&hrtc, &bpt->start_date_time.date, RTC_FORMAT_BIN);
 			HAL_RTC_GetTime(&hrtc, &bpt->start_date_time.time, RTC_FORMAT_BIN);
 
+			bpt->start_bpt = true;
 			bpt->start_date_time.add_pause_seconds = 0;
 			return UBA_BPT_start(bpt); // start the test
 			
@@ -998,10 +1001,12 @@ bool UBA_BPT_save_data_log(UBA_BPT *bpt, bool is_first) {
 	msg.current = UBA_channel_get_current(bpt->ch);
 	msg.voltage = UBA_channel_get_voltage(bpt->ch);
 	msg.temp = (int16_t) (UBA_channel_get_temperature(bpt->ch) * 100);
-	if (is_first == true)
+
+	if (bpt->start_bpt == true)
 	{
 		msg.time = 0;
 		msg.voltage = 0;
+		bpt->start_bpt = false;
 	}
 	print_data_log(&msg);
 

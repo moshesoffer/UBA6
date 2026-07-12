@@ -1232,6 +1232,8 @@ bool UBA_LCD_screen_btn_press_select(UBA_LCD_screen *screen) {
 			HAL_RTC_GetDate(&hrtc, &screen->bpt->start_date_time.date, RTC_FORMAT_BIN);
 			HAL_RTC_GetTime(&hrtc, &screen->bpt->start_date_time.time, RTC_FORMAT_BIN);
 
+			screen->bpt->start_bpt = true;
+
 		}
 		if (is_dual_channel) {
 			UBA_LCD_screen_btn_next_invisible(&UBA_LCD_g.screen_ch_A);

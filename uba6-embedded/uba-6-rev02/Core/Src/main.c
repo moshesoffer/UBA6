@@ -168,6 +168,11 @@ uint32_t lcd_refresh_last_time = 0;
 		    UBA_UART_comm_run();
         cycle1 = 0;
       }
+      if ((cycle4++ %1) == 0) {
+		    LCD_run(&UBA_LCD_g);
+		    UBA_buzzer_run(&buzzer_g);
+        cycle4 = 0;
+      }
       if ((cycle2++ %1) == 0) {
 		    UBA_6_run(&UBA_6_device_g);
         cycle2 = 0;
@@ -176,11 +181,6 @@ uint32_t lcd_refresh_last_time = 0;
 		    UBA_line_run(&UBA_LINE_A);
 		    UBA_line_run(&UBA_LINE_B);
         cycle3 = 0;
-      }
-      if ((cycle4++ %3) == 0) {
-		    LCD_run(&UBA_LCD_g);
-		    UBA_buzzer_run(&buzzer_g);
-        cycle4 = 0;
       }
       //save log file
       if ((cycle5++ %4) == 0) {
