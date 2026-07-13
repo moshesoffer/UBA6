@@ -576,7 +576,7 @@ _logger.LogInformation($"==> await EnqueueMessageAndWaitFileChunkAsync {timeout}
                     EnqueueMessage(message, priority);
                     using (timeoutCts) {
 ////_logger.LogInformation($"==> await Task.WhenAny 2 task ID: {tcs.Task} pri {priority}");
-                        timeout = 30000;
+                        timeout = 10000;
                         var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
 ////_logger.LogInformation($"==> response Task.WhenAny 2 taskID: {completedTask.Id}");
                         if (completedTask == tcs.Task) {
