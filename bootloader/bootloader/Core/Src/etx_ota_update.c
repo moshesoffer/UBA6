@@ -64,7 +64,7 @@ ETX_OTA_EX_ etx_ota_download_and_flash( void )
 {
   ETX_OTA_EX_ ret  = ETX_OTA_EX_OK;
   uint16_t    len;
-  int retries = 4;
+  int retries = 2;
 
   uart_printf("Waiting for the OTA data...\r\n");
   //etx_ota_send_print("Waiting for the OTA data...\r\n");

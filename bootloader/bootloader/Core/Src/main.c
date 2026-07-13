@@ -129,7 +129,7 @@ int main(void)
   uart_printf("Starting Bootloader {%d.%d}\n", BL_Version[0], BL_Version[1]);
 
   //HAL_GPIO_WritePin(GPIOD, GPIO_PIN_8, GPIO_PIN_RESET);
-  HAL_Delay (4000); /* 4sec delay*/
+  HAL_Delay (200); /* 4sec delay*/
   /* USER CODE END 2 */
 
   /* Check the GPIO for 3 seconds */
