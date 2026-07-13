@@ -81,6 +81,7 @@ namespace UBAService {
                         try {
                             GETPendingTasksDTO pt = await wcs.GetPendingTasks();
                             if (pt != null) {
+//_logger.LogInformation("PendingRunningTests {count}", pt?.PendingRunningTests?.Count);
                                 //if (cycle1++ % 1 == 0) {
                                 //    //Change Running test status (uba.Status) - done manually by user (confirm click)
                                     if (pt?.PendingRunningTests?.Count == 0 && pt?.PendingConnectionUbaDevices?.Count == 0) {
@@ -213,7 +214,7 @@ namespace UBAService {
                 ////_logger.LogInformation("Found {Count} UBA devices.", ubaDeviceDtos.Count);
                 foreach (var ubaDto in ubaDeviceDtos) {
                     try {
-//logger.LogInformation("3. {Count}-UBAs channel {Channel} status {Status}", ubaDeviceDtos.Count, ubaDto.Channel, ubaDto.Status);
+//_logger.LogInformation("3. {Count}-UBAs channel {Channel} status {Status}", ubaDeviceDtos.Count, ubaDto.Channel, ubaDto.Status);
                         if (ubaDto.Channel.Equals("A") || ubaDto.Channel.Equals("Ab")) {
                             Message message = await UBAs.First().GetMessage(UBA_PROTO_QUERY.RECIPIENT.BptA);
                             if (message != null) {
@@ -253,6 +254,46 @@ _logger.LogInformation("4.2.Pending test {Channel} {Status}, set to {newState}",
                     }
                 }
             }
+        }
+
+        private async Task SaveTestAsync(GETPendingTestResponseDTO  pendingTest)
+        {
+            UBA6 uba = getUbaFromList("0"/*UbaSN*/);
+            if (uba == null)
+            {
+                _logger.LogInformation("Pending tests list empty.");
+                return;
+            }
+
+            string filename = await uba.GetRunningTestFileName(util.GetChannelFormDTO(pendingTest));
+
+            _logger.LogInformation(
+                "Stopping BPT on channel {Channel} with file {FileName}",
+                util.GetChannelFormDTO(pendingTest),
+                filename);
+
+            await _semaphore.WaitAsync();
+            try
+            {
+                await wcs.TestResultUpdateStatus(
+                    pendingTest.ReportId,
+                    RunningTestsController.Status.PENDING |
+                    RunningTestsController.Status.SAVED);
+
+                byte[] file = await uba.FeatchFileToByteArray(filename);
+                await wcs.TestResultUpload(pendingTest.ReportId, file);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+
+            uba.ClearBPT(util.GetChannelFormDTO(pendingTest));
+
+            if (pendingTest.Channel == "A" || pendingTest.Channel == "Ab")
+                testInProgress[0] = false;
+            else if (pendingTest.Channel == "B")
+                testInProgress[1] = false;
         }
 
         private async Task resolvePendingRunningTest(List<GETPendingTestResponseDTO>? pt) {
@@ -332,25 +373,27 @@ _logger.LogInformation("4.2.Pending test {Channel} {Status}, set to {newState}",
                     } /*else*/ if ((((RunningTestsController.Status)pendingTest.Status) & RunningTestsController.Status.STANDBY) > 0) {
                         _logger.LogInformation("==> STANDBY, ch {channel} ...", pendingTest.Channel);
 
-                        string filename = await uba.GetRunningTestFileName(util.GetChannelFormDTO(pendingTest));
-                        _logger.LogInformation("Stopping BPT on channel {Channel} with file {FileName}", util.GetChannelFormDTO(pendingTest), filename);
-
-                        await _semaphore.WaitAsync();
-                        // TODO: input filename
-                        await wcs.TestResultUpdateStatus(pendingTest.ReportId,RunningTestsController.Status.PENDING | RunningTestsController.Status.SAVED);
-                            _ = uba.FeatchFileToByteArray(filename).ContinueWith(task => {
-                            byte[] file = task.Result;
-                            _ = wcs.TestResultUpload(pendingTest.ReportId, file);
-                        });
-                        _semaphore.Release();
-
-                        uba.ClearBPT(util.GetChannelFormDTO(pendingTest));
-                        if (pendingTest.Channel.Equals("A") || pendingTest.Channel.Equals("Ab")) {
-                            testInProgress[0] = false;
-                        } else if (pendingTest.Channel.Equals("B")) {
-                            testInProgress[1] = false;                                
-                        }
+//                        string filename = await uba.GetRunningTestFileName(util.GetChannelFormDTO(pendingTest));
+//                        _logger.LogInformation("Stopping BPT on channel {Channel} with file {FileName}", util.GetChannelFormDTO(pendingTest), filename);
+//
+//                        await _semaphore.WaitAsync();
+//                        // TODO: input filename
+//                        await wcs.TestResultUpdateStatus(pendingTest.ReportId,RunningTestsController.Status.PENDING | RunningTestsController.Status.SAVED);
+//                            _ = uba.FeatchFileToByteArray(filename).ContinueWith(task => {
+//                            byte[] file = task.Result;
+//                            _ = wcs.TestResultUpload(pendingTest.ReportId, file);
+//                        });
+//                        _semaphore.Release();
+//
+//                        uba.ClearBPT(util.GetChannelFormDTO(pendingTest));
+//                        if (pendingTest.Channel.Equals("A") || pendingTest.Channel.Equals("Ab")) {
+//                            testInProgress[0] = false;
+//                        } else if (pendingTest.Channel.Equals("B")) {
+//                            testInProgress[1] = false;                                
+//                        }
                     
+                        _ = SaveTestAsync(pendingTest);
+
                     } /*else*/ if ((((RunningTestsController.Status)pendingTest.Status) & RunningTestsController.Status.ABORTED) > 0) {
                         _logger.LogInformation("==> ABORTED, ch {channel} ...", pendingTest.Channel);
                         ////uba.AbortedBPT(util.GetChannelFormDTO(pendingTest));

@@ -353,7 +353,7 @@ namespace UBA6Library {
                                 _logger.LogInformation("Serial port is closed, attempting to reopen.");
                                 this.SwitchCom(sp.PortName, true);
                             }
-                       } finally {
+                        } finally {
                         }
                     } else {
                         messageQueue.Enqueue(msg, 1);
@@ -500,6 +500,7 @@ namespace UBA6Library {
                 return null;
             }*/
             Message queryMessage = UBA_Message_Factory.CreateQeuryMessage(targateAddress, recipient);
+            timeout = 5000;
             Message? responseMessage = await EnqueueMessageAndWaitForResponseAsync(queryMessage, MessagePriority.QUERY_MESSAGE, timeout);
 
             return responseMessage;
@@ -555,7 +556,9 @@ namespace UBA6Library {
          }
 
         public async Task<Message?> EnqueueMessageAndWaitFileChunkAsync(Message message, MessagePriority priority = MessagePriority.FILE_DATA_REQUEST, int timeout = 30000) {
-            if (message == null) throw new ArgumentNullException(nameof(message));          
+            if (message == null) throw new ArgumentNullException(nameof(message));
+
+_logger.LogInformation($"==> await EnqueueMessageAndWaitFileChunkAsync {timeout}");
             var tcs = new TaskCompletionSource<Message?>();
             EventHandler<ProtoMessageEventArg>? handler = null;
             CancellationTokenSource timeoutCts = new(timeout);
@@ -594,12 +597,13 @@ namespace UBA6Library {
             }            
         }
 
-        public async Task<Message?> EnqueueMessageAndWaitFileList(Message message, MessagePriority priority = MessagePriority.FILE_NAME_REQUEST, int timeout = 8000) {
+        public async Task<Message?> EnqueueMessageAndWaitFileList(Message message, MessagePriority priority = MessagePriority.FILE_NAME_REQUEST, int timeout = 2000) {
             if (message == null) throw new ArgumentNullException(nameof(message));
           
+_logger.LogInformation($"==> await EnqueueMessageAndWaitFileList {timeout}");
             var tcs = new TaskCompletionSource<Message?>();
             EventHandler<ProtoMessageEventArg>? handler = null;
-            timeout = 3 * 60 * 1000; //3 min
+//            timeout = 3 * 60 * 1000; //3 min
             CancellationTokenSource timeoutCts = new(timeout);
             handler = (sender, args) => {
                 if (checkFileListMessage(message, args.Msg)) {

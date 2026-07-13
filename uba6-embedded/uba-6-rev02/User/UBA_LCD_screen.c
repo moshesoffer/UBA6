@@ -358,9 +358,9 @@ void UBA_LCD_screen_load_channel(UBA_LCD_channel *lcd_ch, UBA_channel *ch) {
 			case UBA_CHANNEL_STATE_STANDBY:
 				lcd_ch->status.effect = UBA_GFX_EFFECT_SOLID;
 				lcd_ch->status.elemnt.status.color_fill = UBA_GFX_COLOR_STANDBY;
-if (ch->id != UBA_PROTO_CHANNEL_ID_B) {
+//if (ch->id != UBA_PROTO_CHANNEL_ID_B) {
 				sprintf(lcd_ch->status.elemnt.status.text, CHANNEL_DISPALY_STATUS, "  STANDBY ");
-}
+//}
 				break;
 			case UBA_CHANNEL_STATE_CHARGE:
 				//lcd_ch->status.effect = UBA_GFX_EFFECT_BLINK_SLOW;
@@ -371,9 +371,9 @@ if (ch->id != UBA_PROTO_CHANNEL_ID_B) {
 			case UBA_CHANNEL_STATE_DISCHARGE:
 				//lcd_ch->status.effect = UBA_GFX_EFFECT_BLINK_SLOW;
 				lcd_ch->status.elemnt.status.color_fill = UBA_GFX_COLOR_RUN;
-if (ch->id == UBA_PROTO_CHANNEL_ID_A) {
+//if (ch->id == UBA_PROTO_CHANNEL_ID_A) {
 				sprintf(lcd_ch->status.elemnt.status.text, "%-10s", " DISCHARGE");
-}
+//}
 				break;
 			case UBA_CHANNEL_STATE_OFF:
 				//lcd_ch->status.effect = UBA_GFX_EFFECT_BLINK_SLOW;

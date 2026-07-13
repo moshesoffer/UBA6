@@ -60,6 +60,7 @@ FIL cached_file;
 bool UBA_FM_SD_mount(void) {
 	bool ret = is_SD_card_mount;
 	if (is_SD_card_mount == false) {
+//UART_LOG(COMPONENT, "UBA_FM_SD_mount");
 		res = f_mount(&fs, "", UBA_FM_SD_CARD_MOUNT_OPT);
 		ret = (res == FR_OK);
 		if (ret) {
@@ -74,8 +75,11 @@ bool UBA_FM_SD_mount(void) {
 }
 
 bool UBA_FM_SD_unmount(void) {
+	return FR_OK; //SD mount is done once !!! 
+
 	bool ret = !is_SD_card_mount;
 	if (is_SD_card_mount) {
+//UART_LOG(COMPONENT, "UBA_FM_SD_unmount");
 		res = f_mount(NULL, "", UBA_FM_SD_CARD_MOUNT_OPT);
 		ret = (res == FR_OK);
 		if (ret) {
@@ -161,11 +165,11 @@ bool create_filepath(char *folder, char *file_name, char *filepath_string, uint3
 bool UBA_FM_create_file(char *folder, char *file_name) {
 	bool ret = false;
     UBA_PROTO_FM_file_list fm_list;
-UART_LOG(COMPONENT, "UBA_FM_create_file");
+//UART_LOG(COMPONENT, "UBA_FM_create_file");
 
 	//limit MAX number of files in folder
 	UBA_FM_file_list(folder, &fm_list, 0/*skip*/);
-UART_LOG(COMPONENT, "filenames_count.. %d", fm_list.filenames_count);
+//UART_LOG(COMPONENT, "filenames_count.. %d", fm_list.filenames_count);
 	if (fm_list.filenames_count+1 >= UBA_FM_MAX_FILE_PER_FOLDER) {
 		ret = UBA_FM_delete_file (fm_list.filenames[0]);
 		if (res != FR_OK) {
@@ -180,7 +184,7 @@ UART_LOG(COMPONENT, "filenames_count.. %d", fm_list.filenames_count);
 				ret = true;
 			} else {
 				res = f_open(&file, filepath, FA_CREATE_NEW | FA_WRITE);
-UART_LOG(COMPONENT, "f_open.. %s", file_name);
+//UART_LOG(COMPONENT, "f_open.. %s", filepath);
 				if (res == FR_OK) {
 					UART_FM_DEBUG(" File:%s already exists", filepath);
 					f_close(&file);
@@ -210,7 +214,7 @@ bool UBA_FM_delete_file(char *filepath) {
 		uint32_t t0 = HAL_GetTick();
 		res = f_unlink(filepath);
 		uint32_t t1 = HAL_GetTick();
-		UART_LOG(COMPONENT, "unlink %s took %lu ms", filepath, t1 - t0);
+		//UART_LOG(COMPONENT, "unlink %s took %lu ms", filepath, t1 - t0);
 
 		if (res == FR_OK) {
 			UART_FM_DEBUG(COMP, "Successfully Delete %s", filepath);
@@ -252,17 +256,19 @@ bool UBA_FM_apppend_data(char *folder, char *file_name, uint8_t *data, uint32_t 
     UBA_PROTO_FM_file_list fm_list;
 UART_LOG(COMPONENT, "UBA_FM_apppend_data");
 
+	create_filepath(folder, file_name, filepath, UBA_FM_MAX_FILE_NAMEPATH);
 	res = f_open(&file, (char*) filepath, FA_OPEN_APPEND | FA_WRITE);
-UART_LOG(COMPONENT, "f_open.. %s", file_name);
+UART_LOG(COMPONENT, "f_open.. %s", filepath);
 	if (res != FR_OK) {
 		//limit MAX number of files in folder
 		UBA_FM_file_list(folder, &fm_list, 0/*skip*/);
-//UART_LOG(COMPONENT, "filenames_count.. %d", fm_list.filenames_count);
+UART_LOG(COMPONENT, "filenames_count.. %d", fm_list.filenames_count);
 //		for (int i=0; i<fm_list.filenames_count; i++) {
 //			UART_LOG(COMPONENT, "%s", fm_list.filenames[i]);
 //		}
 		if (fm_list.filenames_count+1 >= UBA_FM_MAX_FILE_PER_FOLDER) {
 			ret = UBA_FM_delete_file (fm_list.filenames[0]);
+UART_LOG(COMPONENT, "f_unlink.. %s", fm_list.filenames[0]);
 			if (res != FR_OK) {
 				UART_FM_DEBUG(COMP, "Max files per folder: Failed to Delete %s - 0x%02x", filepath, res);
 			}
@@ -271,7 +277,7 @@ UART_LOG(COMPONENT, "f_open.. %s", file_name);
 		if (UBA_FM_SD_mount()) {
 			if (create_filepath(folder, file_name, filepath, UBA_FM_MAX_FILE_NAMEPATH) && UBA_FM_FF_create_folder(folder)) {
 				res = f_open(&file, (char*) filepath, FA_OPEN_APPEND | FA_WRITE);
-UART_LOG(COMPONENT, "f_open.. %s", file_name);
+UART_LOG(COMPONENT, "f_create.. %s", file_name);
 				created = true;
 			}
 		}
@@ -284,7 +290,9 @@ UART_LOG(COMPONENT, "f_open.. %s", file_name);
 		} else {
 			UART_FM_ERROR("Failed to Append to file:%s - 0x%02x", filepath, res);
 		}
+UART_LOG(COMPONENT, "f_write.. %s, data_length %d", file_name, data_length);
 		f_close(&file);
+UART_LOG(COMPONENT, "f_close.. %s", file_name);
 	} else if (res == FR_NO_PATH) {
 		UART_FM_ERROR("Failed to Append to file:%s - 0x%02x - Path not found", filepath, res);
 	} else {
@@ -300,17 +308,17 @@ UART_LOG(COMPONENT, "f_open.. %s", file_name);
 
 bool UBA_FM_store_data(char *folder, char *file_name, uint8_t *data, uint32_t data_length) {
 	bool ret = false;
-UART_LOG(COMPONENT, "UBA_FM_store_data");
+//UART_LOG(COMPONENT, "UBA_FM_store_data");
 
 	if (UBA_FM_SD_mount()) {
 		if (create_filepath(folder, file_name, filepath, UBA_FM_MAX_FILE_NAMEPATH) && UBA_FM_FF_create_folder(folder)) {
 			res = f_open(&file, filepath, FA_CREATE_ALWAYS | FA_WRITE); // Create (or overwrite) the file
-UART_LOG(COMPONENT, "f_open.. %s", file_name);
+//UART_LOG(COMPONENT, "f_open.. %s", filepath);
 			if (res == FR_OK) {
 				res = f_write(&file, data, data_length, &bw);
 				if (res == FR_OK && bw == data_length) {
 					// Successfully written
-					UART_FM_DEBUG("Successfully Sore To File :%s ", filepath);
+					//UART_FM_DEBUG("Successfully Sore To File :%s ", filepath);
 					ret = true;
 				} else {
 					UART_FM_ERROR("Failed to Store data  to file:%s - 0x%02x", filepath, res);
@@ -329,18 +337,18 @@ UART_LOG(COMPONENT, "f_open.. %s", file_name);
 }
 
 int UBA_FM_read_data(char *folder, char *file_name, uint8_t *data_out, uint32_t max_data_length) {
-UART_LOG(COMPONENT, "UBA_FM_read_data");
+//UART_LOG(COMPONENT, "UBA_FM_read_data");
 	bw = 0;
 	if (UBA_FM_SD_mount()) {
 		if (create_filepath(folder, file_name, filepath, UBA_FM_MAX_FILE_NAMEPATH)) {
 			res = f_open(&file, filepath, FA_READ); // Create (or overwrite) the file
-UART_LOG(COMPONENT, "f_open.. %s", file_name);
+//UART_LOG(COMPONENT, "f_open.. %s", filepath);
 			if (res == FR_OK) {
 				res = f_read(&file, data_out, max_data_length, &bw);
 				if (res == FR_OK) {
 					// Successfully read
 					UART_FM_DEBUG("Successfully Read %lu Bytes form %s", bw, filepath);
-					UART_LOG(COMPONENT, "Successfully Read %lu Bytes form %s", bw, filepath);
+					//UART_LOG(COMPONENT, "Successfully Read %lu Bytes form %s", bw, filepath);
 				} else {
 					UART_FM_ERROR("Failed to read data from file:%s - 0x%02x", filepath, res);
 					UART_LOG(COMPONENT, "Failed to read data from file:%s - res: 0x%02x", filepath, res);
@@ -364,15 +372,15 @@ UART_LOG(COMPONENT, "UBA_FM_seek_read_data");
 		if (create_filepath(folder, file_name, filepath, UBA_FM_MAX_FILE_NAMEPATH)) {
 			res = f_open(&file, filepath, FA_READ); // Create (or overwrite) the file
 			if (res == FR_OK) {
-UART_LOG(COMPONENT, "f_open.. %s", file_name);
+UART_LOG(COMPONENT, "f_open.. %s", filepath);
 				res = f_lseek(&file, seek); // move seek to the correct position
 				if (res == FR_OK) {
-//UART_LOG(COMPONENT, "f_seek..");
+UART_LOG(COMPONENT, "f_seek..");
 					uint32_t file_size = f_size(&file);
 					max_data_length = (file_size - seek) < 2048 ? (file_size - seek) : max_data_length;
 					res = f_read(&file, data_out, max_data_length, &bw);
 					if (res == FR_OK) {
-//UART_LOG(COMPONENT, "f_read..");
+UART_LOG(COMPONENT, "f_read..");
 						// Successfully read
 						UART_FM_DEBUG("Successfully Read %lu Bytes form %s", bw, filepath);
 					} else {
@@ -384,6 +392,7 @@ UART_LOG(COMPONENT, "f_open.. %s", file_name);
 				f_close(&file);
 			} else {
 				UART_FM_ERROR("Failed to read data from file:%s - 0x%02x", filepath, res);
+				UART_LOG(COMPONENT, "Failed to open file %s, res %d", filepath, res);
 			}
 		}
 		UBA_FM_SD_unmount();
@@ -392,14 +401,14 @@ UART_LOG(COMPONENT, "f_open.. %s", file_name);
 }
 
 int UBA_FM_read_chunk(char *folder, char *file_name, uint8_t *data, uint32_t chank_size, uint32_t chunk_number) {
-UART_LOG(COMPONENT, "UBA_FM_read_chunk");
+//UART_LOG(COMPONENT, "UBA_FM_read_chunk");
 
 	uint32_t new_seek = chank_size * chunk_number;
 	return UBA_FM_seek_read_data(folder, file_name, new_seek, data, chank_size);
 }
 
 void UBA_FM_file_list(char *folder, UBA_PROTO_FM_file_list *list, uint16_t skip) {
-UART_LOG(COMPONENT, "UBA_FM_file_list");
+//UART_LOG(COMPONENT, "UBA_FM_file_list");
 
 	list->filenames_count = 0;
 	if (UBA_FM_SD_mount()) {
@@ -437,7 +446,7 @@ void UBA_FM_command_execute(UBA_PROTO_FM_command *cmd) {
 			break;
 		case UBA_PROTO_FM_CMD_ID_CHUNK_REQUEST:
 			UART_FM_DEBUG("Transfer File: %s", cmd->filename);
-			UART_LOG(COMPONENT, "Transfer File: %s", cmd->filename);
+//			UART_LOG(COMPONENT, "Transfer File: %s", cmd->filename);
 			UBA_UART_transfer_file(UBA_FM_FOLDER_TEST_RESULTS, cmd->filename, cmd->chunk_index);
 			break;
 		case UBA_PROTO_FM_CMD_ID_FILE_LIST_REQUEST:
@@ -468,12 +477,12 @@ void UBA_FM_command_execute(UBA_PROTO_FM_command *cmd) {
 }
 
 uint32_t UBA_FM_file_size(char *folder, char *file_name) {
-UART_LOG(COMPONENT, "UBA_FM_file_size");
+//UART_LOG(COMPONENT, "UBA_FM_file_size");
 	uint32_t file_size = 0;
 	if (UBA_FM_SD_mount()) {
 		if (create_filepath(folder, file_name, filepath, UBA_FM_MAX_FILE_NAMEPATH)) {
 			res = f_open(&file, filepath, FA_READ); // Create (or overwrite) the file
-UART_LOG(COMPONENT, "f_open.. %s", file_name);
+//UART_LOG(COMPONENT, "f_open.. %s", filepath);
 			if (res == FR_OK) {
 				file_size = f_size(&file);
 				UART_FM_DEBUG("File:%s Size:%lu", filepath, file_size);
@@ -488,7 +497,7 @@ UART_LOG(COMPONENT, "f_open.. %s", file_name);
 }
 
 int UBA_FM_transfer_chunk(char *folder, UBA_PROTO_FM_file_transfer *msg) {
-UART_LOG(COMPONENT, "UBA_FM_transfer_chunk, size %d index %d", msg->data.bytes, msg->chunk_index);
+//UART_LOG(COMPONENT, "UBA_FM_transfer_chunk, size %d index %d", msg->data.bytes, msg->chunk_index);
 //return 0;//
 
 	int read = UBA_FM_read_chunk(UBA_FM_FOLDER_TEST_RESULTS, msg->filename, msg->data.bytes, sizeof(msg->data.bytes), msg->chunk_index);

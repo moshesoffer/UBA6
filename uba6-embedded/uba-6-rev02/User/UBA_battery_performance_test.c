@@ -1091,7 +1091,7 @@ void UBA_BPT_save_log(UBA_BPT *bpt) {
 
 		if (bpt->wr_from > 0) {
 			chunk_length = bpt->wr_from > chunk_length ? chunk_length : bpt->wr_from;
-UART_LOG_BPT_INFO(UBA_COMP, "==> last step complete exit: bpt->wr_from %d [%s]", chunk_length, bpt->filename);
+UART_LOG(UBA_COMP, "==> last step complete exit: bpt->wr_from %d [%s]", chunk_length, bpt->filename);
 			UBA_FM_apppend_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, chunk_length); 
 			bpt->wr_from -= chunk_length;
 		}
