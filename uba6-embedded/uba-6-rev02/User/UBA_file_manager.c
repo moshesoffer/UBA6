@@ -256,29 +256,33 @@ bool UBA_FM_apppend_data(char *folder, char *file_name, uint8_t *data, uint32_t 
     UBA_PROTO_FM_file_list fm_list;
 UART_LOG(COMPONENT, "UBA_FM_apppend_data");
 
-	create_filepath(folder, file_name, filepath, UBA_FM_MAX_FILE_NAMEPATH);
-	res = f_open(&file, (char*) filepath, FA_OPEN_APPEND | FA_WRITE);
+	if (UBA_FM_SD_mount()) {
+		if (create_filepath(folder, file_name, filepath, UBA_FM_MAX_FILE_NAMEPATH) && UBA_FM_FF_create_folder(folder)) {
 UART_LOG(COMPONENT, "f_open.. %s", filepath);
-	if (res != FR_OK) {
-		//limit MAX number of files in folder
-		UBA_FM_file_list(folder, &fm_list, 0/*skip*/);
-UART_LOG(COMPONENT, "filenames_count.. %d", fm_list.filenames_count);
-//		for (int i=0; i<fm_list.filenames_count; i++) {
-//			UART_LOG(COMPONENT, "%s", fm_list.filenames[i]);
-//		}
-		if (fm_list.filenames_count+1 >= UBA_FM_MAX_FILE_PER_FOLDER) {
-			ret = UBA_FM_delete_file (fm_list.filenames[0]);
-UART_LOG(COMPONENT, "f_unlink.. %s", fm_list.filenames[0]);
+			res = f_open(&file, (char*) filepath, FA_OPEN_APPEND | FA_WRITE);
+UART_LOG(COMPONENT, "after f_open.. %s", filepath);
 			if (res != FR_OK) {
-				UART_FM_DEBUG(COMP, "Max files per folder: Failed to Delete %s - 0x%02x", filepath, res);
-			}
-		}
+				//limit MAX number of files in folder
+				UBA_FM_file_list(folder, &fm_list, 0/*skip*/);
+UART_LOG(COMPONENT, "filenames_count.. %d", fm_list.filenames_count);
+		//		for (int i=0; i<fm_list.filenames_count; i++) {
+		//			UART_LOG(COMPONENT, "%s", fm_list.filenames[i]);
+		//		}
+				if (fm_list.filenames_count+1 >= UBA_FM_MAX_FILE_PER_FOLDER) {
+					ret = UBA_FM_delete_file (fm_list.filenames[0]);
+UART_LOG(COMPONENT, "f_unlink.. %s", fm_list.filenames[0]);
+					if (res != FR_OK) {
+						UART_FM_DEBUG(COMP, "Max files per folder: Failed to Delete %s - 0x%02x", filepath, res);
+					}
+				}
 
-		if (UBA_FM_SD_mount()) {
-			if (create_filepath(folder, file_name, filepath, UBA_FM_MAX_FILE_NAMEPATH) && UBA_FM_FF_create_folder(folder)) {
-				res = f_open(&file, (char*) filepath, FA_OPEN_APPEND | FA_WRITE);
+				if (UBA_FM_SD_mount()) {
+					if (create_filepath(folder, file_name, filepath, UBA_FM_MAX_FILE_NAMEPATH) && UBA_FM_FF_create_folder(folder)) {
+						res = f_open(&file, (char*) filepath, FA_OPEN_APPEND | FA_WRITE);
 UART_LOG(COMPONENT, "f_create.. %s", file_name);
-				created = true;
+						created = true;
+					}
+				}
 			}
 		}
 	}

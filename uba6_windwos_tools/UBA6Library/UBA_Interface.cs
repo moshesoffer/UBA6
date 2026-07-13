@@ -576,7 +576,7 @@ _logger.LogInformation($"==> await EnqueueMessageAndWaitFileChunkAsync {timeout}
                     EnqueueMessage(message, priority);
                     using (timeoutCts) {
 ////_logger.LogInformation($"==> await Task.WhenAny 2 task ID: {tcs.Task} pri {priority}");
-                        timeout = 10000;
+                        timeout = 3 * 60 * 1000;//for case of long files and case of dual test
                         var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
 ////_logger.LogInformation($"==> response Task.WhenAny 2 taskID: {completedTask.Id}");
                         if (completedTask == tcs.Task) {

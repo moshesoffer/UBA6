@@ -16,20 +16,36 @@ const printf = (string, ...replacement) => {
 	return string.replace(/{(\d+)}/g, (match, number) => mutateString(match, number, args));
 };
 
+//export const getText = (pathString, ...replacement) => {
+//	const path = pathString.split('.');
+//
+//	let stringDefinition = text[path[0]][path[1]];
+//	if (validateString(text[path[0]][path[1]][path[2]])) {
+//		stringDefinition = text[path[0]][path[1]][path[2]];
+//	}
+//
+//	if (!validateString(stringDefinition)) {
+//		throw new Error(`String definition not found for path: ${pathString}`);
+//	}
+//
+//	return printf(stringDefinition, ...replacement);
+//}
 export const getText = (pathString, ...replacement) => {
-	const path = pathString.split('.');
+    const path = pathString.split('.');
 
-	let stringDefinition = text[path[0]][path[1]];
-	if (validateString(text[path[0]][path[1]][path[2]])) {
-		stringDefinition = text[path[0]][path[1]][path[2]];
-	}
+    let stringDefinition =
+        text?.[path[0]]?.[path[1]];
 
-	if (!validateString(stringDefinition)) {
-		throw new Error(`String definition not found for path: ${pathString}`);
-	}
+    if (validateString(text?.[path[0]]?.[path[1]]?.[path[2]])) {
+        stringDefinition = text[path[0]][path[1]][path[2]];
+    }
 
-	return printf(stringDefinition, ...replacement);
-}
+    if (!validateString(stringDefinition)) {
+        return pathString;   // or ""
+    }
+
+    return printf(stringDefinition, ...replacement);
+};
 
 export const getDate = rawDate => {
 	const locale = 'he-IL';

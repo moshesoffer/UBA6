@@ -399,7 +399,8 @@ function ConfigurationsMandatory(props, ref) {
 							freeSolo
 							size="small"
 							value={getInputValue(testData, 'batteryPN')}
-							onChange={handleBatteryPNChange}
+							onChange={(event, newValue) => handleBatteryPNChange(event, newValue)}
+    						onInputChange={(event, newInputValue) => handleBatteryPNChange(event, newInputValue)}
 							options={batteryPNList}
 							renderInput={params =>
 								<TextField
