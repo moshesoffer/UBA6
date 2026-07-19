@@ -68,11 +68,11 @@ namespace UBAService {
                         //await Task.Delay(delay*10, stoppingToken);
 
                         //periodic query message to UBA for running test data - instantTestResults (state, startTime, step, voltage, current, temp, capacity, ..)
-                        StartPeriodicRunningTestUpdate();
+                        StartPeriodicRunningTestUpdate(stoppingToken);
                         //StopPeriodicRunningTestUpdate();
 
                         //periodic received message from UBA Device
-                        StartPeriodicUBAUpdate();
+                        StartPeriodicUBAUpdate(stoppingToken);
                         //StopPeriodicUBAUpdate();
 
                         //delete file list
@@ -117,7 +117,7 @@ namespace UBAService {
                             continue;
                         }
                     }
-                    await Task.Delay(100/*msec delay*/, stoppingToken);
+                    await Task.Delay(1000/*msec delay*/, stoppingToken);
                 }
             } catch (Exception ex) {
                 _logger.LogError(ex, "An error occurred in the UBA Service: {Message}", ex.Message);
@@ -128,7 +128,7 @@ namespace UBAService {
 
         private CancellationTokenSource? _cts1sec;
         //periodic query message to UBA for running test data - instantTestResults (state, startTime, step, voltage, current, temp, capacity, ..)
-        public async Task StartPeriodicRunningTestUpdate() {
+        public async Task StartPeriodicRunningTestUpdate(CancellationToken stoppingToken) {
             _cts1sec = new CancellationTokenSource();
             var timer = new PeriodicTimer(TimeSpan.FromMicroseconds(950)); //instaed of 1000 mSec, remaining time for execeution
             var cycle1 = 0;
@@ -149,6 +149,7 @@ namespace UBAService {
                         cycle2 = 0;
                     }                    
                     _semaphore.Release();
+                    await Task.Delay(500/*msec delay*/, stoppingToken);
                 }
             } catch (OperationCanceledException) {
                 // expected when stopping
@@ -165,7 +166,7 @@ namespace UBAService {
 
         private CancellationTokenSource? _cts3sec;
         //periodic received message from UBA Device
-        public async Task StartPeriodicUBAUpdate() {
+        public async Task StartPeriodicUBAUpdate(CancellationToken stoppingToken) {
             _cts3sec = new CancellationTokenSource();
             var timer = new PeriodicTimer(TimeSpan.FromSeconds(3));
 
@@ -184,6 +185,7 @@ namespace UBAService {
                         await updateUBA2List(pt?.PendingRunningTests);
                     }
                     _semaphore.Release();
+                    await Task.Delay(1500/*msec delay*/, stoppingToken);
                 }
             } catch (OperationCanceledException) {
                 // expected when stopping
@@ -258,10 +260,10 @@ _logger.LogInformation("4.2.Pending test {Channel} {Status}, set to {newState}",
 
         private async Task SaveTestAsync(GETPendingTestResponseDTO  pendingTest)
         {
-            UBA6 uba = getUbaFromList("0"/*UbaSN*/);
+            UBA6 uba = getUbaFromList(pendingTest.UbaSN);
             if (uba == null)
             {
-                _logger.LogInformation("Pending tests list empty.");
+                _logger.LogInformation("1-Pending tests list empty.");
                 return;
             }
 
@@ -304,13 +306,6 @@ _logger.LogInformation("4.2.Pending test {Channel} {Status}, set to {newState}",
                     return;
                 }
 
-                UBA6 uba = getUbaFromList("0"/*UbaSN*/);
-                if (uba == null)
-                {
-                    _logger.LogInformation("Pending tests list empty.");
-                    return;
-                }
-
                 foreach (GETPendingTestResponseDTO pendingTest in pt) {
 //_logger.LogInformation("==> pendingTest: {id} {status}", pendingTest.Id, pendingTest.Status);
                     //UBA6 uba = getUbaFromList(pendingTest.UbaSN);
@@ -319,6 +314,13 @@ _logger.LogInformation("4.2.Pending test {Channel} {Status}, set to {newState}",
                     //    _logger.LogInformation("Pending tests list empty.");
                     //    return;
                     //}
+
+                    UBA6 uba = getUbaFromList(pendingTest.UbaSN);
+                    if (uba == null)
+                    {
+                        _logger.LogInformation("2-Pending tests list empty.");
+                        return;
+                    }
 
                     //verify UBA responding
                     try {
@@ -663,9 +665,11 @@ _logger.LogInformation($"==> 3.2.pendingTestResponseDTO: STANDBY {Status} channe
                             try {
                                 if (ubaDto.Channel.Equals("A") && (testInProgress[0] == false)) {
                                     Message message = await UBAs.First().GetMessage(ubaDto.Channel.Equals("A") ? UBA_PROTO_QUERY.RECIPIENT.BptA : UBA_PROTO_QUERY.RECIPIENT.BptB);
+//                                    _logger.LogInformation($"QueryResponse: {message.QueryResponse.Bpt}");
                                     await wcs.UpdateTestStatus(ubaDto.RunningTestID, message.QueryResponse.Bpt, true);
                                 } else if (ubaDto.Channel.Equals("B") && (testInProgress[1] == false)) {
-                                    Message message = await UBAs.First().GetMessage(ubaDto.Channel.Equals("A") ? UBA_PROTO_QUERY.RECIPIENT.BptA : UBA_PROTO_QUERY.RECIPIENT.BptB);
+                                    Message message = await UBAs.First().GetMessage(ubaDto.Channel.Equals("B") ? UBA_PROTO_QUERY.RECIPIENT.BptB : UBA_PROTO_QUERY.RECIPIENT.BptA);
+//                                    _logger.LogInformation($"QueryResponse: {message.QueryResponse.Bpt}");
                                     await wcs.UpdateTestStatus(ubaDto.RunningTestID, message.QueryResponse.Bpt, true);
                                 }
 

@@ -258,10 +258,11 @@ int UBA_UART_comm_init()
 int process_message(MSG_Message *message) {
 	if ((message->head.target_address & UBA_6_device_g.settings.address) != UBA_6_device_g.settings.address) {
 //Moshe		UART_LOG_ERROR(COMP, "this is not my message (0x%08x) target is 0x%08x", UBA_6_device_g.settings.address, message->head.target_address);
-//		return -1;
+		return -1;
 	}
 	switch (message->which_pyload) {
 		case MSG_Message_query_tag:
+			UART_LOG(COMP, "Query message: recipient:%u", message->pyload.query.recipient);
 			UART_LOG_COMM_DEBUG("Query message: recipient:%u", message->pyload.query.recipient);
 			//UBA_UART_query_response_message(message->pyload.query.recipient); //within the intterupt
 			UBA_UART_qeury_pending_post(message->pyload.query.recipient, message->head.id);
@@ -298,7 +299,7 @@ UART_LOG_COMM_DEBUG("TR message: %s Store at Index: %u", message->pyload.tr.tr.n
 		case MSG_Message_device_settings_tag: /* change all the settoeng*/
 			break;
 		default:
-			UART_LOG_ERROR(COMP, "message is unknown :%u", message->which_pyload);
+			//UART_LOG_ERROR(COMP, "message is unknown :%u", message->which_pyload);
 			return -1;
 
 	}
@@ -337,7 +338,7 @@ uint32_t process_uart_data(uint8_t *data, uint16_t len) {
 	} else {
 		UART_LOG(COMP, "process uart data len:%u", len);
 		UART_LOG_ERROR(COMP, "Decoding failed: %s", PB_GET_ERROR(&stream));
-		UBA_util_print_buffer(data, len);
+		//UBA_util_print_buffer(data, len);
 		// Error
 		return 1;
 	}

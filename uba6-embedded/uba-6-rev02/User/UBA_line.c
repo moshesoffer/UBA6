@@ -671,7 +671,7 @@ bool UBA_line_load_cal_from_file(UBA_line *line) {
 			// Successfully decoded!
 		} else {
 			UART_LOG_LINE_ERROR(line->name, "File %s -  Decoding failed: %s", line->calibration.file_name, PB_GET_ERROR(&stream));
-			UBA_util_print_buffer(buffer_stream, bytesRead);
+			//UBA_util_print_buffer(buffer_stream, bytesRead);
 			return false;
 			// Error
 		}

@@ -345,7 +345,7 @@ namespace UBA6Library {
                             msg.Head.SenderAddress = 0;
                             byte[] byteMessage = message2byteArry(msg).ToArray();
                             sp?.Write(byteMessage, 0, byteMessage.Length);
-                            _logger.LogDebug($"Sent message: {msg}\nSize:{byteMessage[0]} {BitConverter.ToString(byteMessage)}");
+                            _logger.LogInformation($"Sent message: {msg}\nSize:{byteMessage[0]} {BitConverter.ToString(byteMessage)}");
 
                         } catch (Exception) {
                             _logger.LogError($"Failed to send message: {msg}");
@@ -362,7 +362,7 @@ namespace UBA6Library {
                     Monitor.Exit(_serialReadLock);
                 } else {
                 }
-                await Task.Delay(50, cancellationToken); // Avoid busy-רקשגןמע
+                await Task.Delay(1000, cancellationToken); // Avoid busy-רקשגןמע
             }
         }
         /// <summary>
@@ -499,6 +499,7 @@ namespace UBA6Library {
                 }
                 return null;
             }*/
+            _logger.LogInformation($"GetMessage: targateAddress {targateAddress}");
             Message queryMessage = UBA_Message_Factory.CreateQeuryMessage(targateAddress, recipient);
             timeout = 5000;
             Message? responseMessage = await EnqueueMessageAndWaitForResponseAsync(queryMessage, MessagePriority.QUERY_MESSAGE, timeout);
@@ -527,9 +528,9 @@ namespace UBA6Library {
                     EnqueueMessage(message, priority);
                     using (timeoutCts) {
                         var delayTask = Task.Delay(timeout);
-////_logger.LogInformation($"==> await Task.WhenAny 1 taskID: {tcs.Task.Id} pri {priority}");
+_logger.LogInformation($"==> await Task.WhenAny 1 taskID: {tcs.Task.Id} pri {priority} timeout {timeout}");
                         var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
-////_logger.LogInformation($"==> response Task.WhenAny 1 taskID: {completedTask.Id}");
+_logger.LogInformation($"==> response Task.WhenAny 1 taskID: {completedTask.Id}");
                         stopwatch.Stop();
                         if ((priority == MessagePriority.DEVICE_QUERY) || (priority == MessagePriority.BPT_QUERY) ||(priority == MessagePriority.QUERY_MESSAGE) ||
                             (priority == MessagePriority.FILE_NAME_REQUEST) || (priority == MessagePriority.FILE_DATA_REQUEST))
@@ -538,10 +539,11 @@ namespace UBA6Library {
                                 //_logger.LogDebug($"Received response for Message ID: {originalId} taskID: {completedTask.Id}-{tcs.Task.Id}");// in {stopwatch.ElapsedMilliseconds} ms");
                                 return tcs.Task.Result;
                             } else if (completedTask == delayTask) {
-                                _logger.LogError($"1-Timeout waiting for response with Message ID: {originalId} taskID: {completedTask.Id}-{tcs.Task.Id}");/// after {stopwatch.ElapsedMilliseconds} ms");
+                                _logger.LogInformation($"1-Timeout waiting for response with Message ID: {originalId} taskID: {completedTask.Id}-{tcs.Task.Id}");/// after {stopwatch.ElapsedMilliseconds} ms");
                                 return null;
-                            } else {
-                            }
+                            } 
+                        } else {
+                            _logger.LogInformation($"1-Wrong priority: {priority}");
                         }
                     }
                 } finally {
@@ -552,6 +554,7 @@ namespace UBA6Library {
             {
                 _semaphore.Release();
             }            
+            _logger.LogInformation($"1-Return Null Message ID: taskID: {tcs.Task.Id}");
             return null;
          }
 
@@ -583,7 +586,7 @@ _logger.LogInformation($"==> await EnqueueMessageAndWaitFileChunkAsync {timeout}
                             _logger.LogDebug($"Received response for Message ID: {message.Head.Id}");
                             return tcs.Task.Result;
                         } else {
-                            _logger.LogError($"2-Timeout waiting for Chunk File response with Message ID: {message.Head.Id} {completedTask.Id}");
+                            _logger.LogInformation($"2-Timeout waiting for Chunk File response with Message ID: {message.Head.Id} {completedTask.Id}");
                             return null;
                         }
                     }
@@ -625,7 +628,7 @@ _logger.LogInformation($"==> await EnqueueMessageAndWaitFileList {timeout}");
                             _logger.LogDebug($"Received response for Message ID: {message.Head.Id}");
                             return tcs.Task.Result;
                         } else {
-                            _logger.LogError($"3-Timeout waiting for response with Message ID: {message.Head.Id}");
+                            _logger.LogInformation($"3-Timeout waiting for response with Message ID: {message.Head.Id}");
                             return null;
                         }
                     }               
