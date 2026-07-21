@@ -257,17 +257,23 @@ int UBA_UART_comm_init()
 
 int process_message(MSG_Message *message) {
 	if ((message->head.target_address & UBA_6_device_g.settings.address) != UBA_6_device_g.settings.address) {
-//Moshe		UART_LOG_ERROR(COMP, "this is not my message (0x%08x) target is 0x%08x", UBA_6_device_g.settings.address, message->head.target_address);
+//Moshe	
+		UART_LOG_ERROR(COMP, "this is not my message (0x%08x) target is 0x%08x", UBA_6_device_g.settings.address, message->head.target_address);
 		return -1;
 	}
 	switch (message->which_pyload) {
 		case MSG_Message_query_tag:
-			UART_LOG(COMP, "Query message: recipient:%u", message->pyload.query.recipient);
+			char recipient[32];
+			if (message->pyload.query.recipient == 1) strcpy(recipient, "Device");
+			else if (message->pyload.query.recipient == 64) strcpy(recipient, "BPT A");
+			else if (message->pyload.query.recipient == 128) strcpy(recipient, "BPT B");
+			UART_LOG(COMP, "Query message: recipient:%s", recipient);
 			UART_LOG_COMM_DEBUG("Query message: recipient:%u", message->pyload.query.recipient);
 			//UBA_UART_query_response_message(message->pyload.query.recipient); //within the intterupt
 			UBA_UART_qeury_pending_post(message->pyload.query.recipient, message->head.id);
 			break;
 		case MSG_Message_cmd_tag:
+			UART_LOG(COMP, "CMD message");
 			UART_LOG_COMM_DEBUG("CMD message");
 			if (message->pyload.cmd.which_command == UBA_PROTO_CMD_command_message_bpt_tag) {
 				UBA_UART_cmd_pending_post(&message->pyload.cmd);

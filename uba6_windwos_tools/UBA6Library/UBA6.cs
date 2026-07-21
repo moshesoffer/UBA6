@@ -28,6 +28,7 @@ namespace UBA6Library {
         public Channel B { get; set; } = new Channel(UBA_PROTO_CHANNEL.ID.B);
         public Channel AB { get; set; } = new Channel(UBA_PROTO_CHANNEL.ID.Ab);
         public int VPS = 0;
+        private bool _disposed;
         
         public LineCalibrationData CalDataLineA = new LineCalibrationData();
         public LineCalibrationData CalDataLineB = new LineCalibrationData();
@@ -45,6 +46,29 @@ namespace UBA6Library {
         public UBA6(ILogger<UBA6> logger, UBA_Interface com, string sn) : this(logger, com) {
             this.SerialNumber = sn;
         }
+        public void Dispose()
+        {
+            UBA_Interface.Dispose();
+            
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed)
+                return;
+
+            if (disposing)
+            {
+                if (UBA_Interface != null)
+                {
+                    UBA_Interface.MessageReceived -= UBA_Interface_MessageReceived;
+                }
+            }
+
+            _disposed = true;
+        }
+
         public void SetIntreface(UBA_Interface uBA_Interface) {
             this.UBA_Interface = uBA_Interface;
         }
@@ -199,6 +223,7 @@ _logger.LogInformation("==> get message 10");
         }
 
         public override async Task<float> Mesure<TEnum>(TEnum Type) {
+            _logger.LogInformation($"Requesting measurement for type: {Type}");
             _logger.LogDebug($"Requesting measurement for type: {Type}");
             if (IsInEmulationMode) {
                 _logger.LogWarning($"Emulation Mode: Returning default value for {Type}.");

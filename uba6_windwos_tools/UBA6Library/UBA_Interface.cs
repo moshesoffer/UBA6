@@ -26,6 +26,7 @@ namespace UBA6Library {
         private Task? _processingTask;
         private Task? _readerTask;
         public event EventHandler<ProtoMessageEventArg>? MessageReceived;
+        private bool disposed = false;
 //        private int messageSize = 0;
         protected static UInt32 messageId = 0;
         private int failes { get; set; } = 0; // the number of failed to open the port 
@@ -68,22 +69,79 @@ namespace UBA6Library {
 //            return await task;
 //        }
 
-        public UBA_Interface(ILogger<UBA_Interface> logger, string portName, int baudRate = 115200) : this(logger) {
+        public UBA_Interface(ILogger<UBA_Interface> logger, string portName, int baudRate = 115200) : this(logger)
+        {
             sp = new SerialPort(portName, baudRate);
             sp.ReadBufferSize = 2048;
             sp.Parity = Parity.None;
             sp.ReadTimeout = 3000;
             sp.WriteTimeout = 300;
-////            sp.DataReceived += SerialPort_DataReceived;
+
+            // sp.DataReceived += SerialPort_DataReceived;
+
             _logger.LogDebug($"Initializing UBA_Interface with COM port: {portName}");
-            try {
+
+            try
+            {
                 sp.Open();
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 _logger.LogError($"Initializing COM port {portName}: {ex.Message}");
             }
+
             ClearQueueMessage();
             StartProcessing();
         }
+
+        public void Dispose()
+        {
+_logger.LogInformation($"==> Remove Interface:");
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposed)
+                return;
+
+            disposed = true;
+
+            if (disposing)
+            {
+                // Stop background tasks if you have any
+                // e.g. cancellationTokenSource?.Cancel();
+
+                if (sp != null)
+                {
+                    try
+                    {
+                        // sp.DataReceived -= SerialPort_DataReceived;
+
+                        if (sp.IsOpen)
+                        {
+                            sp.Close();
+                        }
+
+                        sp.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError($"Error disposing SerialPort: {ex.Message}");
+                    }
+
+                    sp = null;
+                }
+            }
+        }
+
+        ~UBA_Interface()
+        {
+            Dispose(false);
+        }
+
+
 
         public void SwitchCom(string newComPort, bool overwite = false) {
             if (string.IsNullOrEmpty(newComPort)) {
@@ -345,7 +403,8 @@ namespace UBA6Library {
                             msg.Head.SenderAddress = 0;
                             byte[] byteMessage = message2byteArry(msg).ToArray();
                             sp?.Write(byteMessage, 0, byteMessage.Length);
-                            _logger.LogInformation($"Sent message: {msg}\nSize:{byteMessage[0]} {BitConverter.ToString(byteMessage)}");
+//                            _logger.LogInformation($"Sent message: {msg}\nSize:{byteMessage[0]} {BitConverter.ToString(byteMessage)}");
+//                            _logger.LogInformation($"Sent message: {msg}");
 
                         } catch (Exception) {
                             _logger.LogError($"Failed to send message: {msg}");
@@ -362,7 +421,7 @@ namespace UBA6Library {
                     Monitor.Exit(_serialReadLock);
                 } else {
                 }
-                await Task.Delay(1000, cancellationToken); // Avoid busy-רקשגןמע
+                await Task.Delay(100, cancellationToken); // Avoid busy
             }
         }
         /// <summary>
@@ -528,11 +587,29 @@ namespace UBA6Library {
                     EnqueueMessage(message, priority);
                     using (timeoutCts) {
                         var delayTask = Task.Delay(timeout);
-_logger.LogInformation($"==> await Task.WhenAny 1 taskID: {tcs.Task.Id} pri {priority} timeout {timeout}");
+//_logger.LogInformation($"==> await Task.WhenAny 1 taskID: {tcs.Task.Id} pri {priority} timeout {timeout} message {message.Head}");
                         var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
-_logger.LogInformation($"==> response Task.WhenAny 1 taskID: {completedTask.Id}");
+//_logger.LogInformation($"==> response Task.WhenAny 1 taskID: {completedTask.Id}");
                         stopwatch.Stop();
-                        if ((priority == MessagePriority.DEVICE_QUERY) || (priority == MessagePriority.BPT_QUERY) ||(priority == MessagePriority.QUERY_MESSAGE) ||
+                        if (priority == MessagePriority.DEVICE_QUERY) {
+                            if (completedTask == tcs.Task) {
+                                //_logger.LogDebug($"Received response for Message ID: {originalId} taskID: {completedTask.Id}-{tcs.Task.Id}");// in {stopwatch.ElapsedMilliseconds} ms");
+                                return tcs.Task.Result;
+                            } else if (completedTask == delayTask) {
+                                _logger.LogInformation($"1-Timeout waiting for response with Message ID: {originalId} taskID: {completedTask.Id}-{tcs.Task.Id}");/// after {stopwatch.ElapsedMilliseconds} ms");
+                                return null;
+                            }                             
+                        }
+                        else if (priority == MessagePriority.QUERY_MESSAGE) {
+                            if (completedTask == tcs.Task) {
+                                //_logger.LogDebug($"Received response for Message ID: {originalId} taskID: {completedTask.Id}-{tcs.Task.Id}");// in {stopwatch.ElapsedMilliseconds} ms");
+                                return tcs.Task.Result;
+                            } else if (completedTask == delayTask) {
+                                _logger.LogInformation($"1-Timeout waiting for response with Message ID: {originalId} taskID: {completedTask.Id}-{tcs.Task.Id}");/// after {stopwatch.ElapsedMilliseconds} ms");
+                                return null;
+                            }                             
+                        }
+                        else if ((priority == MessagePriority.BPT_QUERY) ||
                             (priority == MessagePriority.FILE_NAME_REQUEST) || (priority == MessagePriority.FILE_DATA_REQUEST))
                         {
                             if (completedTask == tcs.Task) {
@@ -554,7 +631,7 @@ _logger.LogInformation($"==> response Task.WhenAny 1 taskID: {completedTask.Id}"
             {
                 _semaphore.Release();
             }            
-            _logger.LogInformation($"1-Return Null Message ID: taskID: {tcs.Task.Id}");
+            //_logger.LogInformation($"1-Return Null Message ID: taskID: {tcs.Task.Id}");
             return null;
          }
 
