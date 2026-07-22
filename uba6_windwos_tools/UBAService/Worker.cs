@@ -258,7 +258,7 @@ _logger.LogInformation("4.2.Pending test {Channel} {Status}, set to {newState}",
 
         private async Task SaveTestAsync(GETPendingTestResponseDTO  pendingTest)
         {
-            UBA6 uba = getUbaFromList("0"/*UbaSN*/);
+            UBA6 uba = getUbaFromList(pendingTest.UbaSN);
             if (uba == null)
             {
                 _logger.LogInformation("Pending tests list empty.");
@@ -304,13 +304,6 @@ _logger.LogInformation("4.2.Pending test {Channel} {Status}, set to {newState}",
                     return;
                 }
 
-                UBA6 uba = getUbaFromList("0"/*UbaSN*/);
-                if (uba == null)
-                {
-                    _logger.LogInformation("Pending tests list empty.");
-                    return;
-                }
-
                 foreach (GETPendingTestResponseDTO pendingTest in pt) {
 //_logger.LogInformation("==> pendingTest: {id} {status}", pendingTest.Id, pendingTest.Status);
                     //UBA6 uba = getUbaFromList(pendingTest.UbaSN);
@@ -319,6 +312,13 @@ _logger.LogInformation("4.2.Pending test {Channel} {Status}, set to {newState}",
                     //    _logger.LogInformation("Pending tests list empty.");
                     //    return;
                     //}
+
+                    UBA6 uba = getUbaFromList(pendingTest.UbaSN);
+                    if (uba == null)
+                    {
+                        _logger.LogInformation("Pending tests list empty.");
+                        return;
+                    }
 
                     //verify UBA responding
                     try {
