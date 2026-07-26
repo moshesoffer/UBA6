@@ -64,7 +64,18 @@ namespace UBAService {
                 _logger.LogInformation("Service starting. Log path: {Path}, Retry: {Retry}", _settings.LogPath, _settings.RetryCount);
                 while (!stoppingToken.IsCancellationRequested) {
                     if (!isInitialized) {
-                        await InitAsync(stoppingToken);
+                        try {
+                            _logger.LogInformation("Initializing UBA Windows Service...");
+                            await wcs.CreateStstion();
+                            await addIntreface(stoppingToken);
+                            _logger.LogInformation("Initialization complete.");
+                            isInitialized = true;
+                        } catch (Exception ex) {
+                            //old version: _logger.LogError(ex, "Failed to initialize UBA Windows Service.");
+                            _logger.LogError("Failed to initialize UBA Windows Service.");
+                        }
+
+                        AddUBAsAsync(stoppingToken);
                         //await Task.Delay(delay*10, stoppingToken);
 
                         //periodic query message to UBA for running test data - instantTestResults (state, startTime, step, voltage, current, temp, capacity, ..)
@@ -72,7 +83,8 @@ namespace UBAService {
                         //StopPeriodicRunningTestUpdate();
 
                         //periodic received message from UBA Device
-                        StartPeriodicUBAUpdate(stoppingToken);
+//Moshe
+//                        StartPeriodicUBAUpdate(stoppingToken);
                         //StopPeriodicUBAUpdate();
 
                         //delete file list
@@ -85,7 +97,8 @@ namespace UBAService {
                                 //if (cycle1++ % 1 == 0) {
                                 //    //Change Running test status (uba.Status) - done manually by user (confirm click)
                                     if (pt?.PendingRunningTests?.Count == 0 && pt?.PendingConnectionUbaDevices?.Count == 0) {
-                                        await refreshChannelReading();
+//Moshe
+//                                        await refreshChannelReading();
                                     }
                                 //    cycle1 = 0;
                                 //}
@@ -130,7 +143,7 @@ namespace UBAService {
         //periodic query message to UBA for running test data - instantTestResults (state, startTime, step, voltage, current, temp, capacity, ..)
         public async Task StartPeriodicRunningTestUpdate(CancellationToken stoppingToken) {
             _cts1sec = new CancellationTokenSource();
-            var timer = new PeriodicTimer(TimeSpan.FromMicroseconds(950)); //instaed of 1000 mSec, remaining time for execeution
+            var timer = new PeriodicTimer(TimeSpan.FromMicroseconds(1000)); //instaed of 1000 mSec, remaining time for execeution
             var cycle1 = 0;
             var cycle2 = 0;
 
@@ -145,11 +158,12 @@ namespace UBAService {
 
                     if (cycle2++ % 1 == 0) {
                         //Change Running test status (uba.Status) - done manually in web-console (confirm click)
-                        await refreshChannelReading();
+//Moshe
+//                        await refreshChannelReading();
                         cycle2 = 0;
                     }                    
                     _semaphore.Release();
-                    await Task.Delay(500/*msec delay*/, stoppingToken);
+                    await Task.Delay(100/*msec delay*/, stoppingToken);
                 }
             } catch (OperationCanceledException) {
                 // expected when stopping
@@ -222,6 +236,7 @@ namespace UBAService {
                             {
                                 if (UBAs[i].Address.ToString() == ubaDto.Address)
                                 {
+_logger.LogInformation("3.1 refreshChannelReading {recipent} {address}", UBA_PROTO_QUERY.RECIPIENT.BptA, ubaDto.Address);
                                     message = await UBAs[i].GetMessage(UBA_PROTO_QUERY.RECIPIENT.BptA);
                                     break;
                                 }
@@ -246,7 +261,8 @@ _logger.LogInformation("4.1.Pending test {Channel} {Status}, set to {newState} {
                             {
                                 if (UBAs[i].Address.ToString() == ubaDto.Address)
                                 {
-                                    message = await UBAs[i].GetMessage(UBA_PROTO_QUERY.RECIPIENT.BptA);
+_logger.LogInformation("3.1 refreshChannelReading {recipent} {address}", UBA_PROTO_QUERY.RECIPIENT.BptB, ubaDto.Address);
+                                    message = await UBAs[i].GetMessage(UBA_PROTO_QUERY.RECIPIENT.BptB);
                                     break;
                                 }
                             }
@@ -339,7 +355,7 @@ _logger.LogInformation("4.2.Pending test {Channel} {Status}, set to {newState}",
                     //verify UBA responding
                     try {
                         var dev = UBA_PROTO_QUERY.RECIPIENT.Device;
-//_logger.LogInformation("==> get message 2 {device}", dev);
+_logger.LogInformation("==> resolvePendingRunningTest: get message 2 {device}", dev);
                         await uba.GetMessage(UBA_PROTO_QUERY.RECIPIENT.Device);
                         //_logger.LogInformation("Response from UBA Device: {uba.Address}");
                     } catch {
@@ -475,10 +491,11 @@ _logger.LogInformation("4.2.Pending test {Channel} {Status}, set to {newState}",
                 }
                 foreach (var pendingDevice in connecedList) {
                     bool exists = UBA_Interfaces.Any(ui => ui.PortName == pendingDevice.ComPort);
-//                    _logger.LogInformation("Interface with PortName {PortName} {Exists}", pendingDevice.ComPort, exists ? "exists" : "does not exist");
                     if (exists == false) {
+_logger.LogInformation("==> 1-Add Interface {address} {comPort}", pendingDevice.Address, pendingDevice.ComPort);
                         UBA_Interfaces.Add(new UBA_Interface(_comLoger, pendingDevice.ComPort));
                     }
+                    
                     UBA_Interface? UbaComInterface = UBA_Interfaces.FirstOrDefault(ui => ui.PortName == pendingDevice.ComPort);
                     if (UbaComInterface != null) {
                         try {
@@ -496,7 +513,6 @@ _logger.LogInformation("4.2.Pending test {Channel} {Status}, set to {newState}",
                             {
                                 break;
                             }
-
 
                             Message? t = await UbaComInterface.GetMessage(UBA_PROTO_QUERY.RECIPIENT.Device, Convert.ToUInt32(pendingDevice.Address));
                             if (t != null) {
@@ -555,13 +571,14 @@ _logger.LogInformation("4.2.Pending test {Channel} {Status}, set to {newState}",
                     ////_logger.LogInformation("Found {Count} UBA devices.", ubaDeviceDtos.Count);
                     foreach (var ubaDto in ubaDeviceDtos) {
                         //check if UBA with the same SN already exists
-                        //if (!UBAs.Any(uba => uba.SerialNumber.Equals(ubaDto.UbaSN))) {
+                        if (!UBAs.Any(uba => uba.SerialNumber.Equals(ubaDto.UbaSN))) {
                             //add UBA device to UBAs list
                             UBA_Interface? intrefaceCOM = UBA_Interfaces.FirstOrDefault(ui => ui.PortName == ubaDto.ComPort);
                             UBA6 newUba = new UBA6(_ubaLogger, intrefaceCOM, ubaDto.UbaSN);
                             newUba.Address = uint.TryParse(ubaDto.Address, out var addr) ? addr : 0;
+_logger.LogInformation("==> 3-Add UBA {address} {sn} {comPort}", newUba.Address, ubaDto.UbaSN, ubaDto.ComPort);
 //_logger.LogInformation("==> get message 4");
-                        var result = await newUba.GetMessage(UBA_PROTO_QUERY.RECIPIENT.Device);
+                            var result = await newUba.GetMessage(UBA_PROTO_QUERY.RECIPIENT.Device);
                             if (result != null) {
                                 UBAs.Add(newUba);
                                 //_logger.LogInformation($"Added new UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac}");
@@ -574,20 +591,21 @@ _logger.LogInformation("4.2.Pending test {Channel} {Status}, set to {newState}",
                                 {
                                     if (UBAs[i].Address.ToString() == ubaDto.Address)
                                     {
+_logger.LogInformation("3.3 AddUBA2List GetMessage");
                                         message =  await UBAs[i].GetMessage(ubaDto.Channel.Equals("A") ? UBA_PROTO_QUERY.RECIPIENT.BptA : UBA_PROTO_QUERY.RECIPIENT.BptB);
                                         break;
                                     }
                                 }
                                 //_logger.LogInformation($"Message: {message}");
                                 await wcs.UpdateTestReadingData(ubaDto.RunningTestID, message.QueryResponse.Bpt, true);
-                            } else {
-                                //remove UBA device - no response
-_logger.LogInformation("==> Remove UBA: AddUBA2List");
-                                newUba.Dispose();
-                                newUba = null;
-                                _logger.LogError($"5-No Response from UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac}");
+//                            } else {
+//                                //remove UBA device - no response
+//_logger.LogInformation("==> Remove UBA: AddUBA2List");
+//                                newUba.Dispose();
+//                                newUba = null;
+//                                _logger.LogError($"5-No Response from UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac}");
                             }
-                        //}                     
+                        }                     
                     }
                 }
             } catch (Exception ex) {
@@ -621,7 +639,7 @@ _logger.LogInformation($"==> 1 Pending Test: {pendingTest.UbaSN}");
                     ////_logger.LogInformation("Found {Count} UBA devices.", ubaDeviceDtos.Count);
                     foreach (var ubaDto in ubaDeviceDtos) {
                         //check if UBA with the same SN already exists
-                        //if (!UBAs.Any(uba => uba.SerialNumber.Equals(ubaDto.UbaSN))) {
+                        if (!UBAs.Any(uba => uba.SerialNumber.Equals(ubaDto.UbaSN))) {
                             UBA_Interface? intrefaceCOM = UBA_Interfaces.FirstOrDefault(ui => ui.PortName == ubaDto.ComPort);
                             UBA6 newUba = new UBA6(_ubaLogger, intrefaceCOM, ubaDto.UbaSN);
                             newUba.Address = uint.TryParse(ubaDto.Address, out var addr) ? addr : 0;
@@ -647,7 +665,7 @@ _logger.LogInformation("==> Remove UBA: updateUBA2List");
                                     newUba = null;
                                 }
                             }
-                        //}                     
+                        }                     
                     }
 
                     for (int i = UBAs.Count - 1; i >= 0; i--)
@@ -785,26 +803,32 @@ _logger.LogInformation($"==> 3.2.pendingTestResponseDTO: STANDBY {Status} channe
             }
         }
 
-        protected async Task InitAsync(CancellationToken stoppingToken) {
-            try {
-                if (!isInitialized) {
-                    _logger.LogInformation("Initializing UBA Windows Service...");
-                    await wcs.CreateStstion();
-                    await addIntreface(stoppingToken);
-                    _logger.LogInformation("Initialization complete.");
-                    isInitialized = true;
+        protected async Task AddUBAsAsync(CancellationToken stoppingToken) {
 
+            int timeout = 1000;
+            var tcs = new TaskCompletionSource<Message?>();
+
+            _logger.LogInformation("Add UBA's");
+            while (true) {
+                CancellationTokenSource timeoutCts = new(timeout);
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+                try { 
+                    var delayTask = Task.Delay(timeout);
+                    var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
+                    stopwatch.Stop();
                     //add UBA's:
+//                    _logger.LogInformation("add UBA's");
                     await AddUBA2List(stoppingToken);
+                    await Task.Delay(200/*msec delay*/, stoppingToken);
+                } finally {
                 }
-            } catch (Exception ex) {
-                //old version: _logger.LogError(ex, "Failed to initialize UBA Windows Service.");
-                _logger.LogError("Failed to initialize UBA Windows Service.");
             }
+            _logger.LogInformation("Initialization exit.");
         }
 
         private async Task addIntreface(CancellationToken stoppingToken) {
-            _logger.LogInformation("addIntreface: Add interface");
+//            _logger.LogInformation("addIntreface: Add interface");
             try {
                 List<UbaDeviceDto> ubaDeviceDtos = await wcs.GetStationUBAs();
                 if (ubaDeviceDtos == null || ubaDeviceDtos.Count == 0) {
@@ -815,10 +839,11 @@ _logger.LogInformation($"==> 3.2.pendingTestResponseDTO: STANDBY {Status} channe
                     // Check if UBA with the same SN already exists
                     foreach (var ubaDto in ubaDeviceDtos) {
                         if (!UBA_Interfaces.Any(ui => ui.PortName == ubaDto.ComPort)) {
+_logger.LogInformation("==> 2-Add Interface {sn} {address} {comPort}", ubaDto.UbaSN, ubaDto.Address, ubaDto.ComPort);
                             UBA_Interfaces.Add(new UBA_Interface(_comLoger, ubaDto.ComPort));
                             _logger.LogInformation($"Added new UBA Interface: Port: {ubaDto.ComPort}");
                         } else {
-                            _logger.LogInformation($"UBA Interface with Port: {ubaDto.ComPort} already exists.");
+                            _logger.LogInformation($"UBA Interface with Port: {ubaDto.ComPort} already exists. ubaSN {ubaDto.UbaSN}");
                         }
                     }
                 }

@@ -13,6 +13,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using UBA_MSG;
 using UBA_PROTO_QUERY;
+using UBA6Library;
+using UBA6Library.WebServerApi.Services.web_console.Controllers.PendingTasks.Models;
+using UBA6Library.WebServerApi.Services.WebConsole;
+using UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests;
+using UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.Models;
+using UBA6Library.WebServerApi.Services.WebConsole.Model;
 
 
 
@@ -25,12 +31,14 @@ namespace UBA6Library {
         private CancellationTokenSource? _cts;
         private Task? _processingTask;
         private Task? _readerTask;
+        private Task? _pendingTask;
         public event EventHandler<ProtoMessageEventArg>? MessageReceived;
         private bool disposed = false;
 //        private int messageSize = 0;
         protected static UInt32 messageId = 0;
         private int failes { get; set; } = 0; // the number of failed to open the port 
         public string PortName => sp?.PortName ?? "Not Connected";
+        private WebConsoleService wcs;
 
         public enum MessagePriority : int {
             BPT_STOP = 1,
@@ -275,19 +283,30 @@ _logger.LogInformation($"==> Remove Interface:");
 
         public void StartProcessing()
         {
-            if (_processingTask != null && !_processingTask.IsCompleted)
-            {
-                _logger.LogDebug("Queue processing already running.");
-                return;
-            }
-
             _cts = new CancellationTokenSource();
 
-            _processingTask = Task.Run(() => ProcessQueueAsync(_cts.Token));
+            // start queue proccesing 
+            if (_processingTask != null && !_processingTask.IsCompleted) {
+                _logger.LogDebug("Queue processing already running.");
+            } else {
+                _processingTask = Task.Run(() => ProcessQueueAsync(_cts.Token));
+            }
 
-            // NEW: start serial reader
-            _readerTask = Task.Run(() => ReadLoop(_cts.Token));
+            // start pending UBA resolution 
+            if (_pendingTask != null && !_pendingTask.IsCompleted) {
+                _logger.LogDebug("Pending UBA resolution already running.");
+            } else {
+                _pendingTask = Task.Run(() => ResolvePrendingUBAAsync(_cts.Token));
+            }
+
+            // start serial port reader
+            if (_readerTask != null && !_readerTask.IsCompleted) {
+                _logger.LogDebug("Serial port reader already running.");
+            } else {
+                _readerTask = Task.Run(() => SerialPortReadLoop(_cts.Token));
+            }
         }
+
         private void ReadExact(Stream stream, byte[] buffer, int count)
         {
             int offset = 0;
@@ -311,7 +330,7 @@ _logger.LogInformation($"==> Remove Interface:");
                 }
             }
         }
-        private void ReadLoop(CancellationToken token)
+        private void SerialPortReadLoop(CancellationToken token)
         {
             var parser = new MessageParser<Message>(() => new Message());
 
@@ -343,6 +362,7 @@ _logger.LogInformation($"==> Remove Interface:");
 
                     // 2. Read full payload
                     ReadExact(sp.BaseStream, buffer, (int)length);
+//                    _logger.LogInformation($"SerialPortReadLoop: {length}");
 
                     // 3. Parse protobuf
                     try {
@@ -404,7 +424,7 @@ _logger.LogInformation($"==> Remove Interface:");
                             byte[] byteMessage = message2byteArry(msg).ToArray();
                             sp?.Write(byteMessage, 0, byteMessage.Length);
 //                            _logger.LogInformation($"Sent message: {msg}\nSize:{byteMessage[0]} {BitConverter.ToString(byteMessage)}");
-//                            _logger.LogInformation($"Sent message: {msg}");
+                            _logger.LogInformation($"ProcessQueueAsync::Sent message: {msg}");
 
                         } catch (Exception) {
                             _logger.LogError($"Failed to send message: {msg}");
@@ -558,7 +578,7 @@ _logger.LogInformation($"==> Remove Interface:");
                 }
                 return null;
             }*/
-            _logger.LogInformation($"GetMessage: targateAddress {targateAddress}");
+//            _logger.LogInformation($"GetMessage: targateAddress {targateAddress}");
             Message queryMessage = UBA_Message_Factory.CreateQeuryMessage(targateAddress, recipient);
             timeout = 5000;
             Message? responseMessage = await EnqueueMessageAndWaitForResponseAsync(queryMessage, MessagePriority.QUERY_MESSAGE, timeout);
@@ -619,6 +639,9 @@ _logger.LogInformation($"==> Remove Interface:");
                                 _logger.LogInformation($"1-Timeout waiting for response with Message ID: {originalId} taskID: {completedTask.Id}-{tcs.Task.Id}");/// after {stopwatch.ElapsedMilliseconds} ms");
                                 return null;
                             } 
+                        }
+                        else if (priority == MessagePriority.TEST_ROUTINE) {
+                            return null;                            
                         } else {
                             _logger.LogInformation($"1-Wrong priority: {priority}");
                         }
@@ -723,6 +746,42 @@ _logger.LogInformation($"==> await EnqueueMessageAndWaitFileList {timeout}");
             return $"UBA_Interface: {sp?.PortName ?? "Not Connected"}";
         }
 
-    }
+        private async Task ResolvePrendingUBAAsync(CancellationToken cancellationToken) {
+            int timeout = 1000;
+            var tcs = new TaskCompletionSource<Message?>();
 
+            while (true) {
+                CancellationTokenSource timeoutCts = new(timeout);
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+                try { 
+                    using (timeoutCts) {
+                        var delayTask = Task.Delay(timeout);
+                        var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
+_logger.LogInformation($"==> ResolvePrendingUBAAsync: after {stopwatch.ElapsedMilliseconds} ms");
+                        stopwatch.Stop();
+
+                        GETPendingTasksDTO pt = await wcs.GetPendingTasks();
+                        if (pt != null) {
+                            if (pt?.PendingConnectionUbaDevices?.Count > 0) {
+                                
+                                foreach (var pendingDevice in pt.PendingConnectionUbaDevices) {
+                                    Message? t = await GetMessage(UBA_PROTO_QUERY.RECIPIENT.Device, Convert.ToUInt32(pendingDevice.Address));
+                                    if (t != null) {
+                                        _logger.LogInformation($"Received message from UBA Device '{t?.QueryResponse.Recipient}' {t?.QueryResponse.Device.Settings}");
+                                        if (t != null) {
+                                            await wcs.DeviceFound(t.QueryResponse, pendingDevice.ComPort);
+                                        }
+                                    } else {
+                                        _logger.LogWarning($"wrong message from UBA Device on Port {pendingDevice.ComPort} at Address {pendingDevice.Address}");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } finally {
+                }
+            }
+        }
+    }
 }

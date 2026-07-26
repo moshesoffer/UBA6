@@ -15,6 +15,7 @@ using UBA_PROTO_CMD;
 using UBA_PROTO_FM;
 using UBA_PROTO_QUERY;
 using UBA_PROTO_TR;
+using UBA6Library.WebServerApi.Services.WebConsole;
 using UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.Models;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using static UBA6Library.UBA_Interface;
@@ -29,6 +30,9 @@ namespace UBA6Library {
         public Channel AB { get; set; } = new Channel(UBA_PROTO_CHANNEL.ID.Ab);
         public int VPS = 0;
         private bool _disposed;
+        private CancellationTokenSource? _cts;
+        private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
+        private Task? _keepaliveTask;
         
         public LineCalibrationData CalDataLineA = new LineCalibrationData();
         public LineCalibrationData CalDataLineB = new LineCalibrationData();
@@ -40,19 +44,21 @@ namespace UBA6Library {
         public UBA6(ILogger<UBA6> logger, UBA_Interface intrefece) : base(logger) {
             UBA_Interface = intrefece;
             UBA_Interface.MessageReceived += UBA_Interface_MessageReceived;
-
         }        
 
         public UBA6(ILogger<UBA6> logger, UBA_Interface com, string sn) : this(logger, com) {
             this.SerialNumber = sn;
+
+_logger.LogInformation($"2 UBA.StartProcessing {SerialNumber} {UBA_Interface.PortName}");
+            StartProcessing();
         }
+
         public void Dispose()
-        {
-            UBA_Interface.Dispose();
-            
+        {            
             Dispose(true);
             GC.SuppressFinalize(this);
         }
+
         protected virtual void Dispose(bool disposing)
         {
             if (_disposed)
@@ -72,6 +78,19 @@ namespace UBA6Library {
         public void SetIntreface(UBA_Interface uBA_Interface) {
             this.UBA_Interface = uBA_Interface;
         }
+
+        public void StartProcessing()
+        {
+            _cts = new CancellationTokenSource();
+
+            // start queue proccesing 
+            if (_keepaliveTask != null) {//} && !_keepaliveTask.IsCompleted) {
+                _logger.LogDebug("Keepalive already running.");
+            } else {
+                _keepaliveTask = Task.Run(() => KeepaliveAsync(_cts.Token));
+            }
+        }
+
         private void UBA_Interface_MessageReceived(object? sender, ProtoMessageEventArg e) {
 
             if (e.Msg.Head?.SenderAddress == Address) { 
@@ -82,7 +101,6 @@ namespace UBA6Library {
             }
         }       
       
-
         public async Task UpdatedTime() {
             DateTime localTime = DateTime.Now;
             _logger.LogInformation($"==> UpdatedTime: {localTime}");    
@@ -92,6 +110,40 @@ namespace UBA6Library {
             SentMessage(UBA_Message_Factory.CreateMessage(Address,cmd));
         }
         
+        private async Task KeepaliveAsync(CancellationToken cancellationToken) {
+            CancellationTokenSource _cts1sec = new CancellationTokenSource();
+            int timeout = 1000;
+            var tcs = new TaskCompletionSource<Message?>();
+
+            while (!cancellationToken.IsCancellationRequested) {
+                CancellationTokenSource timeoutCts = new(timeout);
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+                try { 
+                    using (timeoutCts) {
+                        var delayTask = Task.Delay(timeout);
+                        var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
+                        stopwatch.Stop();
+
+                        await _semaphore.WaitAsync();
+
+                        try {
+                            //Channel A,B
+                            Message message = null;
+_logger.LogInformation("3.1 keepalive {address}", Address);
+                            message = await GetMessage(UBA_PROTO_QUERY.RECIPIENT.BptA);
+                            message = await GetMessage(UBA_PROTO_QUERY.RECIPIENT.BptB);
+                        } catch {
+                            _logger.LogError($"1-No Response from UBA Device: {Address}, SN: {SerialNumber}, MAC: {WebConsoleService.GetMacAddress()}");
+                        }
+
+                        _semaphore.Release();
+                    }
+                } finally {
+                }
+            }
+        }
+
         public void SentMessage(Message msg, MessagePriority priority = MessagePriority.DEFUALT) {
             msg.Head.TargetAddress = this.Address;
             //_logger.LogInformation($"==> SentMessage: {msg}");    
