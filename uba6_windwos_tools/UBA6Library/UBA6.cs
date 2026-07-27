@@ -49,7 +49,6 @@ namespace UBA6Library {
         public UBA6(ILogger<UBA6> logger, UBA_Interface com, string sn) : this(logger, com) {
             this.SerialNumber = sn;
 
-_logger.LogInformation($"2 UBA.StartProcessing {SerialNumber} {UBA_Interface.PortName}");
             StartProcessing();
         }
 
@@ -87,6 +86,7 @@ _logger.LogInformation($"2 UBA.StartProcessing {SerialNumber} {UBA_Interface.Por
             if (_keepaliveTask != null) {//} && !_keepaliveTask.IsCompleted) {
                 _logger.LogDebug("Keepalive already running.");
             } else {
+_logger.LogInformation($"Keepalive start");
                 _keepaliveTask = Task.Run(() => KeepaliveAsync(_cts.Token));
             }
         }
