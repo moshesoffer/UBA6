@@ -232,7 +232,7 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
         }
 
         public async Task DeviceFound(UBA_PROTO_QUERY.query_response_message meg, string comPort) { 
-            _logger.LogInformation($"Notifying server about found device {meg}...");
+            //_logger.LogInformation($"Notifying server about found device {meg}...");
             PendingUbaDeviceDTO p = new PendingUbaDeviceDTO();
             p.t.MachineMac = GetMacAddress();
             p.t.Address = meg.Device.Settings.Address.ToString();

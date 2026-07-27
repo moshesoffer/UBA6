@@ -34,20 +34,6 @@ namespace UBAService {
         private bool[] testInProgress = { false, false};
         private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
-        //timout control for async requests
-//        public const int AWAIT_TIMEOUT = 5000;
-//        static async Task<T> WithTimeout<T>(Task<T> task, int milliseconds)
-//        {
-//            using var cts = new System.Threading.CancellationTokenSource(milliseconds);
-//
-//            var completedTask = await Task.WhenAny(task, Task.Delay(-1, cts.Token));
-//
-//            if (completedTask != task)
-//                throw new TimeoutException($"Timeout after {milliseconds}ms");
-//
-//            return await task;
-//        }
-
         public Worker(ILogger<Worker> logger, ILogger<UBA6> ubaLogger, ILogger<WebConsoleService> webConsoleLogger, ILogger<UBA_Interface> COM_logger, IOptions<MyLocalSettings> settings) {
             _logger = logger;
             _ubaLogger = ubaLogger;
@@ -64,27 +50,29 @@ namespace UBAService {
                 _logger.LogInformation("Service starting. Log path: {Path}, Retry: {Retry}", _settings.LogPath, _settings.RetryCount);
                 while (!stoppingToken.IsCancellationRequested) {
                     if (!isInitialized) {
-                        try {
-                            _logger.LogInformation("Initializing UBA Windows Service...");
-                            await wcs.CreateStstion();
-                            await addIntreface(stoppingToken);
-                            _logger.LogInformation("Initialization complete.");
-                            isInitialized = true;
-                        } catch (Exception ex) {
-                            //old version: _logger.LogError(ex, "Failed to initialize UBA Windows Service.");
-                            _logger.LogError("Failed to initialize UBA Windows Service.");
-                        }
+                        await InitAsync(stoppingToken);
+//                        try {
+//                            _logger.LogInformation("Initializing UBA Windows Service...");
+//                            await wcs.CreateStstion();
+//                            await addIntreface(stoppingToken);
+//                            _logger.LogInformation("Initialization complete.");
+//                            isInitialized = true;
+//                        } catch (Exception ex) {
+//                            //old version: _logger.LogError(ex, "Failed to initialize UBA Windows Service.");
+//                            _logger.LogError("Failed to initialize UBA Windows Service.");
+//                        }
 
-                        AddUBAsAsync(stoppingToken);
+//                        AddUBAsAsync(stoppingToken);
                         //await Task.Delay(delay*10, stoppingToken);
 
                         //periodic query message to UBA for running test data - instantTestResults (state, startTime, step, voltage, current, temp, capacity, ..)
-                        StartPeriodicRunningTestUpdate(stoppingToken);
+//Moshe
+//                        StartPeriodicRunningTestUpdate(stoppingToken);
                         //StopPeriodicRunningTestUpdate();
 
                         //periodic received message from UBA Device
 //Moshe
-//                        StartPeriodicUBAUpdate(stoppingToken);
+                        StartPeriodicUBAUpdate(stoppingToken);
                         //StopPeriodicUBAUpdate();
 
                         //delete file list
@@ -105,7 +93,7 @@ namespace UBAService {
                                 if (cycle2++ % 1 == 0) {
                                     //if (testInProgress[0] == false) {
                                         //update RunningTestsController.Status change (UBA_PROTO_QUERY from UBA) - STANDBY,RUNNING,PAUSED,.. 
-                                        updateRunningTestStatus(pt?.PendingRunningTests);                                            
+//                                        updateRunningTestStatus(pt?.PendingRunningTests);                                            
                                     //}
                                     cycle2 = 0;
                                 }
@@ -130,7 +118,7 @@ namespace UBAService {
                             continue;
                         }
                     }
-                    await Task.Delay(1000/*msec delay*/, stoppingToken);
+                    await Task.Delay(300/*msec delay*/, stoppingToken);
                 }
             } catch (Exception ex) {
                 _logger.LogError(ex, "An error occurred in the UBA Service: {Message}", ex.Message);
@@ -159,7 +147,7 @@ namespace UBAService {
                     if (cycle2++ % 1 == 0) {
                         //Change Running test status (uba.Status) - done manually in web-console (confirm click)
 //Moshe
-//                        await refreshChannelReading();
+                        await refreshChannelReading();
                         cycle2 = 0;
                     }                    
                     _semaphore.Release();
@@ -182,7 +170,7 @@ namespace UBAService {
         //periodic received message from UBA Device
         public async Task StartPeriodicUBAUpdate(CancellationToken stoppingToken) {
             _cts3sec = new CancellationTokenSource();
-            var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(1000));
+            var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(500));
 
             try {
                 while (await timer.WaitForNextTickAsync(_cts3sec.Token)) {
@@ -501,25 +489,19 @@ _logger.LogInformation("==> 1-Add Interface {address} {comPort}", pendingDevice.
                         try {
 //_logger.LogInformation("==> get message 3: {address}", pendingDevice.Address);
                             //verify UBA already exist
-                            bool exist = false;
-                            for (int i = UBAs.Count - 1; i >= 0; i--)
-                            {
-                                if (pendingDevice.Address == UBAs[i].Address.ToString()) {
-                                    exist = true;
-                                    break;
-                                }
-                            }                    
-                            if (exist)
+                            if (UBAs.Any(uba => pendingDevice.Address == uba.Address.ToString()))
                             {
                                 break;
                             }
 
-                            Message? t = await UbaComInterface.GetMessage(UBA_PROTO_QUERY.RECIPIENT.Device, Convert.ToUInt32(pendingDevice.Address));
-                            if (t != null) {
-                                _logger.LogInformation($"Received message from UBA Device '{t?.QueryResponse.Recipient}' {t?.QueryResponse.Device.Settings}");
-                                await wcs.DeviceFound(t.QueryResponse, pendingDevice.ComPort);
-                            } else {
-                                _logger.LogWarning($"wrong message from UBA Device on Port {pendingDevice.ComPort} at Address {pendingDevice.Address}");
+                            if (!pendingDevice.Action.Equals("removeFromWatchList")) {
+                                Message? t = await UbaComInterface.GetMessage(UBA_PROTO_QUERY.RECIPIENT.Device, Convert.ToUInt32(pendingDevice.Address));
+                                if (t != null) {
+                                    _logger.LogInformation($"2 Received message from UBA Device '{t?.QueryResponse.Recipient}' {t?.QueryResponse.Device.Settings}");
+                                    await wcs.DeviceFound(t.QueryResponse, pendingDevice.ComPort);
+                                } else {
+                                    _logger.LogWarning($"wrong message from UBA Device on Port {pendingDevice.ComPort} at Address {pendingDevice.Address}");
+                                }
                             }
                         } catch
                         {
@@ -825,6 +807,48 @@ _logger.LogInformation($"==> 3.2.pendingTestResponseDTO: STANDBY {Status} channe
                 }
             }
             _logger.LogInformation("Initialization exit.");
+        }
+
+        protected async Task InitAsync(CancellationToken stoppingToken) {
+            try {
+                if (!isInitialized) {
+                    _logger.LogInformation("Initializing UBA Windows Service...");
+                    await wcs.CreateStstion();
+                    await addIntreface(stoppingToken);
+                    _logger.LogInformation("Initialization complete.");
+                    isInitialized = true;
+
+
+
+
+
+
+                    //add UBA's:
+
+                    await AddUBA2List(stoppingToken);
+                }
+            } catch (Exception ex) {
+                //old version: _logger.LogError(ex, "Failed to initialize UBA Windows Service.");
+                _logger.LogError("Failed to initialize UBA Windows Service.");
+            }
+
+//            int timeout = 1000;
+//            var tcs = new TaskCompletionSource<Message?>();
+//            while (true) {
+//                CancellationTokenSource timeoutCts = new(timeout);
+//                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+//                try { 
+//                    var delayTask = Task.Delay(timeout);
+//                    var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
+//                    stopwatch.Stop();
+//                    //add UBA's:
+//                    _logger.LogInformation("add UBA's");
+//                    //await AddUBA2List(stoppingToken);
+//                    await addIntreface(stoppingToken);
+//                } finally {
+//                }
+//            }
         }
 
         private async Task addIntreface(CancellationToken stoppingToken) {

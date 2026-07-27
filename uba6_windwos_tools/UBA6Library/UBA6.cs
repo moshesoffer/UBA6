@@ -130,7 +130,7 @@ _logger.LogInformation($"2 UBA.StartProcessing {SerialNumber} {UBA_Interface.Por
                         try {
                             //Channel A,B
                             Message message = null;
-_logger.LogInformation("3.1 keepalive {address}", Address);
+//_logger.LogInformation("3.1 keepalive {address}", Address);
                             message = await GetMessage(UBA_PROTO_QUERY.RECIPIENT.BptA);
                             message = await GetMessage(UBA_PROTO_QUERY.RECIPIENT.BptB);
                         } catch {

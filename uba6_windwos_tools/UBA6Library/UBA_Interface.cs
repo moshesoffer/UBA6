@@ -424,7 +424,7 @@ _logger.LogInformation($"==> Remove Interface:");
                             byte[] byteMessage = message2byteArry(msg).ToArray();
                             sp?.Write(byteMessage, 0, byteMessage.Length);
 //                            _logger.LogInformation($"Sent message: {msg}\nSize:{byteMessage[0]} {BitConverter.ToString(byteMessage)}");
-                            _logger.LogInformation($"ProcessQueueAsync::Sent message: {msg}");
+//                            _logger.LogInformation($"ProcessQueueAsync::Sent message: {msg}");
 
                         } catch (Exception) {
                             _logger.LogError($"Failed to send message: {msg}");
@@ -768,7 +768,7 @@ _logger.LogInformation($"==> ResolvePrendingUBAAsync: after {stopwatch.ElapsedMi
                                 foreach (var pendingDevice in pt.PendingConnectionUbaDevices) {
                                     Message? t = await GetMessage(UBA_PROTO_QUERY.RECIPIENT.Device, Convert.ToUInt32(pendingDevice.Address));
                                     if (t != null) {
-                                        _logger.LogInformation($"Received message from UBA Device '{t?.QueryResponse.Recipient}' {t?.QueryResponse.Device.Settings}");
+                                        _logger.LogInformation($"1 Received message from UBA Device '{t?.QueryResponse.Recipient}' {t?.QueryResponse.Device.Settings}");
                                         if (t != null) {
                                             await wcs.DeviceFound(t.QueryResponse, pendingDevice.ComPort);
                                         }
