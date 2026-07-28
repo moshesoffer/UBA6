@@ -131,8 +131,8 @@ _logger.LogInformation($"Keepalive start");
                             //Channel A,B
                             Message message = null;
 //_logger.LogInformation("3.1 keepalive {address}", Address);
-                            message = await GetMessage(UBA_PROTO_QUERY.RECIPIENT.BptA);
-                            message = await GetMessage(UBA_PROTO_QUERY.RECIPIENT.BptB);
+//                            message = await GetMessage(UBA_PROTO_QUERY.RECIPIENT.BptA);
+//                            message = await GetMessage(UBA_PROTO_QUERY.RECIPIENT.BptB);
                         } catch {
                             _logger.LogError($"1-No Response from UBA Device: {Address}, SN: {SerialNumber}, MAC: {WebConsoleService.GetMacAddress()}");
                         }
@@ -186,7 +186,7 @@ _logger.LogInformation($"Keepalive start");
                 ProtoHelper.CreateBPTCommand(UBA_PROTO_BPT.CMD_ID.Clear, ch)));
         }
 
-        public async Task<Message> GetMessage(RECIPIENT r = RECIPIENT.Device) {
+        public async Task<Message> (RECIPIENT r = RECIPIENT.Device) {
            return await UBA_Interface.GetMessage(r,this.Address);
         }
 

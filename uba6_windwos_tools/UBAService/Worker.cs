@@ -52,7 +52,7 @@ namespace UBAService {
                         //AddUBAsAsync(stoppingToken);
 
                         //periodic query message to UBA for running test data - instantTestResults (state, startTime, step, voltage, current, temp, capacity, ..)
-                        //StartPeriodicRunningTestUpdate(stoppingToken);    //StopPeriodicRunningTestUpdate();
+                        StartPeriodicRunningTestUpdate(stoppingToken);    //StopPeriodicRunningTestUpdate();
 
                         //periodic received message from UBA Device
                         StartPeriodicUBAUpdate(stoppingToken);              //StopPeriodicUBAUpdate();
@@ -93,10 +93,10 @@ namespace UBAService {
                 while (await timer.WaitForNextTickAsync(_cts1sec.Token)) {
                     await _semaphore.WaitAsync();
                     //query message to UBA for running test data - instantTestResults (state, startTime, step, voltage, current, temp, capacity, ..)
-                    //await updateRunningTestData();
+                    await updateRunningTestData();
 
                     //Change Running test status (uba.Status) - done manually in web-console (confirm click)
-                    //await refreshChannelReading();
+                    await refreshChannelReading();
                     _semaphore.Release();
 
                     await Task.Delay(500/*msec delay*/, stoppingToken);

@@ -142,10 +142,10 @@ export default function UbaCard({row}) {
 							.
 						</span>
 
-						<span style={{ display: 'block', textAlign: 'center', fontSize: '13px' }}>
+						<span style={{ display: 'block', textAlign: 'center', fontSize: '10px' }}>
 							<b>
 								{String(getTestRoutineName(row?.[channelIndex]))
-									.slice(0, 16)}
+									.slice(0, 28)}
 							</b>
 						</span>
 						<span style={{ display: 'block', textAlign: 'center', fontSize: '4px' }}>
@@ -200,8 +200,11 @@ export default function UbaCard({row}) {
 	return (
 		<Grid item >
 			<Card sx={{border: (row?.[0]?.status === statusCodes.ABORTED && row?.[0]?.error > 0) || (row?.[1]?.status === statusCodes.ABORTED && row?.[1]?.error > 0) ? '3px double #d64161' : '1px solid gray',}}>
-				<CardHeader title={`${String(row?.[0]?.machineName).slice(0, 16)}`} titleTypographyProps={{textAlign: 'center',}} />
+				<CardHeader title={`SerialNumber: ${String(row?.[0]?.ubaSN).slice(0, 28)}    (addr: ${String(row?.[0]?.address).slice(0, 28)})`} titleTypographyProps={{textAlign: 'center', whiteSpace: 'pre',}} />
 
+				<span style={{ textAlign: 'center', fontSize: '10px', whiteSpace: 'pre' }}>
+				<b>    machine:   {String(row?.[0]?.machineName).slice(0, 28)}</b>
+				</span>
 				<Divider sx={{ width: 300, borderColor: 'black', width: '300px' }} />
 
 				<CardContent>
