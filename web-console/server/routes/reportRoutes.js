@@ -240,4 +240,12 @@ router.post('/test-results/search', reportController.getTestResults);
  */
 router.get('/test-results/:reportID/:exportType', reportController.downloadReportsGraph);
 
+/**
+ * @swagger
+ * /test-results/{reportID}/{exportType}:
+ *   get:
+ * added by Moshe
+ */
+router.delete('/reports/:id', reportController.deleteReport);
+
 module.exports = router;

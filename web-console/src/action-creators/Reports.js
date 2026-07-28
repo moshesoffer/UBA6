@@ -41,7 +41,7 @@ export const getReports = async (authDispatch, reportsDispatch, settingsDispatch
 		authDispatch(setNotification({message: preparedMessage,}));
 	}
 }
-
+ 
 export const updateReport = async (authDispatch, reportsDispatch, settingsDispatch, metadata, report) => {
 	try {
 		await postData(authDispatch, `reports/${report.id}`, 'PATCH', {
@@ -63,6 +63,16 @@ export const getReportData = async (authDispatch, reportsDispatch, ids) => {
 		reportsDispatch(setTestsGraph(response));
 	} catch
 		(error) {
+		const preparedMessage = handleRequestError(error);
+		authDispatch(setNotification({message: preparedMessage,}));
+	}
+}
+
+export const deleteReport = async (authDispatch, reportsDispatch, settingsDispatch, metadata, report) => {
+	try {
+		await postData(authDispatch, `reports/${report.id}`, 'DELETE', report);
+		getReports(authDispatch, reportsDispatch, settingsDispatch, metadata);
+	} catch (error) {
 		const preparedMessage = handleRequestError(error);
 		authDispatch(setNotification({message: preparedMessage,}));
 	}

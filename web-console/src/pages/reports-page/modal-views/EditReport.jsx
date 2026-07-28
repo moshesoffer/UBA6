@@ -19,8 +19,8 @@ import {getInputValue, handleInputChange,} from 'src/utils/helper';
 
 function EditReport(props) {
 
-	const {metadata,} = props;
-
+	const {metadata,} = props; 
+	
 	const [testNameError, setTestNameError] = useState('');
 	const [batteryPNError, setBatteryPNError] = useState('');
 	const [batterySNError, setBatterySNError,] = useState('');

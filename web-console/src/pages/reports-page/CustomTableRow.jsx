@@ -1,6 +1,7 @@
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
+import DeleteIcon from '@mui/icons-material/Delete';
 import Checkbox from '@mui/material/Checkbox';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import BorderColorIcon from '@mui/icons-material/BorderColor';
@@ -13,13 +14,17 @@ import {getDate,} from 'src/services/string-definitions';
 import {statusCodes, getKeyByValue} from 'src/constants/unsystematic';
 
 import DownloadReport from './modal-views/DownloadReport';
+import {deleteReport,} from 'src/action-creators/Reports';
+import {useSettingsDispatch,} from 'src/store/SettingsProvider';
 
 export default function CustomTableRow(props) {
+	const {metadata,} = props;
 
 	const {row, selected, handleClick,} = props;
 
 	const authDispatch = useAuthDispatch();
 	const reportsDispatch = useReportsDispatch();
+	const settingsDispatch = useSettingsDispatch();
 
 	const handleEditClick = () => {
 		reportsDispatch(setCurrentReport(row));
@@ -30,6 +35,22 @@ export default function CustomTableRow(props) {
 		reportsDispatch(setCurrentReport(row));
 		authDispatch(setModal('download.report'));
 	};
+
+	const metadata1 = {
+	    page: 0,
+	    rowsPerPage: 50,
+	    order: "asc",
+	    orderBy: "testName",
+	    filters: ["", "", "", "", "", ""]
+	};
+	const handleDeleteClick = () => {
+		let choice = confirm('Confirm Delete Report?');
+		if(choice === true) {
+			deleteReport(authDispatch, reportsDispatch, settingsDispatch, metadata1, row);
+			return true;
+		}
+		return false;
+	}
 
 	return (
 		<TableRow hover tabIndex={-1} selected={selected}>
@@ -78,6 +99,9 @@ export default function CustomTableRow(props) {
 			</TableCell>
 
 			<TableCell>
+				<IconButton size="small" color="primary" onClick={handleDeleteClick}>
+					<DeleteIcon/>
+				</IconButton>
 				<IconButton size="small" color="primary" onClick={handleEditClick}>
 					<BorderColorIcon/>
 				</IconButton>

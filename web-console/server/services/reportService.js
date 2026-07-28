@@ -3,7 +3,7 @@ const {validateString, validateObject, validateArray,validatePlan, validateTestR
 const {checkOrderParameter, createFolderIfNotExists, readTextFromFile} = require('../utils/helper');
 const {DATE_RANGE,reportsDataPath,testResultsFileName,} = require('../utils/constants');
 const pool = require('../db');
-const { selectQuery, updateModel, createModel} = require('../db/genericCRUD');
+const { selectQuery, updateModel, createModel, deleteModel} = require('../db/genericCRUD');
 const { reportModel } = require('../models'); 
 const { v4: uuidv4 } = require('uuid');
 const path = require('node:path');
@@ -170,6 +170,10 @@ const getPendingReports = async (machineMac) => {
 	}
 };
 
+const deleteReport = async (id, data) => {
+    await  deleteModel(reportModel, id);
+};
+
 module.exports = {
 	getReports,
 	getTestResults,
@@ -177,5 +181,6 @@ module.exports = {
 	updateReport,
 	createReport,
 	createTestResultsFile,
-	getPendingReports
+	getPendingReports,
+	deleteReport
 };

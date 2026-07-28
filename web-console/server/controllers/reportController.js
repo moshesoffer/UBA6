@@ -1,5 +1,5 @@
 const logger = require('../utils/logger');
-const {getReports, getTestResults,updateReport} = require('../services/reportService');
+const {getReports, getTestResults,updateReport,deleteReport} = require('../services/reportService');
 const { downloadReportsGraph } = require('../utils/downloadReportGraphHelper');
 const { createReportAndTestResult, updateReportAndTestResult } = require('../services/transactionsService');
 
@@ -52,5 +52,14 @@ exports.downloadReportsGraph = async (req, res) => {
 	await downloadReportsGraph(req, res);
 };
 
+exports.deleteReport = async (req, res) => {
+    try {
+        await deleteReport(req.params.id);
+        res.status(204).end();
+    } catch (error) {
+        logger.error('deleteReport', error);
+        res.sendStatus(500);
+    }
+};
 
 
