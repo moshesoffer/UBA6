@@ -180,7 +180,7 @@ const deleteUbaDeviceAndTest = async (serial) => {
 
         await connection.commit();// Commit if all functions succeed
 
-        sendConnectionPendingTaskToUba( ubaDevice.machineMac, ubaDevice.address, ubaDevice.comPort, undefined, undefined, undefined, UBA_DEVICE_ACTIONS.REMOVE_FROM_WATCH_LIST, UI_FLOWS.DELETE_UBA_DEVICE );
+        sendConnectionPendingTaskToUba( ubaDevice.machineMac, ubaDevice.address, ubaDevice.comPort, undefined, undefined, ubaDevice.name, UBA_DEVICE_ACTIONS.REMOVE_FROM_WATCH_LIST, UI_FLOWS.DELETE_UBA_DEVICE );
 
     } catch (error) {
         if (connection) await connection.rollback(); // Rollback on error

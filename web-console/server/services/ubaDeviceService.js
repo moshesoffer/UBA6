@@ -43,10 +43,10 @@ const updateUbaDevice = async (ubaSN, data) => {
 	}
 	await updateModel(ubaDeviceModel, ubaSN, data);
 
-	if ((data.machineMac && ubaDevice.machineMac !== data.machineMac) || (data.address && ubaDevice.address !== data.address) || (data.comPort && ubaDevice.comPort !== data.comPort)) {
+	if ((data.machineMac && data.name && ubaDevice.machineMac !== data.machineMac) || (data.address && ubaDevice.address !== data.address) || (data.comPort && ubaDevice.comPort !== data.comPort)) {
 		//if machineMac or address or comPort changed, need to send remove pending task to uba
 		logger.info(`ubaDevice machineMac, address or comPort changed, sending remove pending task to uba for machineMac ${ubaDevice.machineMac}, address ${ubaDevice.address}, comPort ${ubaDevice.comPort}`);
-		sendConnectionPendingTaskToUba(ubaDevice.machineMac, ubaDevice.address, ubaDevice.comPort, undefined, undefined, undefined, UBA_DEVICE_ACTIONS.REMOVE_FROM_WATCH_LIST, UI_FLOWS.EDIT_UBA_DEVICE);
+		sendConnectionPendingTaskToUba(ubaDevice.machineMac, ubaDevice.address, ubaDevice.comPort, undefined, undefined, ubaDevice.name, UBA_DEVICE_ACTIONS.REMOVE_FROM_WATCH_LIST, UI_FLOWS.EDIT_UBA_DEVICE);
 	}
 	const machineMacToUpdate = data.machineMac || ubaDevice.machineMac;
 	const addressToUpdate = data.address || ubaDevice.address;

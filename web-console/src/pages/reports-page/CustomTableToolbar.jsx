@@ -37,7 +37,7 @@ export default function CustomTableToolbar(props) {
 	const handleBatteryPNFilter = event => handleFilters('batteryPN', event.target.value, setFilters, setPage);
 	const handleBatterySNFilter = event => handleFilters('batterySN', event.target.value, setFilters, setPage);
 	const handleTestNameFilter = event => handleFilters('testName', event.target.value, setFilters, setPage);
-	const handleUbaFilter = event => handleFilters('ubaSN', event.target.value, setFilters, setPage);
+	const handleUbaSNFilter = event => handleFilters('ubaSN', event.target.value, setFilters, setPage);
 	const handleMachineFilter = event => handleFilters('machineName', event.target.value, setFilters, setPage);
 	const handleDateRangeFilter = event => handleFilters('dateRange', event.target.value, setFilters, setPage);
 
@@ -51,6 +51,14 @@ export default function CustomTableToolbar(props) {
 				label={getText('testEditor.BATTERY_P_N')}
 				value={batteryPN}
 				onChange={handleBatteryPNFilter}
+				sx={width}
+			/>
+
+			<TextField
+				size="small"
+				label={getText('common.UBA_S_N')}
+				value={ubaSN}
+				onChange={handleUbaSNFilter}
 				sx={width}
 			/>
 
@@ -74,7 +82,7 @@ export default function CustomTableToolbar(props) {
 				size="small"
 				label={getText('reportsPage.UBA')}
 				value={ubaSN}
-				onChange={handleUbaFilter}
+				onChange={handleUbaSNFilter}
 				sx={width}
 			/>
 

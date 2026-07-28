@@ -5,6 +5,10 @@ export default [
 		label: ''
 	},
 	{
+		id: 'ubaSN',
+		label: getText('common.UBA_S_N'),
+	},
+	{
 		id: 'batteryPN',
 		label: getText('testEditor.BATTERY_P_N'),
 		width: '10%',

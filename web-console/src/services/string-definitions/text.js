@@ -29,7 +29,7 @@ export default {
 		TEMPERATURE: 'Temperature',
 		DATE: 'Date',
 		NOT_APPLICABLE: ' ',
-		LAB: 'Lab (Station)',
+		LAB: 'Machine (Station)',
 		TEST_CURRENTLY_RUNNING: 'Test is currently running',
 		STOP: 'Stop',
 		PAUSE: 'Pause',

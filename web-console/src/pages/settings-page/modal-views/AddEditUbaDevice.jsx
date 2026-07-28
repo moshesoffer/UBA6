@@ -107,6 +107,7 @@ function AddEditUbaDevice() {
 	const handleTestClick = async () => {
 		setTestRunStage(1);
 		setQueryError('');
+		const isNameValid = validateValue('name', currentUba.name);
 		const isMachineValid = validateValue('machineMac', currentUba.machineMac);
 		const isPortValid = validateValue('comPort', currentUba.comPort);
 		const isAddressValid = validateValue('address', currentUba.address);
@@ -115,7 +116,7 @@ function AddEditUbaDevice() {
 			return;
 		}
 
-		const queryObj = {machineMac: currentUba.machineMac, comPort: currentUba.comPort, address: currentUba.address,};
+		const queryObj = {name: currentUba.name, machineMac: currentUba.machineMac, comPort: currentUba.comPort, address: currentUba.address,};
 		if( openedModalType === addEditSettings.EDIT_UBA_DEVICE) {
 			queryObj.ubaSN = currentUba.ubaSN;
 			queryObj.ubaChannel = currentUba.ubaChannel;
@@ -137,7 +138,7 @@ function AddEditUbaDevice() {
 
 	const handleSubmitClick = () => {
 		const { action, actionResult, ...ubaToAddEdit} = { ...ubaDeviceQueryAnswer}
-		ubaToAddEdit.name = ubaName;
+		ubaToAddEdit.name = currentUba.name;
 		if (openedModalType === addEditSettings.EDIT_UBA_DEVICE) {
 			updateUbaDevice(authDispatch, ubaDevicesDispatch, ubaToAddEdit);
 		} else {
@@ -190,19 +191,17 @@ function AddEditUbaDevice() {
 					</FormHelperText>
 				</FormControl>
 
-				<Tooltip title={testRunStage === 1 || !ubaDeviceQueryAnswer.ubaSN || !ubaDeviceQueryAnswer.name || !ubaDeviceQueryAnswer.ubaChannel ? "This value can be edited only after a successful test" : ""} arrow>
-					<TextField
-						fullWidth
-						size="small"
-						disabled={testRunStage === 1 || !ubaDeviceQueryAnswer.ubaSN || !ubaDeviceQueryAnswer.name || !ubaDeviceQueryAnswer.ubaChannel}
-						error={validateString(nameError)}
-						label={getText('common.NAME')}
-						value={ubaName || getInputValue(currentUba, 'name')}
-						onChange={event => { setUbaName(event.target.value); setNameError(''); } }
-						helperText={nameError}
-					/>
-				</Tooltip>
-				
+				<TextField
+					fullWidth
+					size="small"
+					disabled={testRunStage === 1}
+					error={validateString(nameError)}
+					label={getText('common.NAME')}
+					value={getInputValue(currentUba, 'name')}
+					onChange={event => {setTestRunStage(0); setQueryError(''); handleChange('name', event.target.value) } }
+					helperText={nameError}
+				/>
+
 				<FormControl fullWidth size="small" error={validateString(machineError)}>
 					<InputLabel>
 						{getText('common.LAB')}

@@ -5,6 +5,10 @@ export default [
 		label: ''
 	},
 	{
+		id: 'ubaSN',
+		label: getText('common.UBA_S_N'),
+	},
+	{
 		id: 'name',
 		label: getText('common.NAME'),
 	},
