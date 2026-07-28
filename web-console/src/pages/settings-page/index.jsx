@@ -18,6 +18,7 @@ import {addEditSettings,} from 'src/constants/unsystematic';
 import UbaDevices from './uba-devices';
 import Machines from './machines';
 import Cells from './cells';
+import {webConsole,} from 'src/../swVersion';
 
 const UBA_DEVICES = 'ubaDevices';
 const MACHINES = 'machines';
@@ -64,6 +65,13 @@ export default function SettingsPage() {
 	return (
 		<Container maxWidth="false">
 			<Card>
+				<div style={{ display: 'inline-block' }}>
+				    <span style={{ fontFamily: 'monospace', whiteSpace: 'nowrap', fontSize: '16px' }}>
+				        {String('SW-Version: ').padEnd(8, ' ')} 
+						{webConsole.SW_VERSION}
+				    </span>
+				</div>
+
 				<Stack direction="row" justifyContent="space-between" >
 					<Tabs value={currentTab} onChange={handleChangeTab} >
 						<Tab value={UBA_DEVICES} label={getText('mainPage.UBA_DEVICES')}/>
