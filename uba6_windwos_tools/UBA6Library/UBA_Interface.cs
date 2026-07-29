@@ -296,7 +296,8 @@ _logger.LogInformation($"==> Remove Interface:");
             if (_pendingTask != null && !_pendingTask.IsCompleted) {
                 _logger.LogDebug("Pending UBA resolution already running.");
             } else {
-                _pendingTask = Task.Run(() => ResolvePrendingUBAAsync(_cts.Token));
+//Moshe
+//                _pendingTask = Task.Run(() => ResolvePrendingUBAAsync(_cts.Token));
             }
 
             // start serial port reader
@@ -764,7 +765,8 @@ _logger.LogInformation($"==> ResolvePrendingUBAAsync: after {stopwatch.ElapsedMi
                         GETPendingTasksDTO pt = await wcs.GetPendingTasks();
                         if (pt != null) {
                             if (pt?.PendingConnectionUbaDevices?.Count > 0) {
-                                
+
+//Moshe                                
                                 foreach (var pendingDevice in pt.PendingConnectionUbaDevices) {
                                     Message? t = await GetMessage(UBA_PROTO_QUERY.RECIPIENT.Device, Convert.ToUInt32(pendingDevice.Address));
                                     if (t != null) {

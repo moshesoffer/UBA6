@@ -434,7 +434,7 @@ _logger.LogInformation("==> 1-Add Interface {address} {comPort}", pendingDevice.
                     UBA_Interface? UbaComInterface = UBA_Interfaces.FirstOrDefault(ui => ui.PortName == pendingDevice.ComPort);
                     if (UbaComInterface != null) {
                         try {
-//_logger.LogInformation("==> get message 3: {address}", pendingDevice.Address);
+//_logger.LogInformation("==> resolvePendingUBA: get message 3: {address}", pendingDevice.Address);
                             //verify UBA already exist
                             if (UBAs.Any(uba => pendingDevice.Address == uba.Address.ToString()))
                             {
