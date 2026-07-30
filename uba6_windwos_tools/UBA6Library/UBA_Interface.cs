@@ -63,20 +63,6 @@ namespace UBA6Library {
             _logger = logger;
         }
 
-        //timout control for async requests
-//        public const int AWAIT_TIMEOUT = 2000;
-//        static async Task<T> WithTimeout<T>(Task<T> task, int milliseconds)
-//        {
-//            using var cts = new System.Threading.CancellationTokenSource(milliseconds);
-//
-//            var completedTask = await Task.WhenAny(task, Task.Delay(-1, cts.Token));
-//
-//            if (completedTask != task)
-//                throw new TimeoutException($"Timeout after {milliseconds}ms");
-//
-//            return await task;
-//        }
-
         public UBA_Interface(ILogger<UBA_Interface> logger, string portName, int baudRate = 115200) : this(logger)
         {
             sp = new SerialPort(portName, baudRate);
@@ -363,16 +349,15 @@ _logger.LogInformation($"==> Remove Interface:");
 
                     // 2. Read full payload
                     ReadExact(sp.BaseStream, buffer, (int)length);
-//                    _logger.LogInformation($"SerialPortReadLoop: {length}");
+                    //_logger.LogInformation($"SerialPortReadLoop: {length}");
 
                     // 3. Parse protobuf
                     try {
-                    Message msg = parser.ParseFrom(buffer);
+                        Message msg = parser.ParseFrom(buffer);
+                        _logger.LogDebug($"RX Message: {msg}");
 
-                    _logger.LogDebug($"RX Message: {msg}");
-
-                    // 4. Raise event
-                    MessageReceived?.Invoke(this, new ProtoMessageEventArg(msg));
+                        // 4. Raise event
+                        MessageReceived?.Invoke(this, new ProtoMessageEventArg(msg));
 
                     } catch {
                         _logger.LogDebug($"ParseFrom: scan for next valid varint");
@@ -407,7 +392,7 @@ _logger.LogInformation($"==> Remove Interface:");
 
         }
         private async Task ProcessQueueAsync(CancellationToken cancellationToken) {
-            int timeout = 100;
+            int timeout = 50;
             var tcs = new TaskCompletionSource<Message?>();
 
             while (true) {
@@ -427,7 +412,7 @@ _logger.LogInformation($"==> Remove Interface:");
                             messageQueue.TryDequeue(out msg, out _);
                         }
                         if (msg != null) {
-                            if (Monitor.TryEnter(_serialReadLock, 5000)) {   
+                            if (Monitor.TryEnter(_serialReadLock, 500)) {   
                                 try {
                                     if (sp?.IsOpen == false) {
                                         sp.Open();
@@ -435,6 +420,8 @@ _logger.LogInformation($"==> Remove Interface:");
                                     msg.Head.SenderAddress = 0;
                                     byte[] byteMessage = message2byteArry(msg).ToArray();
                                     sp?.Write(byteMessage, 0, byteMessage.Length);
+                                    _logger.LogDebug($"Sent message: TargetAddress= {msg.Head.TargetAddress}");
+//                                    _logger.LogInformation($"Sent message: TargetAddress= {msg}");
 //                                    _logger.LogInformation($"Sent message: {msg}"); //\nSize:{byteMessage[0]} {BitConverter.ToString(byteMessage)}");
 
                                 } catch (Exception) {
