@@ -77,7 +77,7 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
                 .ToList();
 
 //_logger.LogInformation($"==> msg: {matchingUBAs.Count()}, {JsonSerializer.Serialize(matchingUBAs)}");
-//Moshe: wrong delte. need to based on ubaChannel field!
+//Moshe: wrong delete. need to based on ubaChannel field!
 //            //remove duplications    
 //            foreach (var uba in matchingUBAs.ToList()) {
 //                string UbaSN = uba.UbaSN;
@@ -162,7 +162,6 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
             instantTestResultsDTO.RunningTestID = runningTestID;
             
             //_logger.LogInformation($"==> voltage: {msg.ChannelStatus.Data.Voltage}");
-            //Moshe
             uint timestamp = msg.StartTime;
 //_logger.LogInformation($"==> timestamp: {timestamp} msg.State: {msg.State}");
 

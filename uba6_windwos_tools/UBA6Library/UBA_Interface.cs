@@ -293,12 +293,12 @@ _logger.LogInformation($"==> Remove Interface:");
             }
 
             // start pending UBA resolution 
-            if (_pendingTask != null && !_pendingTask.IsCompleted) {
-                _logger.LogDebug("Pending UBA resolution already running.");
-            } else {
 //Moshe
+//            if (_pendingTask != null && !_pendingTask.IsCompleted) {
+//                _logger.LogDebug("Pending UBA resolution already running.");
+//            } else {
 //                _pendingTask = Task.Run(() => ResolvePrendingUBAAsync(_cts.Token));
-            }
+//            }
 
             // start serial port reader
             if (_readerTask != null && !_readerTask.IsCompleted) {
@@ -407,42 +407,54 @@ _logger.LogInformation($"==> Remove Interface:");
 
         }
         private async Task ProcessQueueAsync(CancellationToken cancellationToken) {
-            while (!cancellationToken.IsCancellationRequested) {
-                Message? msg = null;
-                lock (messageQueue) {
-                    if (messageQueue.Count > 0)
-                        _logger.LogDebug($"Processing message queue, count: {messageQueue.Count}");
-                    messageQueue.TryDequeue(out msg, out _);
-                }
-                if (msg != null) {
-                    //Moshe
-                    if (Monitor.TryEnter(_serialReadLock, 5000)) {   
-                        try {
-                            if (sp?.IsOpen == false) {
-                                sp.Open();
-                            }
-                            msg.Head.SenderAddress = 0;
-                            byte[] byteMessage = message2byteArry(msg).ToArray();
-                            sp?.Write(byteMessage, 0, byteMessage.Length);
-//                            _logger.LogInformation($"Sent message: {msg}\nSize:{byteMessage[0]} {BitConverter.ToString(byteMessage)}");
-//                            _logger.LogInformation($"ProcessQueueAsync::Sent message: {msg}");
+            int timeout = 100;
+            var tcs = new TaskCompletionSource<Message?>();
 
-                        } catch (Exception) {
-                            _logger.LogError($"Failed to send message: {msg}");
-                            if ((sp?.IsOpen == false) && (failes++ > MAX_PORT_READ_RETRIES)) { 
-                                _logger.LogInformation("Serial port is closed, attempting to reopen.");
-                                this.SwitchCom(sp.PortName, true);
-                            }
-                        } finally {
+            while (true) {
+                CancellationTokenSource timeoutCts = new(timeout);
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+                try { 
+                    using (timeoutCts) {
+                        var delayTask = Task.Delay(timeout);
+                        var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
+                        stopwatch.Stop();
+
+                        Message? msg = null;
+                        lock (messageQueue) {
+                            if (messageQueue.Count > 0)
+                                _logger.LogDebug($"Processing message queue, count: {messageQueue.Count}");
+                            messageQueue.TryDequeue(out msg, out _);
                         }
-                    } else {
-                        messageQueue.Enqueue(msg, 1);
-                        _logger.LogWarning("Serial port is busy reading, skipping write for this cycle.");
+                        if (msg != null) {
+                            if (Monitor.TryEnter(_serialReadLock, 5000)) {   
+                                try {
+                                    if (sp?.IsOpen == false) {
+                                        sp.Open();
+                                    }
+                                    msg.Head.SenderAddress = 0;
+                                    byte[] byteMessage = message2byteArry(msg).ToArray();
+                                    sp?.Write(byteMessage, 0, byteMessage.Length);
+//                                    _logger.LogInformation($"Sent message: {msg}"); //\nSize:{byteMessage[0]} {BitConverter.ToString(byteMessage)}");
+
+                                } catch (Exception) {
+                                    _logger.LogError($"Failed to send message: {msg}");
+                                    if ((sp?.IsOpen == false) && (failes++ > MAX_PORT_READ_RETRIES)) { 
+                                        _logger.LogInformation("Serial port is closed, attempting to reopen.");
+                                        this.SwitchCom(sp.PortName, true);
+                                    }
+                                } finally {
+                                }
+                            } else {
+                                messageQueue.Enqueue(msg, 1);
+                                _logger.LogWarning("Serial port is busy reading, skipping write for this cycle.");
+                            }
+                            Monitor.Exit(_serialReadLock);
+                        } else {
+                        }
                     }
-                    Monitor.Exit(_serialReadLock);
-                } else {
+                } finally {
                 }
-                await Task.Delay(100, cancellationToken); // Avoid busy
             }
         }
         /// <summary>
@@ -765,8 +777,6 @@ _logger.LogInformation($"==> ResolvePrendingUBAAsync: after {stopwatch.ElapsedMi
                         GETPendingTasksDTO pt = await wcs.GetPendingTasks();
                         if (pt != null) {
                             if (pt?.PendingConnectionUbaDevices?.Count > 0) {
-
-//Moshe                                
                                 foreach (var pendingDevice in pt.PendingConnectionUbaDevices) {
                                     Message? t = await GetMessage(UBA_PROTO_QUERY.RECIPIENT.Device, Convert.ToUInt32(pendingDevice.Address));
                                     if (t != null) {

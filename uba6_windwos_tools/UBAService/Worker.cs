@@ -49,32 +49,17 @@ namespace UBAService {
                     if (!isInitialized) {
                         await InitAsync(stoppingToken);
 
-                        //AddUBAsAsync(stoppingToken);
+                        /*Update Running test status (uba.Status) - done manually in web-console (confirm click)
+                          periodic query message to UBA for running test data - instantTestResults (state, startTime, step, voltage, current, temp, capacity, ..)*/
+                        StartPeriodicRunningTestUpdate(stoppingToken);    
 
-                        //periodic query message to UBA for running test data - instantTestResults (state, startTime, step, voltage, current, temp, capacity, ..)
-                        StartPeriodicRunningTestUpdate(stoppingToken);    //StopPeriodicRunningTestUpdate();
+                        /*periodic received message from UBA Device - Add Interface if needed
+                          add UBA device to UBAs list (GETPendingTestResponse)*/
+                        StartPeriodicUBAUpdate(stoppingToken);
 
-                        //periodic received message from UBA Device
-                        StartPeriodicUBAUpdate(stoppingToken);              //StopPeriodicUBAUpdate();
-
-                    } else {
-                        try {
-                            GETPendingTasksDTO pt = await wcs.GetPendingTasks();
-                            if (pt != null) {
-//_logger.LogInformation("PendingRunningTests {count}", pt?.PendingRunningTests?.Count);
-                                //_logger.LogInformation("PendingRunningTests {count}", pt?.PendingRunningTests?.Count);
-                                if (pt?.PendingRunningTests?.Count > 0) {
-                                    //pole RunningTestsController.Status change (GETPendingTestResponse) - STANDBY,RUNNING,PAUSED,..
-                                    await resolvePendingRunningTest(pt?.PendingRunningTests);
-                                }
-                            }
-
-                        } catch {
-                            _logger.LogError("GetPendingTasks failed");
-                            continue;
-                        }
+                        //periodic pole RunningTestsController.Status change (GETPendingTestResponse) - STANDBY,RUNNING,PAUSED,..
+                        StartPeriodicUpdatePendingRunningTest(stoppingToken);
                     }
-                    await Task.Delay(300/*msec delay*/, stoppingToken);
                 }
             } catch (Exception ex) {
                 _logger.LogError(ex, "An error occurred in the UBA Service: {Message}", ex.Message);
@@ -84,7 +69,6 @@ namespace UBAService {
         }
 
         private CancellationTokenSource? _cts1sec;
-        //periodic query message to UBA for running test data - instantTestResults (state, startTime, step, voltage, current, temp, capacity, ..)
         public async Task StartPeriodicRunningTestUpdate(CancellationToken stoppingToken) {
             int timeout = 1000;
             var tcs = new TaskCompletionSource<Message?>();
@@ -100,10 +84,10 @@ namespace UBAService {
                         stopwatch.Stop();
 
                         await _semaphore.WaitAsync();
-                        //query message to UBA for running test data - instantTestResults (state, startTime, step, voltage, current, temp, capacity, ..)
+                        //Update Running test status (uba.Status) - done manually in web-console (confirm click)
                         await updateRunningTestData();
 
-                        //Change Running test status (uba.Status) - done manually in web-console (confirm click)
+                        //query message to UBA for running test data - instantTestResults (state, startTime, step, voltage, current, temp, capacity, ..)
                         await refreshChannelReading();
                         _semaphore.Release();
 
@@ -117,8 +101,6 @@ namespace UBAService {
             _cts1sec?.Cancel();
         }
 
-
-        private CancellationTokenSource? _cts3sec;
         //periodic received message from UBA Device
         public async Task StartPeriodicUBAUpdate(CancellationToken stoppingToken) {
             int timeout = 500;
@@ -135,18 +117,19 @@ namespace UBAService {
                         stopwatch.Stop();
 
 
-                    await _semaphore.WaitAsync();
-                    GETPendingTasksDTO pt = await wcs.GetPendingTasks();
-                    if (pt != null) {
-                        if (pt?.PendingConnectionUbaDevices?.Count > 0) {
-                            //handle received message from UBA Device (PendingConnectionUbaDevice, uba.ComPort)
-                            await resolvePendingUBA(pt?.PendingConnectionUbaDevices);
-                        }
+                        await _semaphore.WaitAsync();
+                        GETPendingTasksDTO pt = await wcs.GetPendingTasks();
+                        if (pt != null) {
+                            if (pt?.PendingConnectionUbaDevices?.Count > 0) {
+                                //handle received message from UBA Device (PendingConnectionUbaDevice, uba.ComPort)
+                                await resolvePendingUBA(pt?.PendingConnectionUbaDevices);
+                            }
 
-                        //add UBA device to UBAs list (GETPendingTestResponse)
-                        await updateUBA2List(pt?.PendingRunningTests);
+                            //add UBA device to UBAs list (GETPendingTestResponse)
+                            await updateUBA2List(pt?.PendingRunningTests);
+                        }
+                        _semaphore.Release();
                     }
-                    _semaphore.Release();
                 } finally {
                 }
             }
@@ -157,6 +140,56 @@ namespace UBAService {
             _cts1sec?.Cancel();
         }
     
+
+
+
+
+
+        public async Task StartPeriodicUpdatePendingRunningTest(CancellationToken stoppingToken) {
+            int timeout = 250;
+            var tcs = new TaskCompletionSource<Message?>();
+
+            while (true) {
+                CancellationTokenSource timeoutCts = new(timeout);
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+                try { 
+                    using (timeoutCts) {
+                        var delayTask = Task.Delay(timeout);
+                        var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
+                        stopwatch.Stop();
+
+                        await _semaphore.WaitAsync();
+                        GETPendingTasksDTO pt = await wcs.GetPendingTasks();
+                        if (pt != null) {
+//_logger.LogInformation("PendingRunningTests {count}", pt?.PendingRunningTests?.Count);
+                            //_logger.LogInformation("PendingRunningTests {count}", pt?.PendingRunningTests?.Count);
+                            if (pt?.PendingRunningTests?.Count > 0) {
+                                //pole RunningTestsController.Status change (GETPendingTestResponse) - STANDBY,RUNNING,PAUSED,..
+                                await resolvePendingRunningTest(pt?.PendingRunningTests);
+                            }
+                        }
+                        _semaphore.Release();
+                    }
+                } finally {
+                }
+            }
+        }
+       
+        public void StopPeriodicPendingRunningTestUpdate()
+        {
+            _cts1sec?.Cancel();
+        }
+
+
+
+
+
+
+
+
+
+
         private UBA6 getUbaFromList(string SN) {
             UBA6? existingUba = UBAs.FirstOrDefault(uba => uba.SerialNumber.Equals(SN));
             return existingUba;            
@@ -179,7 +212,7 @@ namespace UBAService {
                             {
                                 if (UBAs[i].Address.ToString() == ubaDto.Address)
                                 {
-_logger.LogInformation("3.1 refreshChannelReading {recipent} {address}", UBA_PROTO_QUERY.RECIPIENT.BptA, ubaDto.Address);
+//_logger.LogInformation("3.1 refreshChannelReading {recipent} {address}", UBA_PROTO_QUERY.RECIPIENT.BptA, ubaDto.Address);
                                     message = await UBAs[i].GetMessage(UBA_PROTO_QUERY.RECIPIENT.BptA);
                                     break;
                                 }
@@ -204,7 +237,7 @@ _logger.LogInformation("4.1.Pending test {Channel} {Status}, set to {newState} {
                             {
                                 if (UBAs[i].Address.ToString() == ubaDto.Address)
                                 {
-_logger.LogInformation("3.1 refreshChannelReading {recipent} {address}", UBA_PROTO_QUERY.RECIPIENT.BptB, ubaDto.Address);
+//_logger.LogInformation("3.1 refreshChannelReading {recipent} {address}", UBA_PROTO_QUERY.RECIPIENT.BptB, ubaDto.Address);
                                     message = await UBAs[i].GetMessage(UBA_PROTO_QUERY.RECIPIENT.BptB);
                                     break;
                                 }
@@ -323,7 +356,7 @@ _logger.LogInformation("==> resolvePendingRunningTest: get message 2 {device}", 
                         catch {
                             _logger.LogInformation($"SentMessageAsync fail");
                         };
-                        //await Task.Delay(500);
+                        
 //_logger.LogInformation("1.Pending test ch= {Channel} code= {chcode} st= {Status}, set to RUNNING", pendingTest.Channel, util.GetChannelFormDTO(pendingTest), pendingTest.Status);
                         uba.StartBPT(util.GetChannelFormDTO(pendingTest), util.GetIndexFormDTO(pendingTest));
                         await wcs.ChangeRunningTestStatus(pendingTest, (int)RunningTestsController.Status.RUNNING);
@@ -646,7 +679,7 @@ _logger.LogInformation($"==> 2 Remove UBA: {UBAs[i]}");
                                     pendingTestResponseDTO.Id = ubaDto.RunningTestID;
                                     pendingTestResponseDTO.Channel = ubaDto.Channel;
                                     pendingTestResponseDTO.UbaSN = ubaDto.UbaSN;
-_logger.LogInformation($"==> 3.1.pendingTestResponseDTO: RUNNING {Status} {message.QueryResponse.Bpt.StartTime}", Status, message.QueryResponse.Bpt.StartTime);
+_logger.LogInformation($"==> 8.1.pendingTestResponseDTO: RUNNING {Status} {message.QueryResponse.Bpt.StartTime}", Status, message.QueryResponse.Bpt.StartTime);
                                     await wcs.ChangeRunningTestStatus(pendingTestResponseDTO, (int)ubaDto.Status);//RunningTestsController.Status.RUNNING);
 
                                 } else if ((message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.Standby) ||
@@ -656,7 +689,7 @@ _logger.LogInformation($"==> 3.1.pendingTestResponseDTO: RUNNING {Status} {messa
                                     pendingTestResponseDTO.Id = ubaDto.RunningTestID;
                                     pendingTestResponseDTO.Channel = ubaDto.Channel;
                                     pendingTestResponseDTO.UbaSN = ubaDto.UbaSN;
-_logger.LogInformation($"==> 3.2.pendingTestResponseDTO: STANDBY {Status} channelStatus {channelStatus[0]}", Status, channelStatus[0]);
+_logger.LogInformation($"==> 8.2.pendingTestResponseDTO: STANDBY {Status} channelStatus {channelStatus[0]}", Status, channelStatus[0]);
 //                                    if ((channelStatus [0] == (int)UBA_PROTO_BPT.STATE.RunStep) ||
 //                                        (channelStatus [0] == (int)UBA_PROTO_BPT.STATE.Pause) ||
 //                                        (channelStatus [0] == (int)UBA_PROTO_BPT.STATE.StepCompleate)) {
@@ -751,7 +784,6 @@ _logger.LogInformation($"==> 3.2.pendingTestResponseDTO: STANDBY {Status} channe
                     //add UBA's:
 //                    _logger.LogInformation("add UBA's");
                     await AddUBA2List(stoppingToken);
-                    await Task.Delay(200/*msec delay*/, stoppingToken);
                 } finally {
                 }
             }
@@ -767,13 +799,7 @@ _logger.LogInformation($"==> 3.2.pendingTestResponseDTO: STANDBY {Status} channe
                     _logger.LogInformation("Initialization complete.");
                     isInitialized = true;
 
-
-
-
-
-
                     //add UBA's:
-
                     await AddUBA2List(stoppingToken);
                 }
             } catch (Exception ex) {
