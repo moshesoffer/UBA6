@@ -86,26 +86,30 @@ namespace UBAService {
         private CancellationTokenSource? _cts1sec;
         //periodic query message to UBA for running test data - instantTestResults (state, startTime, step, voltage, current, temp, capacity, ..)
         public async Task StartPeriodicRunningTestUpdate(CancellationToken stoppingToken) {
-            _cts1sec = new CancellationTokenSource();
-            var timer = new PeriodicTimer(TimeSpan.FromMicroseconds(1000)); //instaed of 1000 mSec, remaining time for execeution
+            int timeout = 1000;
+            var tcs = new TaskCompletionSource<Message?>();
 
-            try {
-                while (await timer.WaitForNextTickAsync(_cts1sec.Token)) {
-                    await _semaphore.WaitAsync();
-                    //query message to UBA for running test data - instantTestResults (state, startTime, step, voltage, current, temp, capacity, ..)
-                    await updateRunningTestData();
+            while (true) {
+                CancellationTokenSource timeoutCts = new(timeout);
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-                    //Change Running test status (uba.Status) - done manually in web-console (confirm click)
-                    await refreshChannelReading();
-                    _semaphore.Release();
+                try { 
+                    using (timeoutCts) {
+                        var delayTask = Task.Delay(timeout);
+                        var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
+                        stopwatch.Stop();
 
-                    await Task.Delay(500/*msec delay*/, stoppingToken);
+                        await _semaphore.WaitAsync();
+                        //query message to UBA for running test data - instantTestResults (state, startTime, step, voltage, current, temp, capacity, ..)
+                        await updateRunningTestData();
+
+                        //Change Running test status (uba.Status) - done manually in web-console (confirm click)
+                        await refreshChannelReading();
+                        _semaphore.Release();
+
+                    }
+                } finally {
                 }
-            } catch (OperationCanceledException) {
-                // expected when stopping
-            }
-            finally {
-                timer.Dispose();
             }
         }
         public void StopPeriodicRunningTestUpdate()
@@ -117,11 +121,20 @@ namespace UBAService {
         private CancellationTokenSource? _cts3sec;
         //periodic received message from UBA Device
         public async Task StartPeriodicUBAUpdate(CancellationToken stoppingToken) {
-            _cts3sec = new CancellationTokenSource();
-            var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(500));
+            int timeout = 500;
+            var tcs = new TaskCompletionSource<Message?>();
 
-            try {
-                while (await timer.WaitForNextTickAsync(_cts3sec.Token)) {
+            while (true) {
+                CancellationTokenSource timeoutCts = new(timeout);
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+                try { 
+                    using (timeoutCts) {
+                        var delayTask = Task.Delay(timeout);
+                        var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
+                        stopwatch.Stop();
+
+
                     await _semaphore.WaitAsync();
                     GETPendingTasksDTO pt = await wcs.GetPendingTasks();
                     if (pt != null) {
@@ -134,21 +147,16 @@ namespace UBAService {
                         await updateUBA2List(pt?.PendingRunningTests);
                     }
                     _semaphore.Release();
+                } finally {
                 }
-            } catch (OperationCanceledException) {
-                // expected when stopping
-            }
-            finally {
-                timer.Dispose();
             }
         }
+       
         public void StopPeriodicUBAUpdate()
         {
             _cts1sec?.Cancel();
         }
     
-
-
         private UBA6 getUbaFromList(string SN) {
             UBA6? existingUba = UBAs.FirstOrDefault(uba => uba.SerialNumber.Equals(SN));
             return existingUba;            

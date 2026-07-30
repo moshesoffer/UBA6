@@ -186,7 +186,7 @@ _logger.LogInformation($"Keepalive start");
                 ProtoHelper.CreateBPTCommand(UBA_PROTO_BPT.CMD_ID.Clear, ch)));
         }
 
-        public async Task<Message> (RECIPIENT r = RECIPIENT.Device) {
+        public async Task<Message> GetMessage(RECIPIENT r = RECIPIENT.Device) {
            return await UBA_Interface.GetMessage(r,this.Address);
         }
 
