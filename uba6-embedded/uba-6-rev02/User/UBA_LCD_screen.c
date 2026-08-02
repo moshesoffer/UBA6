@@ -419,7 +419,7 @@ void UBA_LCD_screen_load_channel(UBA_LCD_channel *lcd_ch, UBA_channel *ch) {
 	} else {
 		data_vaiue = UBA_channel_get_current(ch);
 	}
-	if (data_vaiue != lcd_ch->shadow.current_vlaue) {
+	//if (data_vaiue != lcd_ch->shadow.current_vlaue) {
 		if (abs(data_vaiue) >= 1000.0f) {
 			data_vaiue /= 1000.0f;
 			//sprintf(buffer, "%.5f %-3s", data_vaiue, "A");
@@ -433,7 +433,7 @@ void UBA_LCD_screen_load_channel(UBA_LCD_channel *lcd_ch, UBA_channel *ch) {
 		//update shadow
 		lcd_ch->shadow.current_vlaue = data_vaiue;
 		lcd_ch->shadow.current_value_changed = true;
-	}
+	//}
 
 	lcd_ch->shadow.capacity_vlaue_changed = false;
 	if (ch->id == UBA_CHANNLE_ID_AB) {
@@ -441,7 +441,7 @@ void UBA_LCD_screen_load_channel(UBA_LCD_channel *lcd_ch, UBA_channel *ch) {
 	} else {
 		data_vaiue = UBA_channel_get_capacity(ch);
 	}
-	if (data_vaiue != lcd_ch->shadow.capacity_vlaue) {
+	//if (data_vaiue != lcd_ch->shadow.capacity_vlaue) {
 		if (abs(data_vaiue) >= 1000) {
 			data_vaiue /= 1000.0f;
 			sprintf(buffer, "%.5f %-3s", data_vaiue, "Ah");
@@ -454,7 +454,7 @@ void UBA_LCD_screen_load_channel(UBA_LCD_channel *lcd_ch, UBA_channel *ch) {
 		//update shadow
 		lcd_ch->shadow.capacity_vlaue = data_vaiue;
 		lcd_ch->shadow.capacity_vlaue_changed = true;
-	}
+	//}
 
 	lcd_ch->shadow.temp_value_changed = false;
 	if (ch->id == UBA_CHANNLE_ID_AB) {
@@ -1972,7 +1972,7 @@ void UBA_LCD_screen_display_bpt_exit(UBA_LCD_screen *screen) {
 //	screen->shadow.ch_control = screen->ch_control;
 //	screen->ch_control = (screen->bpt->ch->id == UBA_PROTO_CHANNEL_ID_A) ? UBA_CHANNLE_ID_A : 
 //		  		         (screen->bpt->ch->id == UBA_PROTO_CHANNEL_ID_B) ? UBA_CHANNLE_ID_B : UBA_CHANNLE_ID_A;
-	
+
 	LCD_screen_force_draw = true;
 	UBA_LCD_draw_screen(screen);
 	LCD_screen_force_draw = false;
@@ -2660,6 +2660,32 @@ void UBA_LCD_screen_display_test_step_enter(UBA_LCD_screen *screen) {
 			screen->pages.test_info.test_info[i].pos.x += 12; 
 			screen->pages.test_info.test_info[i].elemnt.text.size = 1;
 			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  %d of %d", index+1, (screen->tr)->length);
+			break;
+
+		case TR_STEP_TYPE_STEP_TYPE_DELAY:
+			from = 0;
+			i = 0;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 1;
+			screen->pages.test_info.test_info[i].elemnt.text.color_text = UBA_GFX_COLOR_BLUE;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  delay time: ");
+			
+			i++;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 1;
+			screen->pages.test_info.test_info[i].elemnt.text.color_text = UBA_GFX_COLOR_BLUE;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  wait for temperature: ");
+			break;
+
+		case TR_STEP_TYPE_STEP_TYPE_LOOP:
+			from = 0;
+			i = 0;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 1;
+			screen->pages.test_info.test_info[i].elemnt.text.color_text = UBA_GFX_COLOR_BLUE;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  goto step: ");
+			
+			i++;
+			screen->pages.test_info.test_info[i].elemnt.text.size = 1;
+			screen->pages.test_info.test_info[i].elemnt.text.color_text = UBA_GFX_COLOR_BLUE;
+			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  repeat times: ");
 			break;
 	}
 

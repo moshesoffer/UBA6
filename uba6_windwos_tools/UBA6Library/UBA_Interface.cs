@@ -327,7 +327,7 @@ _logger.LogInformation($"==> Remove Interface:");
                 {
                     if (sp == null || !sp.IsOpen)
                     {
-                        Thread.Sleep(200);
+                        Thread.Sleep(250);
                         continue;
                     }
 
@@ -380,7 +380,6 @@ _logger.LogInformation($"==> Remove Interface:");
                 }
             }
         }
-
 
         private List<byte> message2byteArry(Message? msg = null) {
             if (msg == null) {

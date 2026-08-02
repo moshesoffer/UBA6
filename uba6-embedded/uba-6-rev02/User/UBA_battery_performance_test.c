@@ -278,6 +278,7 @@ bool UBA_BPT_isStep_completed(UBA_BPT *bpt) {
 				break;
 
 			case UBA_BPT_STEP_TYPE_DELAY:
+				if (bpt->current_step->type.delay.cool_down_temperature)
 				isCompleted |= UBA_channel_get_temperature(bpt->ch) < bpt->current_step->type.delay.cool_down_temperature;
 				isCompleted |= UBA_BPT_isStep_timeout(bpt, bpt->current_step->type.delay.delay_time);
 				break;
@@ -394,7 +395,7 @@ void UBA_BPT_pause_exit(UBA_BPT *bpt) {
 				break;
 			case UBA_BPT_STEP_TYPE_DELAY:
 				UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_DELAY);
-				UBA_6_fan_on(&UBA_6_device_g, true);
+				UBA_6_fan_on(&UBA_6_device_g, false);
 				break;
 			default:
 				UART_LOG_ERROR(UBA_COMP, "Step Type id is unknown:%u", bpt->current_step->type_id);
@@ -427,8 +428,14 @@ void UBA_BPT_run_step_enter(UBA_BPT *bpt) {
 				break;
 
 			case UBA_BPT_STEP_TYPE_DELAY:
+				UART_LOG_BPT_INFO("Start Step ==> Delay");
 				UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_DELAY);
+				UBA_6_fan_on(&UBA_6_device_g, false);
 				break;
+
+//			case UBA_BPT_STEP_TYPE_LOOP:
+//				UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_LOOP);
+//				break;
 
 			default:
 				UART_LOG_ERROR(UBA_COMP, "Step Type id is unknown:%u", bpt->current_step->type_id);

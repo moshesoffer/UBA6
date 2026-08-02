@@ -179,16 +179,18 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
             }
             instantTestResultsDTO.TestCurrentStep =(int) msg.CurrentStep;
             
-            //_logger.LogInformation($"==> date: {instantTestResultsDTO.Timestamp} state: {instantTestResultsDTO.TestState}");
-            //_logger.LogInformation($"==> volt: {msg.ChannelStatus.Data.Voltage}, crnt: {msg.ChannelStatus.Data.Current}, temp: {msg.ChannelStatus.Data.Temperature}, cap: {msg.ChannelStatus.Data.Capacity}");
-            instantTestResultsDTO.Voltage = msg.ChannelStatus.Data.Voltage;
-            instantTestResultsDTO.Current = msg.ChannelStatus.Data.Current/1000.0f;
-            instantTestResultsDTO.Temp = msg.ChannelStatus.Data.Temperature;
-            instantTestResultsDTO.Capacity = msg.ChannelStatus.Data.Capacity;
-            instantTestResultsDTO.Error = ((int)msg.Error ) | ((int)msg.ChannelStatus.Error) | ((int)msg.ChannelStatus.LineStatus[0].Error);
-            instantTestResultsDTO.IsLogData = isLog ? 1:0;
-            List<InstantTestResultsDTO> sadas = new List<InstantTestResultsDTO>() { instantTestResultsDTO };
-            await RT_Controller.InstantTestResults.Post<object, List<InstantTestResultsDTO>>(Client, sadas);            
+            if (msg.ChannelStatus.Data != null) {
+                //_logger.LogInformation($"==> date: {instantTestResultsDTO.Timestamp} state: {instantTestResultsDTO.TestState}");
+                //_logger.LogInformation($"==> volt: {msg.ChannelStatus.Data.Voltage}, crnt: {msg.ChannelStatus.Data.Current}, temp: {msg.ChannelStatus.Data.Temperature}, cap: {msg.ChannelStatus.Data.Capacity}");
+                instantTestResultsDTO.Voltage = msg.ChannelStatus.Data.Voltage;
+                instantTestResultsDTO.Current = msg.ChannelStatus.Data.Current/1000.0f;
+                instantTestResultsDTO.Temp = msg.ChannelStatus.Data.Temperature;
+                instantTestResultsDTO.Capacity = msg.ChannelStatus.Data.Capacity;
+                instantTestResultsDTO.Error = ((int)msg.Error ) | ((int)msg.ChannelStatus.Error) | ((int)msg.ChannelStatus.LineStatus[0].Error);
+                instantTestResultsDTO.IsLogData = isLog ? 1:0;
+                List<InstantTestResultsDTO> sadas = new List<InstantTestResultsDTO>() { instantTestResultsDTO };
+                await RT_Controller.InstantTestResults.Post<object, List<InstantTestResultsDTO>>(Client, sadas); 
+            }          
         }
 
         public async Task UpdateTestStatus(Guid runningTestID, UBA_PROTO_BPT.status_message msg, bool isLog = false) {
