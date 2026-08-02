@@ -14,6 +14,7 @@
 #include "UBA_common_def.h"
 #include "UBA_PROTO_BPT.pb.h"
 #include "UBA_PROTO_UBA6.pb.h"
+#include "UBA_PROTO_TR.pb.h"
 #include "UBA_GFX.h"
 
 #define UBA_BPT_STMP_MAX_TIME (0xffffffff)
@@ -29,6 +30,7 @@ typedef enum UBA_BPT_STEP_TYPE {
 	UBA_BPT_STEP_TYPE_CHARGE =UBA_PROTO_BPT_STEP_TYPE_CHARGE,
 	UBA_BPT_STEP_TYPE_DISCHARGE =UBA_PROTO_BPT_STEP_TYPE_DISCHARGE,
 	UBA_BPT_STEP_TYPE_DELAY =UBA_PROTO_BPT_STEP_TYPE_DELAY,
+	UBA_BPT_STEP_TYPE_LOOP =UBA_PROTO_BPT_STEP_TYPE_LOOP,
 	UBA_BPT_STEP_TYPE_MAX =UBA_PROTO_BPT_STEP_TYPE_MAX,
 	UBA_BPT_STEP_TYPE_INVALID = UBA_PROTO_BPT_STEP_TYPE_INVALID
 
@@ -132,6 +134,7 @@ typedef struct UBA_BPT_step {
 		UBA_BPT_charge charge;
 		UBA_BPT_discharge discharge;
 		UBA_BPT_delay delay;
+		TR_Loop loop;
 	} type;
 } UBA_BPT_step;
 

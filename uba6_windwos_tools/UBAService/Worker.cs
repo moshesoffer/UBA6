@@ -73,7 +73,7 @@ namespace UBAService {
 
         private CancellationTokenSource? _cts;
         public async Task StartPeriodicRunningTestUpdate(CancellationToken stoppingToken) {
-            int timeout = 250;
+            int timeout = 300;
             var tcs = new TaskCompletionSource<Message?>();
 
             while (true) {
@@ -173,7 +173,7 @@ namespace UBAService {
         }
     
         public async Task StartPeriodicUpdatePendingRunningTest(CancellationToken stoppingToken) {
-            int timeout = 250;
+            int timeout = 300;
             var tcs = new TaskCompletionSource<Message?>();
 
             while (true) {
@@ -312,8 +312,8 @@ _logger.LogInformation("4.2.Pending test {Channel} {Status}, set to {newState}",
             }
             finally
             {
-                _semaphore.Release();
             }
+            _semaphore.Release();
 
             uba.ClearBPT(util.GetChannelFormDTO(pendingTest));
 

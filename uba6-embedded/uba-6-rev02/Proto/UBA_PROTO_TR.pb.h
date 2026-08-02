@@ -23,9 +23,9 @@ typedef enum _TR_STEP_TYPE {
 
 /* Struct definitions */
 typedef struct _TR_Loop {
-    uint8_t loop_to_step;
-    uint16_t loop_size;
-    uint16_t loop_counter;
+    uint32_t loop_to_step;
+    uint32_t loop_size;
+    uint32_t loop_counter;
 } TR_Loop;
 
 typedef struct _TR_config_step {
@@ -109,8 +109,8 @@ extern "C" {
 /* Struct field encoding specification for nanopb */
 #define TR_Loop_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, UINT32,   loop_to_step,      1) \
-X(a, STATIC,   SINGULAR, UINT32,   loop_size,         2) \
-X(a, STATIC,   SINGULAR, UINT32,   loop_counter,      3)
+X(a, STATIC,   SINGULAR, UINT32,   loop_counter,      2) \
+X(a, STATIC,   SINGULAR, UINT32,   loop_size,         3)
 #define TR_Loop_CALLBACK NULL
 #define TR_Loop_DEFAULT NULL
 

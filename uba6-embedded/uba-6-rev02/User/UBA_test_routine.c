@@ -119,6 +119,10 @@ bool UBA_TR_set_step_and_validate(UBA_BPT_step *step, TR_config_step *step_confi
 						ret = true;
 					}
 					break;
+				case UBA_BPT_STEP_TYPE_LOOP:
+					memcpy(&step->type.loop, &step_config->type.loop, sizeof(TR_Loop));
+					ret = true;
+					break;
 				default:
 					UART_LOG_CRITICAL(UBA_COMP, " step id %x is not valid", step->type_id);
 			}
@@ -233,8 +237,10 @@ void UBA_TR_print_step_config(TR_config_step *step) {
 					step->type.delay.delay_time);
 			break;
 		case TR_config_step_loop_tag:
-			LOG_COMP_DEBUG( "Loop - Size: %d",
-					step->type.loop.loop_size);
+			LOG_COMP_DEBUG( "Loop - Size: %d Counter %dStepToLoop %d",
+					step->type.loop.loop_size,
+					step->type.loop.loop_counter,
+					step->type.loop.loop_to_step);
 			break;
 		default:
 			LOG_COMP_DEBUG( "Unknown type");

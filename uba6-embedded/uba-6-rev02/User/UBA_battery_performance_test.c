@@ -418,6 +418,7 @@ void UBA_BPT_run_step_enter(UBA_BPT *bpt) {
 						bpt->current_step->type.charge.voltage);
 				UBA_channel_set_charge_param(bpt->ch, bpt->current_step->type.charge.current, bpt->current_step->type.charge.voltage);
 				UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_CHARGE);
+				UBA_6_fan_on(&UBA_6_device_g, true);
 				break;
 
 			case UBA_BPT_STEP_TYPE_DISCHARGE:
@@ -425,6 +426,7 @@ void UBA_BPT_run_step_enter(UBA_BPT *bpt) {
 						bpt->current_step->type.charge.voltage);
 				UBA_channel_set_discharge_param(bpt->ch, (&(bpt->current_step->type.discharge.current)));
 				UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_DISCHARGE);
+				UBA_6_fan_on(&UBA_6_device_g, true);
 				break;
 
 			case UBA_BPT_STEP_TYPE_DELAY:
@@ -433,9 +435,9 @@ void UBA_BPT_run_step_enter(UBA_BPT *bpt) {
 				UBA_6_fan_on(&UBA_6_device_g, false);
 				break;
 
-//			case UBA_BPT_STEP_TYPE_LOOP:
-//				UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_LOOP);
-//				break;
+			case UBA_BPT_STEP_TYPE_LOOP:
+				UART_LOG_BPT_INFO("Start Step ==> Loop");
+				break;
 
 			default:
 				UART_LOG_ERROR(UBA_COMP, "Step Type id is unknown:%u", bpt->current_step->type_id);
@@ -745,7 +747,7 @@ bool UBA_BPT_start(UBA_BPT *bpt) {
 		} 
 		bpt->error &= ~UBA_PROTO_UBA6_ERROR_USER_ABORT;
 
-		UBA_6_fan_on(&UBA_6_device_g, true);
+//		UBA_6_fan_on(&UBA_6_device_g, true);
 
 		return true;
 

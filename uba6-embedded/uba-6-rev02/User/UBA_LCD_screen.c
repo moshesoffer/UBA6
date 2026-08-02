@@ -939,7 +939,8 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 			lcd_bpt->btn_next.effect = UBA_GFX_EFFECT_VISIBLE;
 		}
 		if ((screen->tr != NULL && screen->bpt != NULL) &&
-			((screen->bpt)->current_step->step_index+1 == (screen->tr)->length)) {
+		  /*((screen->bpt)->current_step->step_index+1 == (screen->tr)->length)) {*/
+			((screen->bpt)->current_step->step_index+1 == channel_test->last_step_index)) {
 			UBA_LCD_page_BPT *lcd_ch = &screen->pages.screen_bpt;
 			lcd_ch->btn_next.effect = UBA_GFX_EFFECT_INVISIBLE;
 		}
@@ -953,7 +954,8 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 			lcd_bpt->btn_next.effect = UBA_GFX_EFFECT_VISIBLE;
 		}
 		if ((screen->tr != NULL && screen->bpt != NULL) &&
-			((screen->bpt)->current_step->step_index+1 == (screen->tr)->length)) {
+		  /*((screen->bpt)->current_step->step_index+1 == (screen->tr)->length)) {*/
+			((screen->bpt)->current_step->step_index+1 == channel_test->last_step_index)) {
 			UBA_LCD_page_BPT *lcd_ch = &screen->pages.screen_bpt;
 			lcd_ch->btn_next.effect = UBA_GFX_EFFECT_INVISIBLE;
 		}
