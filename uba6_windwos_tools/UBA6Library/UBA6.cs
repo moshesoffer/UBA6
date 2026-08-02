@@ -49,7 +49,7 @@ namespace UBA6Library {
         public UBA6(ILogger<UBA6> logger, UBA_Interface com, string sn) : this(logger, com) {
             this.SerialNumber = sn;
 
-            StartProcessing();
+            //StartProcessing();
         }
 
         public void Dispose()
@@ -122,6 +122,7 @@ _logger.LogInformation($"Keepalive start");
                 try { 
                     using (timeoutCts) {
                         var delayTask = Task.Delay(timeout);
+//_logger.LogInformation($"KeepaliveAsync: timeout= {timeout}");
                         var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
                         stopwatch.Stop();
 

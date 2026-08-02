@@ -49,8 +49,7 @@ namespace UBAService {
                     if (!isInitialized) {
                         await InitAsync(stoppingToken);
 
-                        /*Update Running test status (uba.Status) - done manually in web-console (confirm click)
-                          periodic query message to UBA for running test data - instantTestResults (state, startTime, step, voltage, current, temp, capacity, ..)*/
+                        //Update Running test status (uba.Status) - done manually in web-console (confirm click) 
                         StartPeriodicRunningTestUpdate(stoppingToken);    
 
                         /*periodic received message from UBA Device - Add Interface if needed
@@ -59,6 +58,10 @@ namespace UBAService {
 
                         //periodic pole RunningTestsController.Status change (GETPendingTestResponse) - STANDBY,RUNNING,PAUSED,..
                         StartPeriodicUpdatePendingRunningTest(stoppingToken);
+
+                        /*periodic keeplalive - BPT query message
+                          periodic query message to UBA for running test data - instantTestResults (state, startTime, step, voltage, current, temp, capacity, ..)*/
+                        StartPeriodicKeepalive(stoppingToken);
                     }
                 }
             } catch (Exception ex) {
@@ -68,8 +71,41 @@ namespace UBAService {
             }
         }
 
-        private CancellationTokenSource? _cts1sec;
+        private CancellationTokenSource? _cts;
         public async Task StartPeriodicRunningTestUpdate(CancellationToken stoppingToken) {
+            int timeout = 250;
+            var tcs = new TaskCompletionSource<Message?>();
+
+            while (true) {
+                CancellationTokenSource timeoutCts = new(timeout);
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+                try { 
+                    using (timeoutCts) {
+                        var delayTask = Task.Delay(timeout);
+//_logger.LogInformation($"StartPeriodicRunningTestUpdate: timeout= {timeout}");
+                        var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
+                        stopwatch.Stop();
+
+                        await _semaphore.WaitAsync();
+                        //Update Running test status (uba.Status) - done manually in web-console (confirm click)
+                        await updateRunningTestData();
+
+                        //Change UBA running test data - instantTestResults (state, startTime, step, voltage, current, temp, capacity, ..) - donein UBA 
+                        //await refreshChannelReading();
+                        _semaphore.Release();
+
+                    }
+                } finally {
+                }
+            }
+        }
+        public void StopPeriodicRunningTestUpdate()
+        {
+            _cts?.Cancel();
+        }
+
+        public async Task StartPeriodicKeepalive(CancellationToken stoppingToken) {
             int timeout = 1000;
             var tcs = new TaskCompletionSource<Message?>();
 
@@ -80,25 +116,20 @@ namespace UBAService {
                 try { 
                     using (timeoutCts) {
                         var delayTask = Task.Delay(timeout);
+//_logger.LogInformation($"StartPeriodicKeepalive: timeout= {timeout} after {stopwatch.ElapsedMilliseconds} ms");
                         var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
                         stopwatch.Stop();
 
-                        await _semaphore.WaitAsync();
-                        //Update Running test status (uba.Status) - done manually in web-console (confirm click)
-                        await updateRunningTestData();
-
-                        //query message to UBA for running test data - instantTestResults (state, startTime, step, voltage, current, temp, capacity, ..)
+                        //Change UBA running test data - instantTestResults (state, startTime, step, voltage, current, temp, capacity, ..) - donein UBA 
                         await refreshChannelReading();
-                        _semaphore.Release();
-
                     }
                 } finally {
                 }
             }
         }
-        public void StopPeriodicRunningTestUpdate()
+        public void StopPeriodicKeepalive()
         {
-            _cts1sec?.Cancel();
+            _cts?.Cancel();
         }
 
         //periodic received message from UBA Device
@@ -113,6 +144,7 @@ namespace UBAService {
                 try { 
                     using (timeoutCts) {
                         var delayTask = Task.Delay(timeout);
+//_logger.LogInformation($"StartPeriodicUBAUpdate: timeout= {timeout}");
                         var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
                         stopwatch.Stop();
 
@@ -137,14 +169,9 @@ namespace UBAService {
        
         public void StopPeriodicUBAUpdate()
         {
-            _cts1sec?.Cancel();
+            _cts?.Cancel();
         }
     
-
-
-
-
-
         public async Task StartPeriodicUpdatePendingRunningTest(CancellationToken stoppingToken) {
             int timeout = 250;
             var tcs = new TaskCompletionSource<Message?>();
@@ -156,6 +183,7 @@ namespace UBAService {
                 try { 
                     using (timeoutCts) {
                         var delayTask = Task.Delay(timeout);
+//_logger.LogInformation($"StartPeriodicUpdatePendingRunningTest: timeout= {timeout}");
                         var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
                         stopwatch.Stop();
 
@@ -178,17 +206,8 @@ namespace UBAService {
        
         public void StopPeriodicPendingRunningTestUpdate()
         {
-            _cts1sec?.Cancel();
+            _cts?.Cancel();
         }
-
-
-
-
-
-
-
-
-
 
         private UBA6 getUbaFromList(string SN) {
             UBA6? existingUba = UBAs.FirstOrDefault(uba => uba.SerialNumber.Equals(SN));
@@ -648,7 +667,6 @@ _logger.LogInformation($"==> 2 Remove UBA: {UBAs[i]}");
             }
         }
 
-
         protected async Task updateRunningTestData() {
             try {
                 List<UbaDeviceDto> ubaDeviceDtos = await wcs.GetStationUBAs();
@@ -664,12 +682,13 @@ _logger.LogInformation($"==> 2 Remove UBA: {UBAs[i]}");
                             {
                                 if (UBAs[i].Address.ToString() == ubaDto.Address)
                                 {
-//                                    message =  await UBAs[i].GetMessage(ubaDto.Channel.Equals("A") ? UBA_PROTO_QUERY.RECIPIENT.BptA : UBA_PROTO_QUERY.RECIPIENT.BptB);
+                                    message =  await UBAs[i].GetMessage(ubaDto.Channel.Equals("A") ? UBA_PROTO_QUERY.RECIPIENT.BptA : UBA_PROTO_QUERY.RECIPIENT.BptB);
                                     break;
                                 }
                             }
+                            //if (message != null) {
                             await wcs.UpdateTestReadingData(ubaDto.RunningTestID, message.QueryResponse.Bpt, true);
-
+                            
                             if (ubaDto.Channel.Equals("A") && (channelStatus [0] != (int)message.QueryResponse.Bpt.State)) {
                                 channelStatus [0] = (int)message.QueryResponse.Bpt.State;
                                 if ((message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.RunStep) ||
@@ -700,8 +719,9 @@ _logger.LogInformation($"==> 8.2.pendingTestResponseDTO: STANDBY {Status} channe
                                 }
                                 channelStatus [0] = (int)message.QueryResponse.Bpt.State;
                             }
+                            //}
                         } catch {
-                            //_logger.LogInformation($"Trying to update Running Tests for UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac} CH: {ubaDto.Channel} testName: {ubaDto.TestName}");
+                            _logger.LogInformation($"Trying to update Running Tests for UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac} CH: {ubaDto.Channel} testName: {ubaDto.TestName}");
                             //_logger.LogError($"8-No Response from UBA Device on Port");
                         }
                     }
@@ -779,6 +799,7 @@ _logger.LogInformation($"==> 8.2.pendingTestResponseDTO: STANDBY {Status} channe
 
                 try { 
                     var delayTask = Task.Delay(timeout);
+//_logger.LogInformation($"AddUBAsAsync: timeout= {timeout}");
                     var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
                     stopwatch.Stop();
                     //add UBA's:

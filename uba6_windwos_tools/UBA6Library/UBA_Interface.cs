@@ -283,7 +283,7 @@ _logger.LogInformation($"==> Remove Interface:");
 //            if (_pendingTask != null && !_pendingTask.IsCompleted) {
 //                _logger.LogDebug("Pending UBA resolution already running.");
 //            } else {
-//                _pendingTask = Task.Run(() => ResolvePrendingUBAAsync(_cts.Token));
+//                _pendingTask = Task.Run(() => ResolvePendingUBAAsync(_cts.Token));
 //            }
 
             // start serial port reader
@@ -387,12 +387,12 @@ _logger.LogInformation($"==> Remove Interface:");
                 msg = new Message();
             }
             List<byte> retByteList = [.. EncodeVarint((ulong)msg.CalculateSize()), .. msg.ToByteArray()];
-            _logger.LogDebug($"Pacekt Size: {retByteList.Count} Message Size:{msg.CalculateSize()} bytes");
+            _logger.LogDebug($"Packet Size: {retByteList.Count} Message Size:{msg.CalculateSize()} bytes");
             return retByteList;
 
         }
         private async Task ProcessQueueAsync(CancellationToken cancellationToken) {
-            int timeout = 50;
+        int timeout = 50; 
             var tcs = new TaskCompletionSource<Message?>();
 
             while (true) {
@@ -402,14 +402,20 @@ _logger.LogInformation($"==> Remove Interface:");
                 try { 
                     using (timeoutCts) {
                         var delayTask = Task.Delay(timeout);
+//_logger.LogInformation($"ProcessQueueAsync: timeout= {timeout}");
                         var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
                         stopwatch.Stop();
 
                         Message? msg = null;
                         lock (messageQueue) {
-                            if (messageQueue.Count > 0)
+                            if (messageQueue.Count > 0) {
                                 _logger.LogDebug($"Processing message queue, count: {messageQueue.Count}");
-                            messageQueue.TryDequeue(out msg, out _);
+                                try {
+                                    messageQueue.TryDequeue(out msg, out _);
+                                } catch (Exception) {
+                                    _logger.LogInformation($"Failed to dequeue message");
+                                }
+                            }
                         }
                         if (msg != null) {
                             if (Monitor.TryEnter(_serialReadLock, 500)) {   
@@ -420,7 +426,7 @@ _logger.LogInformation($"==> Remove Interface:");
                                     msg.Head.SenderAddress = 0;
                                     byte[] byteMessage = message2byteArry(msg).ToArray();
                                     sp?.Write(byteMessage, 0, byteMessage.Length);
-                                    _logger.LogDebug($"Sent message: TargetAddress= {msg.Head.TargetAddress}");
+//                                    _logger.LogDebug($"Sent message: TargetAddress= {msg.Head.TargetAddress}");
 //                                    _logger.LogInformation($"Sent message: TargetAddress= {msg}");
 //                                    _logger.LogInformation($"Sent message: {msg}"); //\nSize:{byteMessage[0]} {BitConverter.ToString(byteMessage)}");
 
@@ -433,11 +439,11 @@ _logger.LogInformation($"==> Remove Interface:");
                                 } finally {
                                 }
                             } else {
+//_logger.LogInformation($"Enqueuing message: msg");
                                 messageQueue.Enqueue(msg, 1);
                                 _logger.LogWarning("Serial port is busy reading, skipping write for this cycle.");
                             }
                             Monitor.Exit(_serialReadLock);
-                        } else {
                         }
                     }
                 } finally {
@@ -591,6 +597,8 @@ _logger.LogInformation($"==> Remove Interface:");
             var tcs = new TaskCompletionSource<Message?>();
             EventHandler<ProtoMessageEventArg>? handler = null;
             var originalId = message.Head.Id;
+            
+            timeout = 1000;
             CancellationTokenSource timeoutCts = new(timeout);
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             handler = (sender, args) => {
@@ -608,6 +616,7 @@ _logger.LogInformation($"==> Remove Interface:");
                     using (timeoutCts) {
                         var delayTask = Task.Delay(timeout);
 //_logger.LogInformation($"==> await Task.WhenAny 1 taskID: {tcs.Task.Id} pri {priority} timeout {timeout} message {message.Head}");
+//_logger.LogInformation($"EnqueueMessageAndWaitForResponseAsync: timeout= {timeout}");
                         var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
 //_logger.LogInformation($"==> response Task.WhenAny 1 taskID: {completedTask.Id}");
                         stopwatch.Stop();
@@ -661,7 +670,7 @@ _logger.LogInformation($"==> Remove Interface:");
         public async Task<Message?> EnqueueMessageAndWaitFileChunkAsync(Message message, MessagePriority priority = MessagePriority.FILE_DATA_REQUEST, int timeout = 30000) {
             if (message == null) throw new ArgumentNullException(nameof(message));
 
-_logger.LogInformation($"==> await EnqueueMessageAndWaitFileChunkAsync {timeout}");
+_logger.LogInformation($"==> await EnqueueMessageAndWaitFileChunkAsync-1: {timeout}");
             var tcs = new TaskCompletionSource<Message?>();
             EventHandler<ProtoMessageEventArg>? handler = null;
             CancellationTokenSource timeoutCts = new(timeout);
@@ -680,6 +689,7 @@ _logger.LogInformation($"==> await EnqueueMessageAndWaitFileChunkAsync {timeout}
                     using (timeoutCts) {
 ////_logger.LogInformation($"==> await Task.WhenAny 2 task ID: {tcs.Task} pri {priority}");
                         timeout = 3 * 60 * 1000;//for case of long files and case of dual test
+//_logger.LogInformation($"EnqueueMessageAndWaitForResponseAsync-2: timeout= {timeout}");
                         var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
 ////_logger.LogInformation($"==> response Task.WhenAny 2 taskID: {completedTask.Id}");
                         if (completedTask == tcs.Task) {
@@ -703,7 +713,7 @@ _logger.LogInformation($"==> await EnqueueMessageAndWaitFileChunkAsync {timeout}
         public async Task<Message?> EnqueueMessageAndWaitFileList(Message message, MessagePriority priority = MessagePriority.FILE_NAME_REQUEST, int timeout = 2000) {
             if (message == null) throw new ArgumentNullException(nameof(message));
           
-_logger.LogInformation($"==> await EnqueueMessageAndWaitFileList {timeout}");
+//_logger.LogInformation($"==> await EnqueueMessageAndWaitFileList {timeout}");
             var tcs = new TaskCompletionSource<Message?>();
             EventHandler<ProtoMessageEventArg>? handler = null;
 //            timeout = 3 * 60 * 1000; //3 min
@@ -722,6 +732,7 @@ _logger.LogInformation($"==> await EnqueueMessageAndWaitFileList {timeout}");
                     EnqueueMessage(message, priority);
                     using (timeoutCts) {
 ////_logger.LogInformation($"==> await Task.WhenAny 3 task ID: {tcs.Task} pri {priority}");
+//_logger.LogInformation($"EnqueueMessageAndWaitFileList: timeout= {timeout}");
                         var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
 ////_logger.LogInformation($"==> response Task.WhenAny 3 taskID: {completedTask.Id}");
                         if (completedTask == tcs.Task) {
@@ -746,7 +757,7 @@ _logger.LogInformation($"==> await EnqueueMessageAndWaitFileList {timeout}");
             return $"UBA_Interface: {sp?.PortName ?? "Not Connected"}";
         }
 
-        private async Task ResolvePrendingUBAAsync(CancellationToken cancellationToken) {
+        private async Task ResolvePendingUBAAsync(CancellationToken cancellationToken) {
             int timeout = 1000;
             var tcs = new TaskCompletionSource<Message?>();
 
@@ -757,8 +768,9 @@ _logger.LogInformation($"==> await EnqueueMessageAndWaitFileList {timeout}");
                 try { 
                     using (timeoutCts) {
                         var delayTask = Task.Delay(timeout);
-                        var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
-_logger.LogInformation($"==> ResolvePrendingUBAAsync: after {stopwatch.ElapsedMilliseconds} ms");
+//_logger.LogInformation($"ResolvePendingUBAAsync: timeout= {timeout}");
+                       var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
+//_logger.LogInformation($"==> ResolvePendingUBAAsync: after {stopwatch.ElapsedMilliseconds} ms");
                         stopwatch.Stop();
 
                         GETPendingTasksDTO pt = await wcs.GetPendingTasks();
