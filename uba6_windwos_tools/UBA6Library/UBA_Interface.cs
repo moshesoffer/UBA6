@@ -391,7 +391,7 @@ _logger.LogInformation($"==> Remove Interface:");
 
         }
         private async Task ProcessQueueAsync(CancellationToken cancellationToken) {
-        int timeout = 50; 
+        int timeout = 150; 
             var tcs = new TaskCompletionSource<Message?>();
 
             while (true) {

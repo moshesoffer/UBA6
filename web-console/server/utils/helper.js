@@ -62,6 +62,35 @@ const formatSecondsToHHMMSS = (totalSeconds) => {
   return `${hours}:${minutes}:${seconds}`;
 };
 
+const getTotalStagesAmount = (testRoutine) => {
+    let plan = [];
+
+    if (validateArray(testRoutine?.plan)) {
+        ({ plan } = testRoutine);
+    }
+
+    let total = 0;
+    for (const testState of plan) {
+        switch (testState.type) {
+            case "charge":
+            case "discharge":
+            case "delay":
+                total += 1;
+                break;
+
+            case "loop":
+				total += (testState.id - testState.goToStep) * testState.repeatStep;
+                break;
+
+            default:
+                logger.warn(`Unknown test type: ${testState.type}`);
+                break;
+        }
+    }
+
+    return total;
+};
+
 module.exports = {
 	checkRunningTestKeys,
 	checkOrderParameter,
@@ -69,4 +98,5 @@ module.exports = {
 	readTextFromFile,
 	median,
 	formatSecondsToHHMMSS,
+	getTotalStagesAmount,
 }

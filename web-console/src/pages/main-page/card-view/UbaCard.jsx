@@ -42,7 +42,7 @@ export default function UbaCard({row}) {
 
 	const getStep = channel => {
 		if (row?.[channel]?.status===statusCodes.RUNNING) {
-			return `${row?.[channel]?.testCurrentStep}/${row?.[channel]?.totalStagesAmount}`;
+			return `${row?.[channel]?.testCurrentStep}/${row?.[channel]?.numStages}`;
 		} else {
 			return '';
 		}

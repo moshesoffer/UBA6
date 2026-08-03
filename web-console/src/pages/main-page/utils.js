@@ -259,7 +259,7 @@ export const getTestStep = data => {
 	}
 
 	if (data?.status===statusCodes.RUNNING) {
-		return `${data?.testCurrentStep}/${data?.totalStagesAmount}`;
+		return `${data?.testCurrentStep}/${data?.numStages}`;
 	}
 
 	return getKeyByValue(statusCodes, data?.status);

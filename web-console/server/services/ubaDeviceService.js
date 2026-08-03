@@ -5,6 +5,7 @@ const { ubaDeviceModel } = require('../models');
 const { selectQuery, createModel, updateModel, deleteModel } = require('../db/genericCRUD');
 const { sendConnectionPendingTaskToUba, UI_FLOWS, UBA_DEVICE_ACTIONS, } = require('../utils/ubaCommunicatorHelper');
 const { withTimeout, AWAIT_TIMEOUT} = require('../utils/requestSync');
+const { getTotalStagesAmount } = require('../utils/helper');
 
 const getUbaDevices = async () => {
 	try {
@@ -13,11 +14,13 @@ const getUbaDevices = async () => {
 		return rows.map(row => {
 			let totalStagesAmount = 0;
 			if (validateArray(row?.plan)) {
-				totalStagesAmount = row.plan.length;
+				numStages = row.plan.length;
+				totalStagesAmount = getTotalStagesAmount(row);
 			}
 
 			let result = {
 				...row,
+				numStages,
 				totalStagesAmount,
 			};
 			delete result.plan;
@@ -26,6 +29,8 @@ const getUbaDevices = async () => {
 		});
 		
 	} catch (err) {
+		logger.error(err);
+    	throw err;
 		//res.status(500).json({ status: 'error', db: 'down' });
 	} finally {
 		//res.status(500).json({ status: 'error', db: 'down' });

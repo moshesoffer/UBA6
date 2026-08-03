@@ -1,4 +1,4 @@
 // swVersion.js
 export const webConsole = {
-    SW_VERSION: 'Jul 30th 2026',
+    SW_VERSION: '02Aug2026',
 };
