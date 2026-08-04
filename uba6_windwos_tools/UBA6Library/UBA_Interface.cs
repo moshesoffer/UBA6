@@ -391,7 +391,7 @@ _logger.LogInformation($"==> Remove Interface:");
 
         }
         private async Task ProcessQueueAsync(CancellationToken cancellationToken) {
-        int timeout = 150; 
+        int timeout = 50; 
             var tcs = new TaskCompletionSource<Message?>();
 
             while (true) {
@@ -573,7 +573,7 @@ _logger.LogInformation($"==> Remove Interface:");
         }
 
 
-        public async Task<Message?> GetMessage(UBA_PROTO_QUERY.RECIPIENT recipient, UInt32 targateAddress = 0xffffffff, int timeout = 10000) {
+        public async Task<Message?> GetMessage(UBA_PROTO_QUERY.RECIPIENT recipient, UInt32 targateAddress = 0xffffffff, int timeout = 3000) {
           /*  if (sp == null || !sp.IsOpen) {
                 _logger.LogError("Serial port is not open.");
                 failes++;
@@ -585,7 +585,6 @@ _logger.LogInformation($"==> Remove Interface:");
             }*/
 //            _logger.LogInformation($"GetMessage: targateAddress {targateAddress}");
             Message queryMessage = UBA_Message_Factory.CreateQeuryMessage(targateAddress, recipient);
-            timeout = 5000;
             Message? responseMessage = await EnqueueMessageAndWaitForResponseAsync(queryMessage, MessagePriority.QUERY_MESSAGE, timeout);
 
             return responseMessage;
@@ -597,7 +596,6 @@ _logger.LogInformation($"==> Remove Interface:");
             EventHandler<ProtoMessageEventArg>? handler = null;
             var originalId = message.Head.Id;
             
-            timeout = 1000;
             CancellationTokenSource timeoutCts = new(timeout);
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             handler = (sender, args) => {
@@ -606,9 +604,9 @@ _logger.LogInformation($"==> Remove Interface:");
                 }
             };
 
-            await _semaphore.WaitAsync();
-            try
-            {
+            //try
+            //{
+                await _semaphore.WaitAsync();
                 MessageReceived += handler;
                 try { 
                     EnqueueMessage(message, priority);
@@ -617,7 +615,7 @@ _logger.LogInformation($"==> Remove Interface:");
 //_logger.LogInformation($"==> await Task.WhenAny 1 taskID: {tcs.Task.Id} pri {priority} timeout {timeout} message {message.Head}");
 //_logger.LogInformation($"EnqueueMessageAndWaitForResponseAsync: timeout= {timeout}");
                         var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
-//_logger.LogInformation($"==> response Task.WhenAny 1 taskID: {completedTask.Id}");
+//_logger.LogInformation($"==> response Task.WhenAny 1 taskID: {completedTask.Id} {priority} after {stopwatch.ElapsedMilliseconds} ms");
                         stopwatch.Stop();
                         if (priority == MessagePriority.DEVICE_QUERY) {
                             if (completedTask == tcs.Task) {
@@ -627,7 +625,7 @@ _logger.LogInformation($"==> Remove Interface:");
                                 _logger.LogInformation($"1-Timeout waiting for response with Message ID: {originalId} taskID: {completedTask.Id}-{tcs.Task.Id}");/// after {stopwatch.ElapsedMilliseconds} ms");
                                 return null;
                             }                             
-                        }
+                         }
                         else if (priority == MessagePriority.QUERY_MESSAGE) {
                             if (completedTask == tcs.Task) {
                                 //_logger.LogDebug($"Received response for Message ID: {originalId} taskID: {completedTask.Id}-{tcs.Task.Id}");// in {stopwatch.ElapsedMilliseconds} ms");
@@ -656,15 +654,15 @@ _logger.LogInformation($"==> Remove Interface:");
                     }
                 } finally {
                     MessageReceived -= handler;
+                    _semaphore.Release();
                 }
-            }
-            finally
-            {
-                _semaphore.Release();
-            }            
-            //_logger.LogInformation($"1-Return Null Message ID: taskID: {tcs.Task.Id}");
+            //}
+            //finally{
+            //    _semaphore.Release();
+            //}            
+            _logger.LogInformation($"1-Return Null Message ID: taskID: {tcs.Task.Id}");
             return null;
-         }
+        }
 
         public async Task<Message?> EnqueueMessageAndWaitFileChunkAsync(Message message, MessagePriority priority = MessagePriority.FILE_DATA_REQUEST, int timeout = 30000) {
             if (message == null) throw new ArgumentNullException(nameof(message));
@@ -688,7 +686,7 @@ _logger.LogInformation($"==> await EnqueueMessageAndWaitFileChunkAsync-1: {timeo
                     using (timeoutCts) {
 ////_logger.LogInformation($"==> await Task.WhenAny 2 task ID: {tcs.Task} pri {priority}");
                         timeout = 3 * 60 * 1000;//for case of long files and case of dual test
-//_logger.LogInformation($"EnqueueMessageAndWaitForResponseAsync-2: timeout= {timeout}");
+_logger.LogInformation($"EnqueueMessageAndWaitForResponseAsync-2: timeout= {timeout}");
                         var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
 ////_logger.LogInformation($"==> response Task.WhenAny 2 taskID: {completedTask.Id}");
                         if (completedTask == tcs.Task) {
@@ -731,7 +729,7 @@ _logger.LogInformation($"==> await EnqueueMessageAndWaitFileChunkAsync-1: {timeo
                     EnqueueMessage(message, priority);
                     using (timeoutCts) {
 ////_logger.LogInformation($"==> await Task.WhenAny 3 task ID: {tcs.Task} pri {priority}");
-//_logger.LogInformation($"EnqueueMessageAndWaitFileList: timeout= {timeout}");
+_logger.LogInformation($"EnqueueMessageAndWaitFileList: timeout= {timeout}");
                         var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
 ////_logger.LogInformation($"==> response Task.WhenAny 3 taskID: {completedTask.Id}");
                         if (completedTask == tcs.Task) {
@@ -767,7 +765,7 @@ _logger.LogInformation($"==> await EnqueueMessageAndWaitFileChunkAsync-1: {timeo
                 try { 
                     using (timeoutCts) {
                         var delayTask = Task.Delay(timeout);
-//_logger.LogInformation($"ResolvePendingUBAAsync: timeout= {timeout}");
+_logger.LogInformation($"ResolvePendingUBAAsync: timeout= {timeout}");
                        var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
 //_logger.LogInformation($"==> ResolvePendingUBAAsync: after {stopwatch.ElapsedMilliseconds} ms");
                         stopwatch.Stop();

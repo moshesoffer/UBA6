@@ -73,7 +73,7 @@ namespace UBAService {
 
         private CancellationTokenSource? _cts;
         public async Task StartPeriodicRunningTestUpdate(CancellationToken stoppingToken) {
-            int timeout = 300;
+            int timeout = 500;
             var tcs = new TaskCompletionSource<Message?>();
 
             while (true) {
@@ -106,7 +106,7 @@ namespace UBAService {
         }
 
         public async Task StartPeriodicKeepalive(CancellationToken stoppingToken) {
-            int timeout = 1000;
+            int timeout = 5000;
             var tcs = new TaskCompletionSource<Message?>();
 
             while (true) {
@@ -173,7 +173,7 @@ namespace UBAService {
         }
     
         public async Task StartPeriodicUpdatePendingRunningTest(CancellationToken stoppingToken) {
-            int timeout = 300;
+            int timeout = 100;
             var tcs = new TaskCompletionSource<Message?>();
 
             while (true) {
@@ -243,7 +243,7 @@ namespace UBAService {
                                 if (((((RunningTestsController.Status)ubaDto.Status) & RunningTestsController.Status.STOPPED) == 0) &&
                                     ((((RunningTestsController.Status)ubaDto.Status) & RunningTestsController.Status.PENDING) == 0)) {
                                     ////_logger.LogInformation("Change PENDING Test Status {State}", message.QueryResponse.Bpt.State);
-_logger.LogInformation("4.1.Pending test {Channel} {Status}, set to {newState} {channelStatus[0]}", ubaDto.Channel, ubaDto.Status, message.QueryResponse.Bpt.State, channelStatus[0]);
+//_logger.LogInformation("4.1.Pending test {Channel} {Status}, set to {newState} {channelStatus[0]}", ubaDto.Channel, ubaDto.Status, message.QueryResponse.Bpt.State, channelStatus[0]);
                                     await wcs.ChangeRunningTestStatus(ubaDto, Bptstate2DTOstate(message.QueryResponse.Bpt.State, message.QueryResponse.Bpt.StepType));
                                 }
                                 channelStatus [0] = (int)message.QueryResponse.Bpt.State;
@@ -256,7 +256,7 @@ _logger.LogInformation("4.1.Pending test {Channel} {Status}, set to {newState} {
                             {
                                 if (UBAs[i].Address.ToString() == ubaDto.Address)
                                 {
-//_logger.LogInformation("3.1 refreshChannelReading {recipent} {address}", UBA_PROTO_QUERY.RECIPIENT.BptB, ubaDto.Address);
+_logger.LogInformation("3.1 refreshChannelReading {recipent} {address}", UBA_PROTO_QUERY.RECIPIENT.BptB, ubaDto.Address);
                                     message = await UBAs[i].GetMessage(UBA_PROTO_QUERY.RECIPIENT.BptB);
                                     break;
                                 }

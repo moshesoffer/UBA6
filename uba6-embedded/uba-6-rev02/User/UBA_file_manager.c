@@ -162,7 +162,7 @@ bool create_filepath(char *folder, char *file_name, char *filepath_string, uint3
 	}
 }
 
-bool UBA_FM_create_file(char *folder, char *file_name) {
+bool UBA_FM_create_file_OLD(char *folder, char *file_name) {
 	bool ret = false;
     UBA_PROTO_FM_file_list fm_list;
 //UART_LOG(COMPONENT, "UBA_FM_create_file");
@@ -204,6 +204,49 @@ bool UBA_FM_create_file(char *folder, char *file_name) {
 	}
 	return ret;
 }
+bool UBA_FM_create_file(char *folder, char *file_name, bool close) {
+	bool ret = false;
+	bool created = false;
+    UBA_PROTO_FM_file_list fm_list;
+UART_LOG(COMPONENT, "UBA_FM_create_file");
+
+	if (UBA_FM_SD_mount()) {
+		//limit MAX number of files in folder
+		UBA_FM_file_list(folder, &fm_list, 0/*skip*/);
+	  	//for (int i=0; i<fm_list.filenames_count; i++) {
+	  	//	UART_LOG(COMPONENT, ">> %s", fm_list.filenames[i]);
+	  	//}
+UART_LOG(COMPONENT, "count %d ", fm_list.filenames_count);
+		while (fm_list.filenames_count > UBA_FM_MAX_FILE_PER_FOLDER) {
+	  		for (int i=0; i < (fm_list.filenames_count-UBA_FM_MAX_FILE_PER_FOLDER); i++) {
+				create_filepath(folder, fm_list.filenames[i], filepath, UBA_FM_MAX_FILE_NAMEPATH);
+				ret = UBA_FM_delete_file (filepath);
+				if (res != FR_OK) {
+					UART_FM_DEBUG(COMP, "Max files per folder: Failed to Delete");
+				}
+//UART_LOG(COMPONENT, "delete.. count %d res %x  i %d", fm_list.filenames_count, res, i);
+			}
+			UBA_FM_file_list(folder, &fm_list, 0/*skip*/);
+UART_LOG(COMPONENT, "count %d ", fm_list.filenames_count);
+		}
+
+		if (create_filepath(folder, file_name, filepath, UBA_FM_MAX_FILE_NAMEPATH) && UBA_FM_FF_create_folder(folder)) {
+UART_LOG(COMPONENT, "f_open.. %s", filepath);
+			res = f_open(&file, (char*) filepath, FA_OPEN_APPEND | FA_WRITE);
+//UART_LOG(COMPONENT, "after f_open.. %s", filepath);
+			if (res == FR_OK) {
+				if (close == true) {
+					f_close(&file);
+UART_LOG(COMPONENT, "f_close.. %s", file_name);
+				}
+			}
+		}
+		if (close == true) {
+			UBA_FM_SD_unmount();
+		}
+	}
+	return ret;
+}
 
 bool UBA_FM_delete_file(char *filepath) {
 	bool ret = false;
@@ -214,12 +257,12 @@ bool UBA_FM_delete_file(char *filepath) {
 		uint32_t t0 = HAL_GetTick();
 		res = f_unlink(filepath);
 		uint32_t t1 = HAL_GetTick();
-		//UART_LOG(COMPONENT, "unlink %s took %lu ms", filepath, t1 - t0);
+		UART_FM_DEBUG(COMP, "unlink %s took %lu ms", filepath, t1 - t0);
 
 		if (res == FR_OK) {
-			UART_FM_DEBUG(COMP, "Successfully Delete %s", filepath);
+			UART_LOG(COMPONENT, "Successfully Delete %s", filepath);
 		} else {
-			UART_FM_DEBUG(COMP, "Failed to Delete %s - 0x%02x", filepath, res);
+			UART_LOG(COMPONENT, "Failed to Delete %s - 0x%02x", filepath, res);
 		}
 		UBA_FM_SD_unmount();
 	}
@@ -260,29 +303,9 @@ UART_LOG(COMPONENT, "UBA_FM_apppend_data");
 		if (create_filepath(folder, file_name, filepath, UBA_FM_MAX_FILE_NAMEPATH) && UBA_FM_FF_create_folder(folder)) {
 UART_LOG(COMPONENT, "f_open.. %s", filepath);
 			res = f_open(&file, (char*) filepath, FA_OPEN_APPEND | FA_WRITE);
-UART_LOG(COMPONENT, "after f_open.. %s", filepath);
+//UART_LOG(COMPONENT, "after f_open.. %s", filepath);
 			if (res != FR_OK) {
-				//limit MAX number of files in folder
-				UBA_FM_file_list(folder, &fm_list, 0/*skip*/);
-UART_LOG(COMPONENT, "filenames_count.. %d", fm_list.filenames_count);
-		//		for (int i=0; i<fm_list.filenames_count; i++) {
-		//			UART_LOG(COMPONENT, "%s", fm_list.filenames[i]);
-		//		}
-				if (fm_list.filenames_count+1 >= UBA_FM_MAX_FILE_PER_FOLDER) {
-					ret = UBA_FM_delete_file (fm_list.filenames[0]);
-UART_LOG(COMPONENT, "f_unlink.. %s", fm_list.filenames[0]);
-					if (res != FR_OK) {
-						UART_FM_DEBUG(COMP, "Max files per folder: Failed to Delete %s - 0x%02x", filepath, res);
-					}
-				}
-
-				if (UBA_FM_SD_mount()) {
-					if (create_filepath(folder, file_name, filepath, UBA_FM_MAX_FILE_NAMEPATH) && UBA_FM_FF_create_folder(folder)) {
-						res = f_open(&file, (char*) filepath, FA_OPEN_APPEND | FA_WRITE);
-UART_LOG(COMPONENT, "f_create.. %s", file_name);
-						created = true;
-					}
-				}
+				res = UBA_FM_create_file(folder, file_name, /*close=*/false);
 			}
 		}
 	}

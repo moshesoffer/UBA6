@@ -351,6 +351,8 @@ void UBA_BPT_standby(UBA_BPT *bpt) {
 void UBA_BPT_standby_exit(UBA_BPT *bpt) {
 	if (bpt->current_step == bpt->head_step) {
 		UBA_BPT_test_result_filename(bpt);
+		
+//		UBA_FM_create_file(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename); 
 	}
 }
 

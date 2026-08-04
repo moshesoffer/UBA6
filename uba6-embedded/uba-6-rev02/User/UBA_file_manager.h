@@ -21,7 +21,7 @@
 #define UBA_FM_FILE_NAME_CALIBRATION "Calibration.pb"
 
 
-bool UBA_FM_create_file(char *folder, char *file_name) ;
+bool UBA_FM_create_file(char *folder, char *file_name, bool close) ;
 bool UBA_FM_delete_file(char *filepath) ;
 bool UBA_FM_apppend_data(char* folder,char* file_name,uint8_t * data, uint32_t data_length);
 bool UBA_FM_store_data(char* folder,char* file_name,uint8_t * data, uint32_t data_length); // create file then / overwrite

@@ -267,7 +267,7 @@ int process_message(MSG_Message *message) {
 			if (message->pyload.query.recipient == 1) strcpy(recipient, "Device");
 			else if (message->pyload.query.recipient == 64) strcpy(recipient, "BPT A");
 			else if (message->pyload.query.recipient == 128) strcpy(recipient, "BPT B");
-			UART_LOG(COMP, "Query message: recipient:%s", recipient);
+//			UART_LOG(COMP, "Query message: recipient:%s", recipient);
 			UART_LOG_COMM_DEBUG("Query message: recipient:%u", message->pyload.query.recipient);
 			//UBA_UART_query_response_message(message->pyload.query.recipient); //within the intterupt
 			UBA_UART_qeury_pending_post(message->pyload.query.recipient, message->head.id);
