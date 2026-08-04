@@ -204,7 +204,7 @@ _logger.LogInformation($"Keepalive start");
             uint? totlaSize = uint.MaxValue;
 
             do {
-_logger.LogInformation("==> get message 10");
+//_logger.LogInformation("==> get message 10");
                 m = await UBA_Interface.GetMessage(UBA_Message_Factory.CreateMessage(Address, ProtoHelper.CreateFileCommand(UBA_PROTO_FM.CMD_ID.ChunkRequest, filename, index)), 8000);
                 if (m?.File?.Data.Length > 0) {
                     _logger.LogDebug($"Received file chunk {index} with size {m.File.Data.Length} bytes.");

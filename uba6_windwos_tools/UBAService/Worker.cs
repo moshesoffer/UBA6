@@ -302,18 +302,19 @@ _logger.LogInformation("4.2.Pending test {Channel} {Status}, set to {newState}",
             await _semaphore.WaitAsync();
             try
             {
-                await wcs.TestResultUpdateStatus(
-                    pendingTest.ReportId,
-                    RunningTestsController.Status.PENDING |
-                    RunningTestsController.Status.SAVED);
+//Moshe
+//                await wcs.TestResultUpdateStatus(
+//                    pendingTest.ReportId,
+//                    RunningTestsController.Status.PENDING |
+//                    RunningTestsController.Status.SAVED);
 
                 byte[] file = await uba.FeatchFileToByteArray(filename);
                 await wcs.TestResultUpload(pendingTest.ReportId, file);
             }
             finally
             {
+                _semaphore.Release();
             }
-            _semaphore.Release();
 
             uba.ClearBPT(util.GetChannelFormDTO(pendingTest));
 
@@ -703,8 +704,12 @@ _logger.LogInformation($"==> 2 Remove UBA: {UBAs[i]}");
                                     pendingTestResponseDTO.Id = ubaDto.RunningTestID;
                                     pendingTestResponseDTO.Channel = ubaDto.Channel;
                                     pendingTestResponseDTO.UbaSN = ubaDto.UbaSN;
-_logger.LogInformation($"==> 8.1.pendingTestResponseDTO: msgStatus {message.QueryResponse.Bpt.State} ubaStatus {Status} channelStatus {channelStatus[0]}", message.QueryResponse.Bpt.State, Status, channelStatus[0]);
+_logger.LogInformation($"==> 8.1.pendingTestResponseDTO: msgStatus= {message.QueryResponse.Bpt.State}, ubaStatus= {Status}, channelStatus= {channelStatus[0]}", message.QueryResponse.Bpt.State, Status, channelStatus[0]);
 //_logger.LogInformation($"==> 8.1.pendingTestResponseDTO: RUNNING {Status} {message.QueryResponse.Bpt.StartTime}", Status, message.QueryResponse.Bpt.StartTime);
+                                    if (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.RunStep) {
+_logger.LogInformation($"==> 8.2.pendingTestResponseDTO: set ubaDto.Status to RUNNING");
+                                        ubaDto.Status = (int)RunningTestsController.Status.RUNNING;
+                                    }
                                     await wcs.ChangeRunningTestStatus(pendingTestResponseDTO, (int)ubaDto.Status);//RunningTestsController.Status.RUNNING);
 
                                 } else if ((message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.Standby) ||

@@ -284,6 +284,11 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
                     reportPatchDTO.TestResults.Add(new TestResultDataPointDTO(log));
                 }
 
+                if(report_id == null)
+                {
+                    _logger.LogInformation($"ReportPatchDTO undefined report_id, test start by UBA");
+                    return;
+                }
                 try {
                     await ReportsController.Reports.Patch<object, ReportPatchDTO>(Client, report_id.ToString(), reportPatchDTO);
                 } catch (Exception ex) {

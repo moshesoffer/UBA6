@@ -678,10 +678,9 @@ _logger.LogInformation($"==> Remove Interface:");
             return null;
         }
 
-        public async Task<Message?> EnqueueMessageAndWaitFileChunkAsync(Message message, MessagePriority priority = MessagePriority.FILE_DATA_REQUEST, int timeout = 10000) {
+        public async Task<Message?> EnqueueMessageAndWaitFileChunkAsync(Message message, MessagePriority priority = MessagePriority.FILE_DATA_REQUEST, int timeout = 8000) {
             if (message == null) throw new ArgumentNullException(nameof(message));
 
-_logger.LogInformation($"==> await EnqueueMessageAndWaitFileChunkAsync-1: {timeout}");
             var tcs = new TaskCompletionSource<Message?>();
             EventHandler<ProtoMessageEventArg>? handler = null;
             CancellationTokenSource timeoutCts = new(timeout);
@@ -700,7 +699,7 @@ _logger.LogInformation($"==> await EnqueueMessageAndWaitFileChunkAsync-1: {timeo
                     using (timeoutCts) {
 ////_logger.LogInformation($"==> await Task.WhenAny 2 task ID: {tcs.Task} pri {priority}");
                         //timeout = 3 * 60 * 1000;//for case of long files and case of dual test
-_logger.LogInformation($"EnqueueMessageAndWaitForResponseAsync-2: timeout= {timeout}");
+////_logger.LogInformation($"EnqueueMessageAndWaitForResponseAsync-2: timeout= {timeout}");
                         var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
 ////_logger.LogInformation($"==> response Task.WhenAny 2 taskID: {completedTask.Id}");
                         if (completedTask == tcs.Task) {

@@ -1,4 +1,69 @@
 {
   "status": 8,
-  "testResults": []
+  "testResults": [
+    {
+      "current": 0,
+      "voltage": 0,
+      "timestamp": 0,
+      "temperature": 30.309999465942383,
+      "planIndex": 0,
+      "stepIndex": 0
+    },
+    {
+      "current": 144,
+      "voltage": 7751,
+      "timestamp": 1,
+      "temperature": 30.309999465942383,
+      "planIndex": 0,
+      "stepIndex": 0
+    },
+    {
+      "current": 187,
+      "voltage": 7761,
+      "timestamp": 2,
+      "temperature": 30.309999465942383,
+      "planIndex": 0,
+      "stepIndex": 0
+    },
+    {
+      "current": 190,
+      "voltage": 7757,
+      "timestamp": 3,
+      "temperature": 30.309999465942383,
+      "planIndex": 0,
+      "stepIndex": 0
+    },
+    {
+      "current": 190,
+      "voltage": 7761,
+      "timestamp": 4,
+      "temperature": 30.290000915527344,
+      "planIndex": 0,
+      "stepIndex": 0
+    },
+    {
+      "current": 192,
+      "voltage": 7757,
+      "timestamp": 5,
+      "temperature": 30.309999465942383,
+      "planIndex": 0,
+      "stepIndex": 0
+    },
+    {
+      "current": 190,
+      "voltage": 7761,
+      "timestamp": 6,
+      "temperature": 30.290000915527344,
+      "planIndex": 0,
+      "stepIndex": 0
+    },
+    {
+      "current": 190,
+      "voltage": 7761,
+      "timestamp": 7,
+      "temperature": 30.309999465942383,
+      "planIndex": 0,
+      "stepIndex": 0
+    }
+  ]
 }
