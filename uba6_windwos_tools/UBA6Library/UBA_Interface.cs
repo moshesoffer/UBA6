@@ -321,6 +321,7 @@ _logger.LogInformation($"==> Remove Interface:");
         {
             var parser = new MessageParser<Message>(() => new Message());
 
+            SafeDiscardInput(sp);
             while (!token.IsCancellationRequested)
             {
                 try
@@ -354,13 +355,14 @@ _logger.LogInformation($"==> Remove Interface:");
                     // 3. Parse protobuf
                     try {
                         Message msg = parser.ParseFrom(buffer);
-                        _logger.LogDebug($"RX Message: {msg}");
+                        //_logger.LogDebug($"RX Message: {msg}");
 
                         // 4. Raise event
                         MessageReceived?.Invoke(this, new ProtoMessageEventArg(msg));
 
                     } catch {
                         _logger.LogDebug($"ParseFrom: scan for next valid varint");
+                        SafeDiscardInput(sp);
                         continue;
                     }
                 }
@@ -378,6 +380,18 @@ _logger.LogInformation($"==> Remove Interface:");
                         SafeReset();
                     });
                 }
+            }
+        }
+        private void SafeDiscardInput(SerialPort port)
+        {
+            try
+            {
+                if (port.IsOpen)
+                    port.DiscardInBuffer();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to clear serial input buffer.");
             }
         }
 
@@ -660,11 +674,11 @@ _logger.LogInformation($"==> Remove Interface:");
             //finally{
             //    _semaphore.Release();
             //}            
-            _logger.LogInformation($"1-Return Null Message ID: taskID: {tcs.Task.Id}");
+            //_logger.LogInformation($"1-Return Null Message ID: taskID: {tcs.Task.Id}");
             return null;
         }
 
-        public async Task<Message?> EnqueueMessageAndWaitFileChunkAsync(Message message, MessagePriority priority = MessagePriority.FILE_DATA_REQUEST, int timeout = 30000) {
+        public async Task<Message?> EnqueueMessageAndWaitFileChunkAsync(Message message, MessagePriority priority = MessagePriority.FILE_DATA_REQUEST, int timeout = 10000) {
             if (message == null) throw new ArgumentNullException(nameof(message));
 
 _logger.LogInformation($"==> await EnqueueMessageAndWaitFileChunkAsync-1: {timeout}");
@@ -685,7 +699,7 @@ _logger.LogInformation($"==> await EnqueueMessageAndWaitFileChunkAsync-1: {timeo
                     EnqueueMessage(message, priority);
                     using (timeoutCts) {
 ////_logger.LogInformation($"==> await Task.WhenAny 2 task ID: {tcs.Task} pri {priority}");
-                        timeout = 3 * 60 * 1000;//for case of long files and case of dual test
+                        //timeout = 3 * 60 * 1000;//for case of long files and case of dual test
 _logger.LogInformation($"EnqueueMessageAndWaitForResponseAsync-2: timeout= {timeout}");
                         var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
 ////_logger.LogInformation($"==> response Task.WhenAny 2 taskID: {completedTask.Id}");
@@ -707,7 +721,7 @@ _logger.LogInformation($"EnqueueMessageAndWaitForResponseAsync-2: timeout= {time
             }            
         }
 
-        public async Task<Message?> EnqueueMessageAndWaitFileList(Message message, MessagePriority priority = MessagePriority.FILE_NAME_REQUEST, int timeout = 2000) {
+        public async Task<Message?> EnqueueMessageAndWaitFileList(Message message, MessagePriority priority = MessagePriority.FILE_NAME_REQUEST, int timeout = 5000) {
             if (message == null) throw new ArgumentNullException(nameof(message));
           
 //_logger.LogInformation($"==> await EnqueueMessageAndWaitFileList {timeout}");

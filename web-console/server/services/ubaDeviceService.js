@@ -12,7 +12,9 @@ const getUbaDevices = async () => {
 
 		const rows = await selectQuery(ubaDeviceModel.tableName, ubaDeviceModel.selectAllQuery);
 		return rows.map(row => {
+			let numStages = 0;
 			let totalStagesAmount = 0;
+
 			if (validateArray(row?.plan)) {
 				numStages = row.plan.length;
 				totalStagesAmount = getTotalStagesAmount(row);

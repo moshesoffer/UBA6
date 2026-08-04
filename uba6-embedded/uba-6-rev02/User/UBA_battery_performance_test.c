@@ -647,7 +647,7 @@ bool UBA_BPT_stop(UBA_BPT *bpt) {
 		if (UBA_BPT_isRunning(bpt)) {
 			bpt->error |= UBA_PROTO_UBA6_ERROR_USER_ABORT;
 		} 
-		bpt->state.next = UBA_BPT_STATE_STANDBY;//UBA_BPT_STATE_STEP_COMPLETE
+		bpt->state.next = UBA_BPT_STATE_TEST_COMPLETE;//UBA_BPT_STATE_STANDBY;//UBA_BPT_STATE_STEP_COMPLETE
 		bpt->current_step = bpt->head_step;
 
 		UART_LOG(UBA_COMP, "id %d: A: %d, B %d, AB %d", bpt->ch->id, UBA_BPT_isRunning(&UBA_6_device_g.BPT_A), UBA_BPT_isRunning(&UBA_6_device_g.BPT_B), UBA_BPT_isRunning(&UBA_6_device_g.BPT_AB));
@@ -671,12 +671,12 @@ bool UBA_BPT_stop(UBA_BPT *bpt) {
 			//if (bpt->ch->id == UBA_CHANNLE_ID_A) {
 				UBA_LCD_g.screen_ch_A.shadow.ch_control = UBA_LCD_g.screen_ch_A.ch_control;
 				UBA_LCD_g.screen_ch_A.ch_control = UBA_CHANNLE_ID_A;
-				UBA_LCD_g.screen_ch_A.bpt->ch->state.current = UBA_CHANNEL_STATE_STANDBY;
+				UBA_LCD_g.screen_ch_A.bpt->ch->state.current = UBA_BPT_STATE_TEST_COMPLETE;
 
 			//} else if (bpt->ch->id == UBA_CHANNLE_ID_B) {
 				UBA_LCD_g.screen_ch_B.shadow.ch_control = UBA_LCD_g.screen_ch_B.ch_control;
 				UBA_LCD_g.screen_ch_B.ch_control = UBA_CHANNLE_ID_B;
-				UBA_LCD_g.screen_ch_B.bpt->ch->state.current = UBA_CHANNEL_STATE_STANDBY;
+				UBA_LCD_g.screen_ch_B.bpt->ch->state.current = UBA_BPT_STATE_TEST_COMPLETE;
 			//}
 
 			if (bpt->ch->id == UBA_CHANNLE_ID_B) {
