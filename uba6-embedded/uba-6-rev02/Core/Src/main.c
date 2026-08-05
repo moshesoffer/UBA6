@@ -127,27 +127,33 @@ int main(void)
   if (MX_FATFS_Init() != APP_OK) {
     Error_Handler();
   }
+
   MX_USART2_UART_Init();
   MX_TIM1_Init();
   MX_USART1_UART_Init();
   MX_TIM8_Init();
   MX_RTC_Init();
   MX_TIM5_Init();
+  HAL_Delay(10);
+	
   /* USER CODE BEGIN 2 */
-  	uart_printf("Starting UBA6 {d.%d}\n", BL_Version[0], BL_Version[1]);
+  //	uart_printf("Starting UBA6 {d.%d}\n", BL_Version[0], BL_Version[1]);
 	//HAL_TIM_PWM_Start(&htim4,TIM_CHANNEL_2);
-	UART_LOG_INFO(UBA_COMP, "System Init - %s", get_RTC_date_time_str());
-	test_print();
+	//UART_LOG_INFO(UBA_COMP, "System Init - %s", get_RTC_date_time_str());
+	//test_print();
 
-	HAL_Delay(10);
 	HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_RESET);
 	UBA_line_init_local_lines();
 	HAL_Delay(10);
+  
   UBA_TR_demo_init();
 	file_logger_print();
+  LCD_start();
+	HAL_Delay(200);
+
 	UBA_UART_comm_init();
 	PLI74HC166_init(&buttons_driver_g);
-  LCD_start();
+	HAL_Delay(10);
 
   /* USER CODE END 2 */
 

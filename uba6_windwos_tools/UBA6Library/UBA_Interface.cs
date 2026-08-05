@@ -551,7 +551,7 @@ _logger.LogInformation($"==> Remove Interface:");
             return BitConverter.ToUInt32(buffer, 0);
         }
 
-        public async Task<Message?> GetMessage(Message? send, int timeout = 5000) {
+        public async Task<Message?> GetMessage(Message? send, int timeout = 8000) {
            /* if (sp == null || !sp.IsOpen) {
                 _logger.LogError("Serial port is not open.");
                 failes++;
@@ -720,7 +720,7 @@ _logger.LogInformation($"==> Remove Interface:");
             }            
         }
 
-        public async Task<Message?> EnqueueMessageAndWaitFileList(Message message, MessagePriority priority = MessagePriority.FILE_NAME_REQUEST, int timeout = 5000) {
+        public async Task<Message?> EnqueueMessageAndWaitFileList(Message message, MessagePriority priority = MessagePriority.FILE_NAME_REQUEST, int timeout = 3000) {
             if (message == null) throw new ArgumentNullException(nameof(message));
           
 //_logger.LogInformation($"==> await EnqueueMessageAndWaitFileList {timeout}");

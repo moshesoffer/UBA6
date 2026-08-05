@@ -704,7 +704,7 @@ _logger.LogInformation($"==> 2 Remove UBA: {UBAs[i]}");
                                     pendingTestResponseDTO.Id = ubaDto.RunningTestID;
                                     pendingTestResponseDTO.Channel = ubaDto.Channel;
                                     pendingTestResponseDTO.UbaSN = ubaDto.UbaSN;
-_logger.LogInformation($"==> 8.1.pendingTestResponseDTO: msgStatus= {message.QueryResponse.Bpt.State}, ubaStatus= {Status}, channelStatus= {channelStatus[0]}", message.QueryResponse.Bpt.State, Status, channelStatus[0]);
+//_logger.LogInformation($"==> 8.1.pendingTestResponseDTO: msgStatus= {message.QueryResponse.Bpt.State}, ubaStatus= {Status}, channelStatus= {channelStatus[0]}", message.QueryResponse.Bpt.State, Status, channelStatus[0]);
 //_logger.LogInformation($"==> 8.1.pendingTestResponseDTO: RUNNING {Status} {message.QueryResponse.Bpt.StartTime}", Status, message.QueryResponse.Bpt.StartTime);
                                     if (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.RunStep) {
 //_logger.LogInformation($"==> 8.1.pendingTestResponseDTO: set ubaDto.Status to RUNNING");
@@ -719,7 +719,7 @@ _logger.LogInformation($"==> 8.1.pendingTestResponseDTO: msgStatus= {message.Que
                                     pendingTestResponseDTO.Id = ubaDto.RunningTestID;
                                     pendingTestResponseDTO.Channel = ubaDto.Channel;
                                     pendingTestResponseDTO.UbaSN = ubaDto.UbaSN;
-_logger.LogInformation($"==> 8.2.pendingTestResponseDTO: msgStatus= {message.QueryResponse.Bpt.State}, ubaStatus= {Status}, channelStatus= {channelStatus[0]}", message.QueryResponse.Bpt.State, Status, channelStatus[0]);
+//_logger.LogInformation($"==> 8.2.pendingTestResponseDTO: msgStatus= {message.QueryResponse.Bpt.State}, ubaStatus= {Status}, channelStatus= {channelStatus[0]}", message.QueryResponse.Bpt.State, Status, channelStatus[0]);
 //_logger.LogInformation($"==> 8.2.pendingTestResponseDTO: STANDBY {Status} channelStatus {channelStatus[0]}", Status, channelStatus[0]);
 //                                    if ((channelStatus [0] == (int)UBA_PROTO_BPT.STATE.RunStep) ||
 //                                        (channelStatus [0] == (int)UBA_PROTO_BPT.STATE.Pause) ||
