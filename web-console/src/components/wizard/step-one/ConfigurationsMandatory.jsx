@@ -196,8 +196,9 @@ function ConfigurationsMandatory(props, ref) {
 		const isCellsInSerialValid = validateCellsInSerial(noCellSerial, setCellsInSerialError);
 		const isCellsInParallelValid = validateCellsInParallel(noCellParallel, setCellsInParallelError);
 		const isTestNameValid = validateTestName(testName, testRoutines, testData?.id, setTestNameError);
-
-		return isTestNameValid && isBatteryPNValid && isBatterySNValid && isCellPNValid && isCellsInSerialValid && isCellsInParallelValid;
+//Moshe
+//		return isTestNameValid && isBatteryPNValid && isBatterySNValid && isCellPNValid && isCellsInSerialValid && isCellsInParallelValid;
+		return isTestNameValid && isBatteryPNValid && isCellPNValid && isCellsInSerialValid && isCellsInParallelValid;
 	};
 
 	useImperativeHandle(ref, () => ({
@@ -470,11 +471,10 @@ function ConfigurationsMandatory(props, ref) {
 							options={batterySNList}
 							renderInput={params =>
 								<TextField
-									error={validateString(batterySNError)}
-									{...params}
-									label={getText('reportsPage.BATTERY_S_N')}
-									helperText={batterySNError}
-									required={true}
+								    error={validateString(batterySNError)}
+								    {...params}
+								    label={getText('reportsPage.BATTERY_S_N')}
+								    helperText={batterySNError}
 								/>
 							}
 							sx={{input: inputColors.current?.batterySN, width:250}}

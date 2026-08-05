@@ -59,3 +59,10 @@ export const checkString = (incomingValue, incomingValueTitle, setIncomingValueE
 	setIncomingValueError('');
 	return true;
 };
+
+export const dontCheckString = (incomingValue, incomingValueTitle, setIncomingValueError) => {
+	const errorMessage = `${getText(incomingValueTitle)} ${getText('mainPage.wizardOne.NOT_BE_EMPTY')}`;
+
+	setIncomingValueError('');
+	return true;
+};

@@ -1,6 +1,6 @@
 import {getText} from 'src/services/string-definitions';
 import {validateNumber, validateString, validateFunction,} from 'src/utils/validators';
-import {checkString, checkNumber, checkInteger,} from 'src/utils/checker';
+import {checkString, dontCheckString, checkNumber, checkInteger,} from 'src/utils/checker';
 import {getInteger,} from 'src/utils/helper';
 
 const getDataValue = dataParameter => {
@@ -81,7 +81,8 @@ export const validateTestName = (testName, testRoutines, id, setTestNameError) =
 
 export const validateBatteryPN = (batteryPN, setBatteryPNError) => checkString(batteryPN, 'testEditor.BATTERY_P_N', setBatteryPNError);
 
-export const validateBatterySN = (batterySN, setBatterySNError) => checkString(batterySN, 'reportsPage.BATTERY_S_N', setBatterySNError);
+//export const validateBatterySN = (batterySN, setBatterySNError) => checkString(batterySN, 'reportsPage.BATTERY_S_N', setBatterySNError);
+export const validateBatterySN = (batterySN, setBatterySNError) => dontCheckString(batterySN, 'reportsPage.BATTERY_S_N', setBatterySNError);
 
 export const validateCellPN = (cellPN, setCellPNError) => checkString(cellPN, 'testEditor.CELL_P_N', setCellPNError);
 
