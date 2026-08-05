@@ -48,6 +48,11 @@ export default function WizardZero(props) {
 
 	const {currentUba, ubaDevices} = useUbaDevices();
 	const {testRoutines,} = useTestRoutines();
+//Moshe
+//	console.log("testRoutines:", testRoutines.length);
+//	testRoutines.forEach((row, index) => {
+//	    console.log(`${index}: ${row.testName}`);
+//	});
 
 	const authDispatch = useAuthDispatch();
 	const ubaDevicesDispatch = useUbaDevicesDispatch();
@@ -62,21 +67,22 @@ export default function WizardZero(props) {
 	const isAnotherChannelFree = isOtherChannelFree(ubaDevices, currentUba);
 	//console.log('dddd',sameUbaButWithDifferentChannel, isAnotherChannelFree);
 	
-	dataFiltered = dataFiltered.filter(test => {
-		//console.log('==> A_OR_B filter');
-		if (test.channel === UBA_CHANNEL_LIST.A_OR_B) {
-			// 'A-or-B' test.
-			return true;
-		}
-
-		if (!validateObject(currentUba, true)) {
-			// We are on the "Run Batch Test" flow.
-			return false;//dont allow a & b in batch
-		}
-
-		// 'A-and-B' test. Filter out unsuitable tests.
-		return isAnotherChannelFree;
-	});
+//Moshe	
+//	dataFiltered = dataFiltered.filter(test => {
+//		//console.log('==> A_OR_B filter');
+//		if (test.channel === UBA_CHANNEL_LIST.A_OR_B) {
+//			// 'A-or-B' test.
+//			return true;
+//		}
+//
+//		if (!validateObject(currentUba, true)) {
+//			// We are on the "Run Batch Test" flow.
+//			return false;//dont allow a & b in batch
+//		}
+//
+//		// 'A-and-B' test. Filter out unsuitable tests.
+//		return isAnotherChannelFree;
+//	});
 
 	useEffect(() => {
 		//Moshe
