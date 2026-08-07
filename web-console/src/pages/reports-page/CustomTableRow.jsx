@@ -59,10 +59,6 @@ export default function CustomTableRow(props) {
 			</TableCell>
 
 			<TableCell>
-				{row?.ubaSN}
-			</TableCell>
-
-			<TableCell>
 				{row?.batteryPN}
 			</TableCell>
 
