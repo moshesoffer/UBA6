@@ -917,7 +917,7 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 	//Step	
 	if (UBA_BPT_isRunning(channel_test)) {
 		lcd_bpt->test_step.effect = UBA_GFX_EFFECT_SOLID;
-		sprintf(lcd_bpt->test_step.elemnt.text.text, "STEP-%d", channel_test->current_step->step_index+1);
+		sprintf(lcd_bpt->test_step.elemnt.text.text, "STEP-%d(%d)", channel_test->current_step->step_index+1, channel_test->last_step_index+1);
 		////sprintf(lcd_bpt->test_step.elemnt.text.text, "%02u/%02u", channel_test->current_step->step_index, channel_test->last_step_index);
 		//if (mate_lcd_bpt) {
 		//	sprintf(mate_lcd_bpt->test_step.elemnt.text.text, "STEP-%d", channel_test->current_step->step_index+1);
@@ -1674,7 +1674,7 @@ bool UBA_LCD_screen_bpt_update_position(UBA_LCD_screen *screen) {
 
 		screen->pages.screen_bpt.time.pos.x = position->start_x + ((position->width - (2 * BORDER_PADDING)) / 2); /*center*/
 
-		screen->pages.screen_bpt.test_step.pos.x = position->start_x + BORDER_PADDING + ((position->width - (2 * BORDER_PADDING)) / 4) + 8;
+		screen->pages.screen_bpt.test_step.pos.x = position->start_x + BORDER_PADDING;// + ((position->width - (2 * BORDER_PADDING)) / 4) + 8;
 
 		screen->pages.screen_bpt.channel.ch_name.pos.x = position->start_x + BORDER_PADDING;
 
@@ -1734,7 +1734,7 @@ void UBA_LCD_screen_display_bpt_enter(UBA_LCD_screen *screen) {
 	screen->pages.screen_bpt.time.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
 
 	screen->pages.screen_bpt.test_step.id = UBA_GFX_ELEMNET_TEXT;
-	screen->pages.screen_bpt.test_step.pos.x = position->start_x + BORDER_PADDING + ((position->width - (2 * BORDER_PADDING)) / 4) + 8;
+	screen->pages.screen_bpt.test_step.pos.x = position->start_x + BORDER_PADDING;// + ((position->width - (2 * BORDER_PADDING)) / 4) + 8;
 	screen->pages.screen_bpt.test_step.pos.y = LINE(LINE_STEP) + 23;
 	screen->pages.screen_bpt.test_step.effect = UBA_GFX_EFFECT_SOLID;
 	screen->pages.screen_bpt.test_step.elemnt.text.size = LINE_STEP_FONT_SIZE;
