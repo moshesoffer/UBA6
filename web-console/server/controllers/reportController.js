@@ -3,6 +3,8 @@ const {getReports, getTestResults,updateReport,deleteReport} = require('../servi
 const { downloadReportsGraph } = require('../utils/downloadReportGraphHelper');
 const { createReportAndTestResult, updateReportAndTestResult } = require('../services/transactionsService');
 
+let sampleRate = 1;
+
 exports.createReportAndTestResult = async (req, res) => {
 	try {
 		logger.info('(ctrl)createReportAndTestResult');
@@ -27,10 +29,18 @@ exports.getReports = async (req, res) => {
 
 //this is for updating reports and report data, when clicking edit on the modal itself
 exports.updateReportAndTestResult = async (req, res) => {
+    //console.log('========== PATCH CONTROLLER ==========');
+    //console.log('id:', req.params?.id);
+    //console.log('body:', req.body);
+    //console.log('sampleRate:', req.body?.sampleRate);
+
 	try {
 		await updateReportAndTestResult(req.params?.id, req.body);
+		sampleRate = req.body?.sampleRate;
+        //console.log('========= PATCH SERVICE SUCCESS ==========');
 		res.end();
 	} catch (error) {
+        //console.log('========= PATCH SERVICE ERROR ==========');
 		logger.error('updateReportAndTestResult', error);
 		res.sendStatus(500);
 	}
@@ -49,7 +59,7 @@ exports.getTestResults = async (req, res) => {
 
 //this is for download excel or pdf
 exports.downloadReportsGraph = async (req, res) => {
-	await downloadReportsGraph(req, res);
+	await downloadReportsGraph(req, res, sampleRate);
 };
 
 exports.deleteReport = async (req, res) => {

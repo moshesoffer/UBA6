@@ -84,6 +84,15 @@ app.get(/^\/[a-z\-]{2,35}$/i, (req, res, next) => res.sendFile(path.join(__dirna
 app.use(express.static(path.join(__dirname, 'dist')));
 app.use('/*', express.static(path.join(__dirname, 'dist')));
 
+app.use(function(req, res, next) {
+    if (req.method === 'PATCH') {
+        //console.log('*** PATCH REQUEST RECEIVED ***');
+        //console.log('URL:', req.originalUrl);
+    }
+
+    next();
+});
+
 // Error handler.
 app.use(function(err, req, res, next) {
 	// Set locals, only providing error in development.

@@ -77,6 +77,14 @@ export const postData = async (authDispatch, pathname, method, data) => {
 	const options = createRequestOptions(method, data);
 	const url = `${import.meta.env.VITE_API_URL}/${pathname}`;
 
+    //console.log('========== postData ==========');
+    //console.log('URL:', url);
+    //console.log('METHOD:', method);
+    //console.log('DATA:', data);
+    //console.log('OPTIONS:', options);
+    //console.log('BODY:', options.body);
+    //console.log('==============================');
+
 	if (validateFunction(authDispatch)) {
 		//console.log('postData authDispatch', pathname,method, authDispatch);
 		authDispatch(setAjaxLoader(true));

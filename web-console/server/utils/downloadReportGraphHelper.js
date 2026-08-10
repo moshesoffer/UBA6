@@ -46,7 +46,7 @@ const deleteFiles = (excelOutputFilePath, pdfPath) => {
 	}
 }
 
-const downloadReportsGraph = async (req, res) => {
+const downloadReportsGraph = async (req, res, sampleRate) => {
 	let excelOutputFilePath;
 	let excelFileStream;
 	let pdfPath;
@@ -182,7 +182,26 @@ const downloadReportsGraph = async (req, res) => {
 		reportSheet.cell(cells.lastDischarges2).value(Math.abs(lastDischarges.lastDischargesEnergy)).style("horizontalAlignment", "right").style("numberFormat", "0.000");
 		//add summary
 		addSummary(testData, lastDischarges, maxTemperature, rowNumber, reportSheet);
-		
+ 
+		//console.log('==> downloadReportsGraph: sampleRate:', sampleRate);		
+    	dataSheet.cell(`J2`).value(sampleRate);
+		rowNumber = 2;
+		const usedRange = dataSheet.usedRange();
+		const lastRow = usedRange.endCell().rowNumber();
+		for (let sourceRow = 2; sourceRow <= lastRow; sourceRow += sampleRate) {
+    		const value2 = dataSheet.cell(`A${sourceRow}`).value();
+    		dataSheet.cell(`K${rowNumber}`).value(value2);
+
+    		const value3 = dataSheet.cell(`C${sourceRow}`).value();
+    		dataSheet.cell(`L${rowNumber}`).value(value3);
+
+    		const value4 = dataSheet.cell(`D${sourceRow}`).value();
+    		dataSheet.cell(`M${rowNumber}`).value(value4);
+
+    		const value5 = dataSheet.cell(`E${sourceRow}`).value();
+    		dataSheet.cell(`N${rowNumber}`).value(value5);
+			rowNumber++;
+		}
 
 		const id = uuidv4();
 		excelOutputFilePath = path.join(__dirname, 'output-' + id + '.xlsx');

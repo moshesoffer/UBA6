@@ -77,3 +77,26 @@ export const deleteReport = async (authDispatch, reportsDispatch, settingsDispat
 		authDispatch(setNotification({message: preparedMessage,}));
 	}
 }
+
+export const downloadReport = async (authDispatch, reportsDispatch, settingsDispatch, metadata, report, sampleRate) => {
+	try {
+        const data = {
+            ...report,
+            sampleRate
+        };
+
+        //console.log('PATCH report:', report.id);
+        //console.log('PATCH data:', data);
+        //console.log('PATCH sampleRate:', sampleRate);
+        //console.log('PATCH sampleRate type:', typeof sampleRate);
+
+		await postData(authDispatch, `reports/${report.id}`, 'PATCH', data); //{
+		//	...report,
+		//	sampleRate
+		//});
+		//getReports(authDispatch, reportsDispatch, settingsDispatch, metadata);
+	} catch (error) {
+		const preparedMessage = handleRequestError(error);
+		authDispatch(setNotification({message: preparedMessage,}));
+	}
+}

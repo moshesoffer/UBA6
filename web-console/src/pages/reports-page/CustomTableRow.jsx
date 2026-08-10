@@ -14,8 +14,12 @@ import {getDate,} from 'src/services/string-definitions';
 import {statusCodes, getKeyByValue} from 'src/constants/unsystematic';
 
 import DownloadReport from './modal-views/DownloadReport';
-import {deleteReport,} from 'src/action-creators/Reports';
+import {deleteReport, downloadReport} from 'src/action-creators/Reports';
 import {useSettingsDispatch,} from 'src/store/SettingsProvider';
+
+import { useState } from 'react';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 
 export default function CustomTableRow(props) {
 	const {metadata,} = props;
@@ -31,9 +35,30 @@ export default function CustomTableRow(props) {
 		authDispatch(setModal('edit.report'));
 	};
 
+	//const handleDownloadClick = () => {
+	//	reportsDispatch(setCurrentReport(row));
+	//	authDispatch(setModal('download.report'));
+	//};
 	const handleDownloadClick = () => {
-		reportsDispatch(setCurrentReport(row));
-		authDispatch(setModal('download.report'));
+	    const report = {
+	        ...row,
+	        sampleRate
+	    };
+
+    	//console.log('row:', row);
+    	//console.log('report.id:', row?.id);
+    	//console.log('sampleRate:', sampleRate);
+
+	    reportsDispatch(setCurrentReport(report));
+	    downloadReport(
+	        authDispatch,
+	        reportsDispatch,
+	        settingsDispatch,
+	        metadata,
+	        report,
+	        sampleRate
+	    );
+	    authDispatch(setModal('download.report'));
 	};
 
 	const metadata1 = {
@@ -51,6 +76,12 @@ export default function CustomTableRow(props) {
 		}
 		return false;
 	}
+
+	const [sampleRate, setSampleRate] = useState(row?.sampleRate ?? 1);
+
+	const handleSampleRateChange = (event) => {
+	    setSampleRate(Number(event.target.value));
+	};
 
 	return (
 		<TableRow hover tabIndex={-1} selected={selected}>
@@ -101,12 +132,29 @@ export default function CustomTableRow(props) {
 				<IconButton size="small" color="primary" onClick={handleEditClick}>
 					<BorderColorIcon/>
 				</IconButton>
+
+				{
+					row?.status === statusCodes.FINISHED &&
+			    		<Select
+			    		    size="small"
+			    		    value={sampleRate}
+			    		    onChange={handleSampleRateChange}
+			    		    sx={{ ml: 1, minWidth: 30 }}
+			    		>
+			    		    {[1, 5, 10, 15, 30, 60, 180].map((value) => (
+			    		        <MenuItem key={value} value={value}>
+			    		            {value}
+			    		        </MenuItem>
+			    		    ))}
+			    		</Select>
+				}
 				{
 					row?.status === statusCodes.FINISHED &&
 						<IconButton size="small" color="primary" onClick={handleDownloadClick}>
 							<CloudDownloadIcon/>
 						</IconButton>
 				}
+
 			</TableCell>
 
 			<DownloadReport p={0} actionName={['download.report',]}/>
