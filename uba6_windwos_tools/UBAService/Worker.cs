@@ -695,7 +695,7 @@ _logger.LogInformation($"==> 2 Remove UBA: {UBAs[i]}");
                             if (message != null) {
                             await wcs.UpdateTestReadingData(ubaDto.RunningTestID, message.QueryResponse.Bpt, true);
                             
-                            if (ubaDto.Channel.Equals("A") && (channelStatus [0] != (int)message?.QueryResponse.Bpt.State)) {
+                            if (ubaDto.Channel.Equals("A") && (channelStatus [0] != (int)message.QueryResponse.Bpt.State)) {
                                 channelStatus [0] = (int)message.QueryResponse.Bpt.State;
                                 if ((message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.RunStep) ||
                                     (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.Pause) ||
@@ -738,7 +738,7 @@ _logger.LogInformation($"==> 8.2.pendingTestResponseDTO Ch B: set ubaDto.Status 
                             }
                             }
 
-                            else if (ubaDto.Channel.Equals("B") && (channelStatus [1] != (int)message?.QueryResponse.Bpt.State)) {
+                            else if (ubaDto.Channel.Equals("B") && (channelStatus [1] != (int)message.QueryResponse.Bpt.State)) {
                                 channelStatus [1] = (int)message.QueryResponse.Bpt.State;
                                 if ((message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.RunStep) ||
                                     (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.Pause) ||
