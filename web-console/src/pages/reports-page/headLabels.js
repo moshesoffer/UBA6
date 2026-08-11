@@ -41,6 +41,6 @@ export default [
 		label: getText('common.RUN_TIME'),
 	},
 	{
-		label: getText('common.ACTION'),
+		label: getText('common.ACTION_RATE'),
 	}
 ];

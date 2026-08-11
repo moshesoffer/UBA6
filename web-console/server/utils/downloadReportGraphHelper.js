@@ -209,7 +209,12 @@ const downloadReportsGraph = async (req, res, sampleRate) => {
 		await workbook.toFileAsync(excelOutputFilePath);
 		if(exportType === 'XSLX'){
 			// Set headers for file download filename="${resultsGraphData[0].reportID}.xlsx"
-			res.setHeader('Content-Disposition', `attachment; filename="${testData.reportID}.xlsx"`);
+			const pn = testData.batteryPN;
+			const sn = testData.batterySN;
+			const now = new Date();
+			const dateString = `${String(now.getDate()).padStart(2, '0')}` + `${String(now.getMonth() + 1).padStart(2, '0')}` + `${now.getFullYear()}`;
+			res.setHeader('Content-Disposition', `attachment; filename="${pn}--${sn}--${dateString}.xlsx"`);
+			//res.setHeader('Content-Disposition', `attachment; filename="${testData.reportID}.xlsx"`) - OLD version;
 			res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 			logger.info(`downloadReportsGraph [${req.params?.reportID}] createReadStream to [${excelOutputFilePath}]`);
 			// Stream the Excel file to the client

@@ -23,6 +23,7 @@ export default {
 		CH_: 'Ch.',
 		RUN_TIME: 'Run time',
 		ACTION: 'Action',
+		ACTION_RATE: 'Action            Rate [sec]',
 		VOLTAGE: 'Voltage',
 		CURRENT: 'Current',
 		CAPACITY: 'Capacity',
