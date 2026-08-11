@@ -148,11 +148,11 @@ int main(void)
   
   UBA_TR_demo_init();
 	file_logger_print();
+	PLI74HC166_init(&buttons_driver_g);
   LCD_start();
 	HAL_Delay(200);
 
 	UBA_UART_comm_init();
-	PLI74HC166_init(&buttons_driver_g);
 	HAL_Delay(10);
 
   /* USER CODE END 2 */

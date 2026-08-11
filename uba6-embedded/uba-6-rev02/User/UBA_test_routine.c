@@ -169,6 +169,11 @@ int32_t UBA_TR_unpack(TR_Test_Routine *tr, UBA_BPT *bpt) {
 					new_step->plan_index = index;
 					isAdd_step = true;
 UART_LOG(UBA_COMP, "index %d, step_index %d, step type %s", index, step_index, tr->config[index].type_id == 0 ? "charge" : "discharge");
+	if (tr->config[index].type_id == 0) {
+ 		UART_LOG(UBA_COMP, "new_step current=%d", new_step->type.charge.current);
+	} else {
+ 		UART_LOG(UBA_COMP, "new_step current=%d", new_step->type.discharge.current);
+	}
 					index++;
 				} else {
 					UART_LOG_CRITICAL(UBA_COMP, "Step is not valid");

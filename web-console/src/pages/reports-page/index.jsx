@@ -36,14 +36,25 @@ export default function ReportsPage() {
 		dateRange: '',
 	};
 
-	const [order, setOrder] = useState('asc');
-	const [orderBy, setOrderBy] = useState('testName');
+	const [order, setOrder] = useState('desc');
+	const [orderBy, setOrderBy] = useState('timeOfTest');
 	const [page, setPage] = useState(0);
 	const [rowsPerPage, setRowsPerPage] = useState(50);
 	const [filters, setFilters] = useState(filtersInitial);
 	const [selected, setSelected] = useState([]);
 
 	const {reports,} = useReports();
+
+//	console.log(
+//	    'REPORT ROWS:',
+//	    reports?.rows?.map(row => ({
+//	        id: row.id,
+//	        timestampStart: row.timestampStart,
+//	        timestampEnd: row.timestampEnd,
+//	        timeOfTest: row.timeOfTest,
+//	        row
+//	    }))
+//	);
 
 	const authDispatch = useAuthDispatch();
 	const reportsDispatch = useReportsDispatch();
@@ -54,7 +65,7 @@ export default function ReportsPage() {
 			page,
 			rowsPerPage,
 			order,
-			orderBy,
+			orderBy: 'timestampStart',
 			filters,
 		});
 	}, [
@@ -89,6 +100,26 @@ export default function ReportsPage() {
 		authDispatch(setModal('results.graphs'))
 	};
 
+	const parseTimeOfTest = (value) => {
+	    if (!value) return 0;
+
+	    const [date, time] = value.split(' ');
+
+	    if (!date || !time) return 0;
+
+	    const [year, month, day] = date.split('-').map(Number);
+	    const [hours, minutes, seconds] = time.split(':').map(Number);
+
+	    return new Date(
+	        year,
+	        month - 1,
+	        day,
+	        hours,
+	        minutes,
+	        seconds
+	    ).getTime();
+	};
+	
 	return (
 		<Container maxWidth="false">
 			<Card sx={{mb: 1}}>
@@ -99,18 +130,20 @@ export default function ReportsPage() {
 				<TableContainer>
 					<Table>
 						<CustomTableHead {...{order}} setOrder={setOrder} {...{orderBy}} setOrderBy={setOrderBy} {...{headLabels}}/>
-
 						<TableBody>
-							{
-								reports.rows.map((row, key) => (
-									<CustomTableRow
-										key={key}
-										{...{row}}
-										selected={selected.indexOf(row.id) !== -1}
-										handleClick={event => handleCheckClick(event, row.id)}
-									/>
-								))
-							}
+						    {[...reports.rows]
+						        .sort((a, b) => {
+						            return new Date(b.timestampStart) - new Date(a.timestampStart);
+						        })
+						        .map((row) => (
+						            <CustomTableRow
+						                key={row.id}
+						                row={row}
+						                selected={selected.indexOf(row.id) !== -1}
+						                handleClick={event => handleCheckClick(event, row.id)}
+						            />
+						        ))
+						    }
 						</TableBody>
 					</Table>
 				</TableContainer>
