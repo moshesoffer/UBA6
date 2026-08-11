@@ -168,6 +168,7 @@ int32_t UBA_TR_unpack(TR_Test_Routine *tr, UBA_BPT *bpt) {
 				if (UBA_TR_set_step_and_validate(new_step, &tr->config[index])) {
 					new_step->plan_index = index;
 					isAdd_step = true;
+UART_LOG(UBA_COMP, "index %d, step_index %d, step type %s", index, step_index, tr->config[index].type_id == 0 ? "charge" : "discharge");
 					index++;
 				} else {
 					UART_LOG_CRITICAL(UBA_COMP, "Step is not valid");
@@ -181,6 +182,7 @@ int32_t UBA_TR_unpack(TR_Test_Routine *tr, UBA_BPT *bpt) {
 			case TEST_ROUTINE_STEP_TYPE_LOOP:
 				if (tr->config[index].type.loop.loop_counter < tr->config[index].type.loop.loop_size) {
 					tr->config[index].type.loop.loop_counter++;
+UART_LOG(UBA_COMP, "index %d, LOOP counter %d size %d to_step %d", index, tr->config[index].type.loop.loop_counter, tr->config[index].type.loop.loop_size, tr->config[index].type.loop.loop_to_step);
 					index = tr->config[index].type.loop.loop_to_step;
 				} else {
 					index++;
