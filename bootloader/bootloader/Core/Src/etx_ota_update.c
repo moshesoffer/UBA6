@@ -88,7 +88,7 @@ ETX_OTA_EX_ etx_ota_download_and_flash( void )
     {
       len = etx_receive_chunk( Rx_Buffer, ETX_OTA_PACKET_MAX_SIZE );
       //uart_printf("etx_receive_chunk, len %d, retries %d\r\n", (int16_t)len, retries);
-      if ( ( (int16_t)len < 0 ) && 
+      if ( ( (int16_t)len <= 0 ) && 
            ( retries > 0) ) // timeout, retry receive chunck
       {
         uart_printf("-");
@@ -97,7 +97,7 @@ ETX_OTA_EX_ etx_ota_download_and_flash( void )
         continue;
       }
 
-      retries = 1;
+      //retries = 1;
       break;
     }
 #endif
