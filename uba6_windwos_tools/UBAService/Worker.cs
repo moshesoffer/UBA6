@@ -695,7 +695,7 @@ _logger.LogInformation($"==> 2 Remove UBA: {UBAs[i]}");
                             if (message != null) {
                             await wcs.UpdateTestReadingData(ubaDto.RunningTestID, message.QueryResponse.Bpt, true);
                             
-                            if (ubaDto.Channel.Equals("A") && (channelStatus [0] != (int)message.QueryResponse.Bpt.State)) {
+                            if (ubaDto.Channel.Equals("A") && (message != null) && (channelStatus [0] != (int)message.QueryResponse.Bpt.State)) {
                                 channelStatus [0] = (int)message.QueryResponse.Bpt.State;
                                 if ((message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.RunStep) ||
                                     (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.Pause) ||
@@ -738,7 +738,7 @@ _logger.LogInformation($"==> 8.2.pendingTestResponseDTO Ch B: set ubaDto.Status 
                             }
                             }
 
-                            else if (ubaDto.Channel.Equals("B") && (channelStatus [1] != (int)message.QueryResponse.Bpt.State)) {
+                            else if (ubaDto.Channel.Equals("B") && (message != null) && (channelStatus [1] != (int)message.QueryResponse.Bpt.State)) {
                                 channelStatus [1] = (int)message.QueryResponse.Bpt.State;
                                 if ((message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.RunStep) ||
                                     (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.Pause) ||
@@ -775,6 +775,8 @@ _logger.LogInformation($"==> 8.2.pendingTestResponseDTO: msgStatus= {message.Que
                             _logger.LogInformation($"8.3 Trying to update Running Tests for UBA Device-1: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac} CH: {ubaDto.Channel} testName: {ubaDto.TestName}");
                             _logger.LogError(ex.Message);
                             //_logger.LogError($"8-No Response from UBA Device on Port");
+//20:51:07 info: UBAService.Worker[0] 8.3 Trying to update Running Tests for UBA Device-1: proto, SN: 20, MAC: AC45EF00059B CH: B testName:
+//20:51:07 fail: UBAService.Worker[0] Object reference not set to an instance of an object.
                         }
                     }
                 }
