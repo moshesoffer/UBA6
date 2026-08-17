@@ -165,24 +165,27 @@ _logger.LogInformation($"Keepalive start");
         }
 
         public void StopBPT(UBA_PROTO_CHANNEL.ID ch) {
-            _logger.LogInformation($"==> StopBPT");    
+            _logger.LogInformation($"==> adr {Address} StartBPT", this.Address);    
             SentMessage(UBA_Message_Factory.CreateMessage(this.Address,
                 ProtoHelper.CreateBPTCommand(UBA_PROTO_BPT.CMD_ID.Stop, ch)), MessagePriority.BPT_STOP);
         }
         public void StartBPT(UBA_PROTO_CHANNEL.ID ch,UInt32 index) {
-            _logger.LogInformation($"==> StartBPT");    
+            _logger.LogInformation($"==> adr {Address} StartBPT", this.Address);    
             SentMessage(UBA_Message_Factory.CreateMessage(this.Address,
                 ProtoHelper.CreateBPTCommand(UBA_PROTO_BPT.CMD_ID.Select, ch,index)), MessagePriority.BPT_START);
         }
         public void PasueBPT(UBA_PROTO_CHANNEL.ID ch) {
+            _logger.LogInformation($"==> adr {Address} PauseBPT", this.Address);    
             SentMessage(UBA_Message_Factory.CreateMessage(this.Address,
                 ProtoHelper.CreateBPTCommand(UBA_PROTO_BPT.CMD_ID.Paused, ch)), MessagePriority.BPT_PAUSE);
         }
         public void StepBPT(UBA_PROTO_CHANNEL.ID ch) {
+            _logger.LogInformation($"==> adr {Address} StepBPT", this.Address);    
             SentMessage(UBA_Message_Factory.CreateMessage(this.Address,
                 ProtoHelper.CreateBPTCommand(UBA_PROTO_BPT.CMD_ID.Step, ch)), MessagePriority.BPT_STEP);
         }
         public void ClearBPT(UBA_PROTO_CHANNEL.ID ch) {
+            _logger.LogInformation($"==> adr {Address} ClearBPT", this.Address);    
             SentMessage(UBA_Message_Factory.CreateMessage(this.Address,
                 ProtoHelper.CreateBPTCommand(UBA_PROTO_BPT.CMD_ID.Clear, ch)));
         }

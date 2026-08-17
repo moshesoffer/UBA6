@@ -53,5 +53,6 @@ namespace UBA6Library {
             IsBatteryConnected = status.Data.IsBatteryConnected;
 
         }
+        public int ChannelStatus = 0;
     }
 }

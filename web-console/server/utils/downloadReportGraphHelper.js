@@ -209,11 +209,24 @@ const downloadReportsGraph = async (req, res, sampleRate) => {
 		await workbook.toFileAsync(excelOutputFilePath);
 		if(exportType === 'XSLX'){
 			// Set headers for file download filename="${resultsGraphData[0].reportID}.xlsx"
+			//const pn = testData.batteryPN;
+			//const sn = testData.batterySN;
+			//const now = new Date();
+			//const dateString = `${String(now.getDate()).padStart(2, '0')}` + `${String(now.getMonth() + 1).padStart(2, '0')}` + `${now.getFullYear()}}`;
+
 			const pn = testData.batteryPN;
 			const sn = testData.batterySN;
 			const now = new Date();
-			const dateString = `${String(now.getDate()).padStart(2, '0')}` + `${String(now.getMonth() + 1).padStart(2, '0')}` + `${now.getFullYear()}`;
-			res.setHeader('Content-Disposition', `attachment; filename="${pn}--${sn}--${dateString}.xlsx"`);
+			const dateString =
+			    `${String(now.getDate()).padStart(2, '0')}` +
+			    `${String(now.getMonth() + 1).padStart(2, '0')}` +
+			    `${now.getFullYear()}` +
+			    `-` +
+			    `${String(now.getHours()).padStart(2, '0')}` +
+			    `${String(now.getMinutes()).padStart(2, '0')}` +
+			    `${String(now.getSeconds()).padStart(2, '0')}`;
+
+			res.setHeader('Content-Disposition', `attachment; filename="${pn}__${sn}__${dateString}.xlsx"`);
 			//res.setHeader('Content-Disposition', `attachment; filename="${testData.reportID}.xlsx"`) - OLD version;
 			res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 			logger.info(`downloadReportsGraph [${req.params?.reportID}] createReadStream to [${excelOutputFilePath}]`);
@@ -229,6 +242,7 @@ const downloadReportsGraph = async (req, res, sampleRate) => {
 			excelFileStream.on('end', () => {
 				fs.unlinkSync(excelOutputFilePath);
 			});
+
 		} else {
 			//exec('soffice --headless --convert-to pdf ' +  excelOutputFilePath, (error, stdout, stderr) => {
 			//exec('soffice --headless --convert-to pdf --outdir ' + __dirname + ' ' + excelOutputFilePath, (error, stdout, stderr) => {
@@ -269,9 +283,9 @@ const downloadReportsGraph = async (req, res, sampleRate) => {
 					deleteFiles(excelOutputFilePath, pdfPath);
 					res.sendStatus(500);
 				}
-				
 			});
 		}
+
 	} catch (error) {
 		//TODO delete file if fails
 		logger.error('downloadReportsGraph error', error);

@@ -30,7 +30,6 @@ namespace UBAService {
         private List<UBA_Interface> UBA_Interfaces { get; set; } = new List<UBA_Interface>();
         private WebConsoleService wcs;
         private static TimeSpan delay = TimeSpan.FromSeconds(1);
-        private int[] channelStatus = { 0, 0 };
         private bool[] testInProgress = { false, false};
         private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
 
@@ -75,7 +74,7 @@ namespace UBAService {
 
         private CancellationTokenSource? _cts;
         public async Task StartPeriodicRunningTestUpdate(CancellationToken stoppingToken) {
-            int timeout = 1000;
+            int timeout = 500;
             var tcs = new TaskCompletionSource<Message?>();
 
             while (true) {
@@ -226,14 +225,14 @@ namespace UBAService {
                 ////_logger.LogInformation("Found {Count} UBA devices.", ubaDeviceDtos.Count);
                 foreach (var ubaDto in ubaDeviceDtos) {
                     try {
+                        UBA6 uba = null;
 //_logger.LogInformation("3. {Count}-UBAs channel {Channel} status {Status}", ubaDeviceDtos.Count, ubaDto.Channel, ubaDto.Status);
                         if (ubaDto.Channel.Equals("A") || ubaDto.Channel.Equals("Ab")) {
                             Message message = null;// await UBAs.First().GetMessage(UBA_PROTO_QUERY.RECIPIENT.BptA);
-                            for (int i = 0; i < UBAs.Count; i++)
-                            {
-                                if (UBAs[i].Address.ToString() == ubaDto.Address)
-                                {
+                            for (int i = 0; i < UBAs.Count; i++) {
+                                if (UBAs[i].Address.ToString() == ubaDto.Address) {
 //_logger.LogInformation("3.1 refreshChannelReading {recipent} {address}", UBA_PROTO_QUERY.RECIPIENT.BptA, ubaDto.Address);
+                                    uba = UBAs[i];
                                     message = await UBAs[i].GetMessage(UBA_PROTO_QUERY.RECIPIENT.BptA);
                                     break;
                                 }
@@ -241,14 +240,14 @@ namespace UBAService {
                             if (message != null) {
                                 await wcs.UpdateTestReadingData(ubaDto.RunningTestID, message.QueryResponse.Bpt, true);
 
-                                if (channelStatus [0] != (int)message.QueryResponse.Bpt.State) {
+                                if (uba.A.ChannelStatus != (int)message.QueryResponse.Bpt.State) {
                                     if (((((RunningTestsController.Status)ubaDto.Status) & RunningTestsController.Status.STOPPED) == 0) &&
                                         ((((RunningTestsController.Status)ubaDto.Status) & RunningTestsController.Status.PENDING) == 0)) {
                                         ////_logger.LogInformation("Change PENDING Test Status {State}", message.QueryResponse.Bpt.State);
-_logger.LogInformation("9.1.Pending test {Channel} {Status}, set to {newState} {channelStatus[0]}", ubaDto.Channel, ubaDto.Status, message.QueryResponse.Bpt.State, channelStatus[0]);
+_logger.LogInformation("9.1.Pending test {Channel} {Status}, set to {newState} {uba.A.ChannelStatus}", ubaDto.Channel, ubaDto.Status, message.QueryResponse.Bpt.State, uba.A.ChannelStatus);
                                         await wcs.ChangeRunningTestStatus(ubaDto, Bptstate2DTOstate(message.QueryResponse.Bpt.State, message.QueryResponse.Bpt.StepType));
                                     }
-                                    channelStatus [0] = (int)message.QueryResponse.Bpt.State;
+                                    uba.A.ChannelStatus = (int)message.QueryResponse.Bpt.State;
                                 }
                             }
 
@@ -266,14 +265,14 @@ _logger.LogInformation("9.1.Pending test {Channel} {Status}, set to {newState} {
                             if (message != null) {
                                 await wcs.UpdateTestReadingData(ubaDto.RunningTestID, message.QueryResponse.Bpt, true);
 
-                                if (channelStatus [1] != (int)message.QueryResponse.Bpt.State) {
+                                if (uba.B.ChannelStatus != (int)message.QueryResponse.Bpt.State) {
                                     if (((((RunningTestsController.Status)ubaDto.Status) & RunningTestsController.Status.STOPPED) == 0) &&
                                         ((((RunningTestsController.Status)ubaDto.Status) & RunningTestsController.Status.PENDING) == 0)) {
                                         ////_logger.LogInformation("Change PENDING Test Status {State}", message.QueryResponse.Bpt.State);
 _logger.LogInformation("9.2.Pending test {Channel} {Status}, set to {newState}", ubaDto.Channel, ubaDto.Status, message.QueryResponse.Bpt.State);
                                         await wcs.ChangeRunningTestStatus(ubaDto, Bptstate2DTOstate(message.QueryResponse.Bpt.State, message.QueryResponse.Bpt.StepType));
                                     }
-                                    channelStatus [1] = (int)message.QueryResponse.Bpt.State;
+                                    uba.B.ChannelStatus = (int)message.QueryResponse.Bpt.State;
                                 }
                             }
                         }
@@ -361,13 +360,13 @@ _logger.LogInformation("9.2.Pending test {Channel} {Status}, set to {newState}",
                     }
 
                     if ((((RunningTestsController.Status)pendingTest.Status) & RunningTestsController.Status.PENDING) > 0) {
-                        _logger.LogInformation("==> PENDING, ch {channel} ...", pendingTest.Channel);
+                        _logger.LogInformation("==> PENDING, adr {address} ch {channel} ...", uba.Address, pendingTest.Channel);
                         ////uba.PendingBPT(util.GetChannelFormDTO(pendingTest));
 
 //_logger.LogInformation("2.Pending test {Channel} {Status}, set to {Status}", pendingTest.Channel, pendingTest.Status, pendingTest.Status & ~((uint)RunningTestsController.Status.PENDING));
                         await wcs.ChangeRunningTestStatus(pendingTest, (int)((uint)pendingTest.Status & ~((uint)RunningTestsController.Status.PENDING)));
                     } /*else*/ if ((((RunningTestsController.Status)pendingTest.Status) & RunningTestsController.Status.RUNNING) > 0) {
-                        _logger.LogInformation("==> RUNNING, ch {channel} ...", pendingTest.Channel);
+                        _logger.LogInformation("==> RUNNING, adr {address} ch {channel} ...", uba.Address, pendingTest.Channel);
                         await uba.UpdatedTime();
                         Test_Routine_Message msg = new Test_Routine_Message();
                         msg.Index = util.GetIndexFormDTO(pendingTest);
@@ -389,19 +388,19 @@ _logger.LogInformation("9.2.Pending test {Channel} {Status}, set to {newState}",
                         }
 
                     } /*else*/ if ((((RunningTestsController.Status)pendingTest.Status) & RunningTestsController.Status.STOPPED) > 0) {
-                        _logger.LogInformation("==> STOPPED, ch {channel} ...", pendingTest.Channel);
+                        _logger.LogInformation("==> STOPPED, adr {address} ch {channel} ...", uba.Address, pendingTest.Channel);
                         uba.StopBPT(util.GetChannelFormDTO(pendingTest));
 
                     } /*else*/ if ((((RunningTestsController.Status)pendingTest.Status) & RunningTestsController.Status.PAUSED) > 0) {
-                        _logger.LogInformation("==> PAUSED, ch {channel} ...", pendingTest.Channel);
+                        _logger.LogInformation("==> PAUSED, adr {address} ch {channel} ...", uba.Address, pendingTest.Channel);
                         uba.PasueBPT(util.GetChannelFormDTO(pendingTest));
 
                     } /*else*/ if ((((RunningTestsController.Status)pendingTest.Status) & RunningTestsController.Status.NEXTSTEP) > 0) {
-                        _logger.LogInformation("==> NEXTSTEP, ch {channel} ...", pendingTest.Channel);
+                        _logger.LogInformation("==> NEXTSTEP, adr {address} ch {channel} ...", uba.Address, pendingTest.Channel);
                         uba.StepBPT(util.GetChannelFormDTO(pendingTest));
 
                     } /*else*/ if ((((RunningTestsController.Status)pendingTest.Status) & RunningTestsController.Status.STANDBY) > 0) {
-                        _logger.LogInformation("==> STANDBY, ch {channel} ...", pendingTest.Channel);
+                        _logger.LogInformation("==> STANDBY, adr {address} ch {channel} ...", uba.Address, pendingTest.Channel);
 
 //                        string filename = await uba.GetRunningTestFileName(util.GetChannelFormDTO(pendingTest));
 //                        _logger.LogInformation("Stopping BPT on channel {Channel} with file {FileName}", util.GetChannelFormDTO(pendingTest), filename);
@@ -425,7 +424,7 @@ _logger.LogInformation("9.2.Pending test {Channel} {Status}, set to {newState}",
                         _ = SaveTestAsync(pendingTest);
 
                     } /*else*/ if ((((RunningTestsController.Status)pendingTest.Status) & RunningTestsController.Status.ABORTED) > 0) {
-                        _logger.LogInformation("==> ABORTED, ch {channel} ...", pendingTest.Channel);
+                        _logger.LogInformation("==> ABORTED, adr {address} ch {channel} ...", uba.Address, pendingTest.Channel);
                         ////uba.AbortedBPT(util.GetChannelFormDTO(pendingTest));
                     }
 
@@ -579,17 +578,17 @@ _logger.LogInformation("==> 3-Add UBA {address} {sn} {comPort}", newUba.Address,
                                 //_logger.LogInformation($"Update Running Tests for UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac}");
 //_logger.LogInformation("==> get message 5");
                                 Message message = null;//await UBAs.First().GetMessage(ubaDto.Channel.Equals("A") ? UBA_PROTO_QUERY.RECIPIENT.BptA : UBA_PROTO_QUERY.RECIPIENT.BptB);
-                                for (int i = 0; i < UBAs.Count; i++)
-                                {
-                                    if (UBAs[i].Address.ToString() == ubaDto.Address)
-                                    {
+                                for (int i = 0; i < UBAs.Count; i++) {
+                                    if (UBAs[i].Address.ToString() == ubaDto.Address) {
 _logger.LogInformation("3.3 AddUBA2List GetMessage");
                                         message =  await UBAs[i].GetMessage(ubaDto.Channel.Equals("A") ? UBA_PROTO_QUERY.RECIPIENT.BptA : UBA_PROTO_QUERY.RECIPIENT.BptB);
                                         break;
                                     }
                                 }
-                                //_logger.LogInformation($"Message: {message}");
-                                await wcs.UpdateTestReadingData(ubaDto.RunningTestID, message.QueryResponse.Bpt, true);
+                                if (message != null) {
+                                    //_logger.LogInformation($"Message: {message}");
+                                    await wcs.UpdateTestReadingData(ubaDto.RunningTestID, message.QueryResponse.Bpt, true);
+                                }
                             }
                         }                     
                     }
@@ -670,124 +669,6 @@ _logger.LogInformation($"==> 2 Remove UBA: {UBAs[i]}");
             }
         }
 
-        protected async Task updateRunningTestDataOLD() {
-            try {
-                List<UbaDeviceDto> ubaDeviceDtos = await wcs.GetStationUBAs();
-                if (ubaDeviceDtos == null || ubaDeviceDtos.Count == 0) {
-                    _logger.LogInformation("4 No UBA devices found. Retrying in {Retry} seconds.", _settings.RetryCount);
-                } else {
-                    foreach (var ubaDto in ubaDeviceDtos) {
-                        int Status = (int) ubaDto.Status;
-                        //update UBA running test
-                        try {
-                            Message message = null;//await UBAs.First().GetMessage(ubaDto.Channel.Equals("A") ? UBA_PROTO_QUERY.RECIPIENT.BptA : UBA_PROTO_QUERY.RECIPIENT.BptB);
-                            //for (int i = 0; i < UBAs.Count; i++)
-                            //{
-                            //    if (UBAs[i].Address.ToString() == ubaDto.Address)
-                            //    {
-                            //        message =  await UBAs[i].GetMessage(ubaDto.Channel.Equals("A") ? UBA_PROTO_QUERY.RECIPIENT.BptA : UBA_PROTO_QUERY.RECIPIENT.BptB);
-                            //        break;
-                            //    }
-                            //}
-                            var uba = UBAs.FirstOrDefault(u => u.Address.ToString() == ubaDto.Address);
-                            if (uba != null) {
-_logger.LogInformation($"==> 8.0.pendingTestResponseDTO Ch {ubaDto.Channel}", ubaDto.Channel);
-                                message = await uba.GetMessage(ubaDto.Channel.Equals("A") ? UBA_PROTO_QUERY.RECIPIENT.BptA : UBA_PROTO_QUERY.RECIPIENT.BptB);
-                            }
-
-                            if (message != null) {
-                            await wcs.UpdateTestReadingData(ubaDto.RunningTestID, message.QueryResponse.Bpt, true);
-                            
-                            if (ubaDto.Channel.Equals("A") && (message != null) && (channelStatus [0] != (int)message.QueryResponse.Bpt.State)) {
-                                channelStatus [0] = (int)message.QueryResponse.Bpt.State;
-                                if ((message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.RunStep) ||
-                                    (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.Pause) ||
-                                    (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.StepCompleate)) {
-                                    GETPendingTestResponseDTO pendingTestResponseDTO = new GETPendingTestResponseDTO();
-                                    pendingTestResponseDTO.Id = ubaDto.RunningTestID;
-                                    pendingTestResponseDTO.Channel = ubaDto.Channel;
-                                    pendingTestResponseDTO.UbaSN = ubaDto.UbaSN;
-_logger.LogInformation($"==> 8.1.pendingTestResponseDTO Ch A: msgStatus= {message.QueryResponse.Bpt.State}, ubaStatus= {Status}, channelStatus= {channelStatus[0]}", message.QueryResponse.Bpt.State, Status, channelStatus[0]);
-//_logger.LogInformation($"==> 8.1.pendingTestResponseDTO: RUNNING {Status} {message.QueryResponse.Bpt.StartTime}", Status, message.QueryResponse.Bpt.StartTime);
-                                    if (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.RunStep) {
-_logger.LogInformation($"==> 8.1.pendingTestResponseDTO Ch A: set ubaDto.Status to RUNNING");
-                                        ubaDto.Status = (int)RunningTestsController.Status.RUNNING;
-                                    }
-                                    await wcs.ChangeRunningTestStatus(pendingTestResponseDTO, (int)ubaDto.Status);//RunningTestsController.Status.RUNNING);
-
-                                } else if ((message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.Standby) ||
-                                           (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.TestCompleate) ||
-                                           (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.Init)) {
-                                    GETPendingTestResponseDTO pendingTestResponseDTO = new GETPendingTestResponseDTO();
-                                    pendingTestResponseDTO.Id = ubaDto.RunningTestID;
-                                    pendingTestResponseDTO.Channel = ubaDto.Channel;
-                                    pendingTestResponseDTO.UbaSN = ubaDto.UbaSN;
-_logger.LogInformation($"==> 8.2.pendingTestResponseDTO Ch B: msgStatus= {message.QueryResponse.Bpt.State}, ubaStatus= {Status}, channelStatus= {channelStatus[0]}", message.QueryResponse.Bpt.State, Status, channelStatus[0]);
-//_logger.LogInformation($"==> 8.2.pendingTestResponseDTO: STANDBY {Status} channelStatus {channelStatus[0]}", Status, channelStatus[0]);
-//                                    if ((channelStatus [0] == (int)UBA_PROTO_BPT.STATE.RunStep) ||
-//                                        (channelStatus [0] == (int)UBA_PROTO_BPT.STATE.Pause) ||
-//                                        (channelStatus [0] == (int)UBA_PROTO_BPT.STATE.StepCompleate)) {
-
-                                    if (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.TestCompleate) {
-_logger.LogInformation($"==> 8.2.pendingTestResponseDTO Ch B: set ubaDto.Status to STOPPED");
-                                        ubaDto.Status = (int)RunningTestsController.Status.STOPPED;
-                                    }
-                                    await wcs.ChangeRunningTestStatus(pendingTestResponseDTO, (int)(int)ubaDto.Status);//RunningTestsController.Status.STOPPED);
-//                                    } else {
-//                                        await wcs.ChangeRunningTestStatus(pendingTestResponseDTO, (int)RunningTestsController.Status.STANDBY);                                        
-//                                    }
-                                }
-                                channelStatus [0] = (int)message.QueryResponse.Bpt.State;
-                            }
-                            }
-
-                            else if (ubaDto.Channel.Equals("B") && (message != null) && (channelStatus [1] != (int)message.QueryResponse.Bpt.State)) {
-                                channelStatus [1] = (int)message.QueryResponse.Bpt.State;
-                                if ((message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.RunStep) ||
-                                    (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.Pause) ||
-                                    (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.StepCompleate)) {
-                                    GETPendingTestResponseDTO pendingTestResponseDTO = new GETPendingTestResponseDTO();
-                                    pendingTestResponseDTO.Id = ubaDto.RunningTestID;
-                                    pendingTestResponseDTO.Channel = ubaDto.Channel;
-                                    pendingTestResponseDTO.UbaSN = ubaDto.UbaSN;
-_logger.LogInformation($"==> 8.1.pendingTestResponseDTO: msgStatus= {message.QueryResponse.Bpt.State}, ubaStatus= {Status}, channelStatus= {channelStatus[1]}", message.QueryResponse.Bpt.State, Status, channelStatus[0]);
-                                    if (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.RunStep) {
-//_logger.LogInformation($"==> 8.1.pendingTestResponseDTO: set ubaDto.Status to RUNNING");
-                                        ubaDto.Status = (int)RunningTestsController.Status.RUNNING;
-                                    }
-                                    await wcs.ChangeRunningTestStatus(pendingTestResponseDTO, (int)ubaDto.Status);//RunningTestsController.Status.RUNNING);
-
-                                } else if ((message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.Standby) ||
-                                           (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.TestCompleate) ||
-                                           (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.Init)) {
-                                    GETPendingTestResponseDTO pendingTestResponseDTO = new GETPendingTestResponseDTO();
-                                    pendingTestResponseDTO.Id = ubaDto.RunningTestID;
-                                    pendingTestResponseDTO.Channel = ubaDto.Channel;
-                                    pendingTestResponseDTO.UbaSN = ubaDto.UbaSN;
-_logger.LogInformation($"==> 8.2.pendingTestResponseDTO: msgStatus= {message.QueryResponse.Bpt.State}, ubaStatus= {Status}, channelStatus= {channelStatus[1]}", message.QueryResponse.Bpt.State, Status, channelStatus[0]);
-                                    if (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.TestCompleate) {
-//_logger.LogInformation($"==> 8.2.pendingTestResponseDTO: set ubaDto.Status to STOPPED");
-                                        ubaDto.Status = (int)RunningTestsController.Status.STOPPED;
-                                    }
-                                    await wcs.ChangeRunningTestStatus(pendingTestResponseDTO, (int)(int)ubaDto.Status);//RunningTestsController.Status.STOPPED);
-                                }
-                                channelStatus [1] = (int)message.QueryResponse.Bpt.State;
-                            }
-
-                        } catch (Exception ex) {
-                            _logger.LogInformation($"8.3 Trying to update Running Tests for UBA Device-1: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac} CH: {ubaDto.Channel} testName: {ubaDto.TestName}");
-                            _logger.LogError(ex.Message);
-                            //_logger.LogError($"8-No Response from UBA Device on Port");
-//20:51:07 info: UBAService.Worker[0] 8.3 Trying to update Running Tests for UBA Device-1: proto, SN: 20, MAC: AC45EF00059B CH: B testName:
-//20:51:07 fail: UBAService.Worker[0] Object reference not set to an instance of an object.
-                        }
-                    }
-                }
-            } catch (Exception ex) {
-                _logger.LogError(ex.Message);
-            }
-        }
-
         protected async Task updateRunningTestData() {
             try {
                 List<UbaDeviceDto> ubaDeviceDtos = await wcs.GetStationUBAs();
@@ -799,10 +680,19 @@ _logger.LogInformation($"==> 8.2.pendingTestResponseDTO: msgStatus= {message.Que
                         //update UBA running test
                         try {
                             Message message = null;//await UBAs.First().GetMessage(ubaDto.Channel.Equals("A") ? UBA_PROTO_QUERY.RECIPIENT.BptA : UBA_PROTO_QUERY.RECIPIENT.BptB);
+//                            var uba = UBAs.FirstOrDefault(u => u.Address.ToString() == ubaDto.Address);
+//                            if (uba != null) {
+////_logger.LogInformation($"==> 8.0.pendingTestResponseDTO Ch {ubaDto.Channel}", ubaDto.Channel);
+//                                message = await uba.GetMessage(ubaDto.Channel.Equals("A") ? UBA_PROTO_QUERY.RECIPIENT.BptA : UBA_PROTO_QUERY.RECIPIENT.BptB);
+//                            }
                             var uba = UBAs.FirstOrDefault(u => u.Address.ToString() == ubaDto.Address);
                             if (uba != null) {
-//_logger.LogInformation($"==> 8.0.pendingTestResponseDTO Ch {ubaDto.Channel}", ubaDto.Channel);
+//_logger.LogInformation($"==> 8.0.pendingTestResponseDTO Adr {ubaDto.Address} Ch {ubaDto.Channel}", ubaDto.Address, ubaDto.Channel);
                                 message = await uba.GetMessage(ubaDto.Channel.Equals("A") ? UBA_PROTO_QUERY.RECIPIENT.BptA : UBA_PROTO_QUERY.RECIPIENT.BptB);
+                            }
+                            else {
+                                // UBA not found
+                                continue;
                             }
 
                             if (message != null) {
@@ -812,108 +702,124 @@ _logger.LogInformation($"==> 8.2.pendingTestResponseDTO: msgStatus= {message.Que
                                 if (ubaDto.Channel.Equals("A") || ubaDto.Channel.Equals("Ab")) {
                                     if (((((RunningTestsController.Status)ubaDto.Status) & RunningTestsController.Status.STOPPED) == 0) &&
                                         ((((RunningTestsController.Status)ubaDto.Status) & RunningTestsController.Status.PENDING) == 0)) {
-                                        if (channelStatus [0] != (int)message.QueryResponse.Bpt.State) {
-_logger.LogInformation("4.1.Pending test {Channel} {Status}, set to {newState} {channelStatus[0]}", ubaDto.Channel, ubaDto.Status, message.QueryResponse.Bpt.State, channelStatus[0]);
-                                            await wcs.ChangeRunningTestStatus(ubaDto, Bptstate2DTOstate(message.QueryResponse.Bpt.State, message.QueryResponse.Bpt.StepType));
-                                        }
+                                        if (uba.A.ChannelStatus != (int)message.QueryResponse.Bpt.State) {
+//_logger.LogInformation("4.1.Pending test adr={Adress} {Channel} {Status}, set from {uba.A.ChannelStatus} to {intState} {newState}", ubaDto.Address, ubaDto.Channel, ubaDto.Status, uba.A.ChannelStatus, (int)message.QueryResponse.Bpt.State, message.QueryResponse.Bpt.State);
+                                            if ((message.QueryResponse.Bpt.State == (int)UBA_PROTO_BPT.STATE.Init) &&
+                                                ((uba.A.ChannelStatus == (int)UBA_PROTO_BPT.STATE.Pause) ||
+                                                 (uba.A.ChannelStatus == (int)UBA_PROTO_BPT.STATE.RunStep))) {
+                                            } else {
+_logger.LogInformation("4.1.Pending test adr={Adress} {Channel} {Status}, set from {uba.A.ChannelStatus} to {intState} {newState}", ubaDto.Address, ubaDto.Channel, ubaDto.Status, uba.A.ChannelStatus, (int)message.QueryResponse.Bpt.State, message.QueryResponse.Bpt.State);
+                                                await wcs.ChangeRunningTestStatus(ubaDto, Bptstate2DTOstate(message.QueryResponse.Bpt.State, message.QueryResponse.Bpt.StepType));
+                                                uba.A.ChannelStatus = (int)message.QueryResponse.Bpt.State;
+                                            }
+                                            return;
+                                         }
                                     }
-                                    channelStatus [0] = (int)message.QueryResponse.Bpt.State;
 
                                 } else if (ubaDto.Channel.Equals("B") || ubaDto.Channel.Equals("Ab")) {
                                     if (((((RunningTestsController.Status)ubaDto.Status) & RunningTestsController.Status.STOPPED) == 0) &&
                                         ((((RunningTestsController.Status)ubaDto.Status) & RunningTestsController.Status.PENDING) == 0)) {
-                                        if (channelStatus [1] != (int)message.QueryResponse.Bpt.State) {
-_logger.LogInformation("4.1.Pending test {Channel} {Status}, set to {newState} {channelStatus[1]}", ubaDto.Channel, ubaDto.Status, (int)message.QueryResponse.Bpt.State, channelStatus[1]);
-                                            await wcs.ChangeRunningTestStatus(ubaDto, Bptstate2DTOstate(message.QueryResponse.Bpt.State, message.QueryResponse.Bpt.StepType));
+                                        if (uba.B.ChannelStatus != (int)message.QueryResponse.Bpt.State) {
+//_logger.LogInformation("4.1.Pending test adr={Adress} {Channel} {Status}, set from {uba.B.ChannelStatus} to {newState}", ubaDto.Address, ubaDto.Channel, ubaDto.Status, uba.B.ChannelStatus, message.QueryResponse.Bpt.State);
+                                            if ((message.QueryResponse.Bpt.State == (int)UBA_PROTO_BPT.STATE.Init) &&
+                                                ((uba.B.ChannelStatus == (int)UBA_PROTO_BPT.STATE.Pause) ||
+                                                 (uba.B.ChannelStatus == (int)UBA_PROTO_BPT.STATE.RunStep))) {
+                                            } else {
+_logger.LogInformation("4.1.Pending test adr={Adress} {Channel} {Status}, set from {uba.B.ChannelStatus} to {newState}", ubaDto.Address, ubaDto.Channel, ubaDto.Status, uba.B.ChannelStatus, message.QueryResponse.Bpt.State);
+                                                await wcs.ChangeRunningTestStatus(ubaDto, Bptstate2DTOstate(message.QueryResponse.Bpt.State, message.QueryResponse.Bpt.StepType));
+                                                uba.B.ChannelStatus = (int)message.QueryResponse.Bpt.State;
+                                            }
+                                            return;
                                         }
                                     }
-                                    channelStatus [1] = (int)message.QueryResponse.Bpt.State;
                                 }
 
 
-                                if (ubaDto.Channel.Equals("A") && (message != null) && (channelStatus [0] != (int)message.QueryResponse.Bpt.State)) {
-                                    channelStatus [0] = (int)message.QueryResponse.Bpt.State;
-                                    if ((message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.RunStep) ||
-                                        (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.Pause) ||
-                                        (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.StepCompleate)) {
-                                        GETPendingTestResponseDTO pendingTestResponseDTO = new GETPendingTestResponseDTO();
-                                        pendingTestResponseDTO.Id = ubaDto.RunningTestID;
-                                        pendingTestResponseDTO.Channel = ubaDto.Channel;
-                                        pendingTestResponseDTO.UbaSN = ubaDto.UbaSN;
-//_logger.LogInformation($"==> 8.1.pendingTestResponseDTO Ch A: msgStatus= {message.QueryResponse.Bpt.State}, ubaStatus= {Status}, channelStatus= {channelStatus[0]}", message.QueryResponse.Bpt.State, Status, channelStatus[0]);
-//_logger.LogInformation($"==> 8.1.pendingTestResponseDTO: RUNNING {Status} {message.QueryResponse.Bpt.StartTime}", Status, message.QueryResponse.Bpt.StartTime);
-                                        if (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.RunStep) {
-_logger.LogInformation($"==> 8.1.pendingTestResponseDTO Ch A: set ubaDto.Status to RUNNING");
-                                            ubaDto.Status = (int)RunningTestsController.Status.RUNNING;
-                                        }
-                                        await wcs.ChangeRunningTestStatus(pendingTestResponseDTO, (int)ubaDto.Status);//RunningTestsController.Status.RUNNING);
-
-                                        //channelStatus [0] = (int)message.QueryResponse.Bpt.State;
-                                        //return;
-
-                                    } else if ((message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.Standby) ||
-                                               (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.TestCompleate) ||
-                                               (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.Init)) {
-                                        GETPendingTestResponseDTO pendingTestResponseDTO = new GETPendingTestResponseDTO();
-                                        pendingTestResponseDTO.Id = ubaDto.RunningTestID;
-                                        pendingTestResponseDTO.Channel = ubaDto.Channel;
-                                        pendingTestResponseDTO.UbaSN = ubaDto.UbaSN;
-//_logger.LogInformation($"==> 8.2.pendingTestResponseDTO Ch B: msgStatus= {message.QueryResponse.Bpt.State}, ubaStatus= {Status}, channelStatus= {channelStatus[0]}", message.QueryResponse.Bpt.State, Status, channelStatus[0]);
-//_logger.LogInformation($"==> 8.2.pendingTestResponseDTO: STANDBY {Status} channelStatus {channelStatus[0]}", Status, channelStatus[0]);
-//                                        if ((channelStatus [0] == (int)UBA_PROTO_BPT.STATE.RunStep) ||
-//                                            (channelStatus [0] == (int)UBA_PROTO_BPT.STATE.Pause) ||
-//                                            (channelStatus [0] == (int)UBA_PROTO_BPT.STATE.StepCompleate)) {
-
-                                        if (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.TestCompleate) {
-_logger.LogInformation($"==> 8.2.pendingTestResponseDTO Ch B: set ubaDto.Status to STOPPED");
-                                            ubaDto.Status = (int)RunningTestsController.Status.STOPPED;
-                                        }
-                                        await wcs.ChangeRunningTestStatus(pendingTestResponseDTO, (int)(int)ubaDto.Status);//RunningTestsController.Status.STOPPED);
-
-                                        //channelStatus [0] = (int)message.QueryResponse.Bpt.State;
-                                        //return;
-                                    } 
-                                    channelStatus [0] = (int)message.QueryResponse.Bpt.State;
-                                }
-
-                                else if (ubaDto.Channel.Equals("B") && (message != null) && (channelStatus [1] != (int)message.QueryResponse.Bpt.State)) {
-                                    channelStatus [1] = (int)message.QueryResponse.Bpt.State;
-                                    if ((message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.RunStep) ||
-                                        (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.Pause) ||
-                                        (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.StepCompleate)) {
-                                        GETPendingTestResponseDTO pendingTestResponseDTO = new GETPendingTestResponseDTO();
-                                        pendingTestResponseDTO.Id = ubaDto.RunningTestID;
-                                        pendingTestResponseDTO.Channel = ubaDto.Channel;
-                                        pendingTestResponseDTO.UbaSN = ubaDto.UbaSN;
-_logger.LogInformation($"==> 8.1.pendingTestResponseDTO: msgStatus= {message.QueryResponse.Bpt.State}, ubaStatus= {Status}, channelStatus= {channelStatus[1]}", message.QueryResponse.Bpt.State, Status, channelStatus[0]);
-                                        if (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.RunStep) {
-//_logger.LogInformation($"==> 8.1.pendingTestResponseDTO: set ubaDto.Status to RUNNING");
-                                            ubaDto.Status = (int)RunningTestsController.Status.RUNNING;
-                                        }
-                                        await wcs.ChangeRunningTestStatus(pendingTestResponseDTO, (int)ubaDto.Status);//RunningTestsController.Status.RUNNING);
-
-                                        //channelStatus [1] = (int)message.QueryResponse.Bpt.State;
-                                        //return;
-
-                                    } else if ((message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.Standby) ||
-                                               (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.TestCompleate) ||
-                                               (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.Init)) {
-                                        GETPendingTestResponseDTO pendingTestResponseDTO = new GETPendingTestResponseDTO();
-                                        pendingTestResponseDTO.Id = ubaDto.RunningTestID;
-                                        pendingTestResponseDTO.Channel = ubaDto.Channel;
-                                        pendingTestResponseDTO.UbaSN = ubaDto.UbaSN;
-_logger.LogInformation($"==> 8.2.pendingTestResponseDTO: msgStatus= {message.QueryResponse.Bpt.State}, ubaStatus= {Status}, channelStatus= {channelStatus[1]}", message.QueryResponse.Bpt.State, Status, channelStatus[0]);
-                                        if (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.TestCompleate) {
-//_logger.LogInformation($"==> 8.2.pendingTestResponseDTO: set ubaDto.Status to STOPPED");
-                                            ubaDto.Status = (int)RunningTestsController.Status.STOPPED;
-                                        }
-                                        await wcs.ChangeRunningTestStatus(pendingTestResponseDTO, (int)(int)ubaDto.Status);//RunningTestsController.Status.STOPPED);
-
-                                        //channelStatus [1] = (int)message.QueryResponse.Bpt.State;
-                                        //return;
-                                    }
-                                    channelStatus [1] = (int)message.QueryResponse.Bpt.State;
-                                }
+//                                if (ubaDto.Channel.Equals("A") && (message != null) && (uba.A.ChannelStatus != (int)message.QueryResponse.Bpt.State)) {
+//                                    //uba.A.ChannelStatus = (int)message.QueryResponse.Bpt.State;
+//                                    if ((message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.RunStep) ||
+//                                        (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.Pause) ||
+//                                        (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.StepCompleate)) {
+//                                        GETPendingTestResponseDTO pendingTestResponseDTO = new GETPendingTestResponseDTO();
+//                                        pendingTestResponseDTO.Id = ubaDto.RunningTestID;
+//                                        pendingTestResponseDTO.Channel = ubaDto.Channel;
+//                                        pendingTestResponseDTO.UbaSN = ubaDto.UbaSN;
+////_logger.LogInformation($"==> 8.1.pendingTestResponseDTO Ch A: msgStatus= {message.QueryResponse.Bpt.State}, ubaStatus= {Status}, channelStatus= {uba.A.ChannelStatus}", message.QueryResponse.Bpt.State, Status, uba.A.ChannelStatus);
+////_logger.LogInformation($"==> 8.1.pendingTestResponseDTO: RUNNING {Status} {message.QueryResponse.Bpt.StartTime}", Status, message.QueryResponse.Bpt.StartTime);
+//                                        if (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.RunStep) {
+//_logger.LogInformation($"==> 8.1.pendingTestResponseDTO Ch A: set ubaDto.Status to RUNNING");
+//                                            ubaDto.Status = (int)RunningTestsController.Status.RUNNING;
+//                                        }
+//                                        await wcs.ChangeRunningTestStatus(pendingTestResponseDTO, (int)ubaDto.Status);//RunningTestsController.Status.RUNNING);
+//
+//                                        //uba.A.ChannelStatus = (int)message.QueryResponse.Bpt.State;
+//                                        //return;
+//
+//                                    } else if ((message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.Standby) ||
+//                                               (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.TestCompleate) ||
+//                                               (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.Init)) {
+//                                        GETPendingTestResponseDTO pendingTestResponseDTO = new GETPendingTestResponseDTO();
+//                                        pendingTestResponseDTO.Id = ubaDto.RunningTestID;
+//                                        pendingTestResponseDTO.Channel = ubaDto.Channel;
+//                                        pendingTestResponseDTO.UbaSN = ubaDto.UbaSN;
+////_logger.LogInformation($"==> 8.2.pendingTestResponseDTO Ch B: msgStatus= {message.QueryResponse.Bpt.State}, ubaStatus= {Status}, channelStatus= {uba.A.ChannelStatus}", message.QueryResponse.Bpt.State, Status, uba.A.ChannelStatus);
+////_logger.LogInformation($"==> 8.2.pendingTestResponseDTO: STANDBY {Status} channelStatus {uba.A.ChannelStatus}", Status, uba.A.ChannelStatus);
+////                                        if ((uba.A.ChannelStatus == (int)UBA_PROTO_BPT.STATE.RunStep) ||
+////                                            (uba.A.ChannelStatus == (int)UBA_PROTO_BPT.STATE.Pause) ||
+////                                            (uba.A.ChannelStatus == (int)UBA_PROTO_BPT.STATE.StepCompleate)) {
+//
+//                                        if (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.TestCompleate) {
+//_logger.LogInformation($"==> 8.2.pendingTestResponseDTO Ch B: set ubaDto.Status to STOPPED");
+//                                            ubaDto.Status = (int)RunningTestsController.Status.STOPPED;
+//                                        }
+//                                        await wcs.ChangeRunningTestStatus(pendingTestResponseDTO, (int)(int)ubaDto.Status);//RunningTestsController.Status.STOPPED);
+//
+//                                        //uba.A.ChannelStatus = (int)message.QueryResponse.Bpt.State;
+//                                        //return;
+//                                    } 
+//_logger.LogInformation("4.1.1. Pending test adr={Adress} {Channel}, set from {uba.A.ChannelStatus} to {intState} {newState}", ubaDto.Address, ubaDto.Channel, uba.A.ChannelStatus, (int)message.QueryResponse.Bpt.State, message.QueryResponse.Bpt.State);
+//                                    uba.A.ChannelStatus = (int)message.QueryResponse.Bpt.State;
+//                                }
+//
+//                                else if (ubaDto.Channel.Equals("B") && (message != null) && (uba.B.ChannelStatus != (int)message.QueryResponse.Bpt.State)) {
+//                                    uba.B.ChannelStatus = (int)message.QueryResponse.Bpt.State;
+//                                    if ((message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.RunStep) ||
+//                                        (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.Pause) ||
+//                                        (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.StepCompleate)) {
+//                                        GETPendingTestResponseDTO pendingTestResponseDTO = new GETPendingTestResponseDTO();
+//                                        pendingTestResponseDTO.Id = ubaDto.RunningTestID;
+//                                        pendingTestResponseDTO.Channel = ubaDto.Channel;
+//                                        pendingTestResponseDTO.UbaSN = ubaDto.UbaSN;
+//_logger.LogInformation($"==> 8.1.pendingTestResponseDTO: msgStatus= {message.QueryResponse.Bpt.State}, ubaStatus= {Status}, channelStatus= {uba.B.ChannelStatus}", message.QueryResponse.Bpt.State, Status, uba.B.ChannelStatus);
+//                                        if (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.RunStep) {
+////_logger.LogInformation($"==> 8.1.pendingTestResponseDTO: set ubaDto.Status to RUNNING");
+//                                            ubaDto.Status = (int)RunningTestsController.Status.RUNNING;
+//                                        }
+//                                        await wcs.ChangeRunningTestStatus(pendingTestResponseDTO, (int)ubaDto.Status);//RunningTestsController.Status.RUNNING);
+//
+//                                        //uba.B.ChannelStatus = (int)message.QueryResponse.Bpt.State;
+//                                        //return;
+//
+//                                    } else if ((message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.Standby) ||
+//                                               (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.TestCompleate) ||
+//                                               (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.Init)) {
+//                                        GETPendingTestResponseDTO pendingTestResponseDTO = new GETPendingTestResponseDTO();
+//                                        pendingTestResponseDTO.Id = ubaDto.RunningTestID;
+//                                        pendingTestResponseDTO.Channel = ubaDto.Channel;
+//                                        pendingTestResponseDTO.UbaSN = ubaDto.UbaSN;
+//_logger.LogInformation($"==> 8.2.pendingTestResponseDTO: msgStatus= {message.QueryResponse.Bpt.State}, ubaStatus= {Status}, channelStatus= {uba.B.ChannelStatus}", message.QueryResponse.Bpt.State, Status, uba.B.ChannelStatus);
+//                                        if (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.TestCompleate) {
+////_logger.LogInformation($"==> 8.2.pendingTestResponseDTO: set ubaDto.Status to STOPPED");
+//                                            ubaDto.Status = (int)RunningTestsController.Status.STOPPED;
+//                                        }
+//                                        await wcs.ChangeRunningTestStatus(pendingTestResponseDTO, (int)(int)ubaDto.Status);//RunningTestsController.Status.STOPPED);
+//
+//                                        //uba.B.ChannelStatus = (int)message.QueryResponse.Bpt.State;
+//                                        //return;
+//                                    }
+//_logger.LogInformation("4.1.1. Pending test adr={Adress} {Channel}, set from {uba.B.ChannelStatus} to {intState} {newState}", ubaDto.Address, ubaDto.Channel, uba.B.ChannelStatus, (int)message.QueryResponse.Bpt.State, message.QueryResponse.Bpt.State);
+//                                    uba.B.ChannelStatus = (int)message.QueryResponse.Bpt.State;
+//                                }
                             }
 
                         } catch (Exception ex) {
@@ -943,11 +849,9 @@ _logger.LogInformation($"==> 8.2.pendingTestResponseDTO: msgStatus= {message.Que
                             try {
                                 if (ubaDto.Channel.Equals("A") && (testInProgress[0] == false)) {
                                     Message message = null;//await UBAs.First().GetMessage(ubaDto.Channel.Equals("A") ? UBA_PROTO_QUERY.RECIPIENT.BptA : UBA_PROTO_QUERY.RECIPIENT.BptB);
-                                    for (int i = 0; i < UBAs.Count; i++)
-                                    {
-                                        if (UBAs[i].Address.ToString() == ubaDto.Address)
-                                        {
-//                                            message =  await UBAs[i].GetMessage(ubaDto.Channel.Equals("A") ? UBA_PROTO_QUERY.RECIPIENT.BptA : UBA_PROTO_QUERY.RECIPIENT.BptB);
+                                    for (int i = 0; i < UBAs.Count; i++) {
+                                        if (UBAs[i].Address.ToString() == ubaDto.Address) {
+                                            message =  await UBAs[i].GetMessage(ubaDto.Channel.Equals("A") ? UBA_PROTO_QUERY.RECIPIENT.BptA : UBA_PROTO_QUERY.RECIPIENT.BptB);
                                             break;
                                         }
                                     }

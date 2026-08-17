@@ -111,7 +111,7 @@ export const getTestRuntime = ubaDevice => {
 	let currTime;
 
 	const instant = ubaDevice.instantTestResults || [];
-	const runningTests = ubaDevice.runningTests || [];
+//	const runningTests = ubaDevice.runningTests || [];
 //console.log('instant:', instant.length);
 //console.log('runningTests:', runningTests.length);
 	const lastInstantTimestamp =
