@@ -74,7 +74,7 @@ namespace UBAService {
 
         private CancellationTokenSource? _cts;
         public async Task StartPeriodicRunningTestUpdate(CancellationToken stoppingToken) {
-            int timeout = 500;
+            int timeout = 100;
             var tcs = new TaskCompletionSource<Message?>();
 
             while (true) {
@@ -84,8 +84,8 @@ namespace UBAService {
                 try { 
                     using (timeoutCts) {
                         var delayTask = Task.Delay(timeout);
-//_logger.LogInformation($"StartPeriodicRunningTestUpdate: timeout= {timeout}");
                         var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
+//_logger.LogInformation($"StartPeriodicRunningTestUpdate: timeout= {timeout}");
                         stopwatch.Stop();
 
                         await _semaphore.WaitAsync();
@@ -637,17 +637,17 @@ _logger.LogInformation($"==> 1 Pending Test: {pendingTest.UbaSN}");
                                     UBAs.Add(newUba);
                                     _logger.LogInformation($"Added new UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac}");
                                 } else {
-                                    _logger.LogError($"7-No Response from UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac}");
+                                    //_logger.LogError($"7-No Response from UBA Device: {ubaDto.Name}, SN: {ubaDto.UbaSN}, MAC: {ubaDto.MachineMac}");
 
                                     foreach (GETPendingTestResponseDTO pendingTest in pt) {
                                         ////_logger.LogInformation("==> STOPPED, ch {channel} ...", pendingTest.Channel);
                                         newUba.StopBPT(util.GetChannelFormDTO(pendingTest));
                                     }
 
-_logger.LogInformation("==> Remove UBA: updateUBA2List");
-                                    //remove UBA device - no response
-                                    newUba.Dispose();
-                                    newUba = null;
+//_logger.LogInformation("==> Remove UBA: updateUBA2List");
+//                                    //remove UBA device - no response
+//                                    newUba.Dispose();
+//                                    newUba = null;
                                 }
                             }
                         }                     
@@ -687,8 +687,8 @@ _logger.LogInformation($"==> 2 Remove UBA: {UBAs[i]}");
 //                            }
                             var uba = UBAs.FirstOrDefault(u => u.Address.ToString() == ubaDto.Address);
                             if (uba != null) {
-//_logger.LogInformation($"==> 8.0.pendingTestResponseDTO Adr {ubaDto.Address} Ch {ubaDto.Channel}", ubaDto.Address, ubaDto.Channel);
                                 message = await uba.GetMessage(ubaDto.Channel.Equals("A") ? UBA_PROTO_QUERY.RECIPIENT.BptA : UBA_PROTO_QUERY.RECIPIENT.BptB);
+//_logger.LogInformation($"==> 8.0.pendingTestResponseDTO Adr {ubaDto.Address} Ch {ubaDto.Channel}", ubaDto.Address, ubaDto.Channel);
                             }
                             else {
                                 // UBA not found
@@ -703,7 +703,6 @@ _logger.LogInformation($"==> 2 Remove UBA: {UBAs[i]}");
                                     if (((((RunningTestsController.Status)ubaDto.Status) & RunningTestsController.Status.STOPPED) == 0) &&
                                         ((((RunningTestsController.Status)ubaDto.Status) & RunningTestsController.Status.PENDING) == 0)) {
                                         if (uba.A.ChannelStatus != (int)message.QueryResponse.Bpt.State) {
-//_logger.LogInformation("4.1.Pending test adr={Adress} {Channel} {Status}, set from {uba.A.ChannelStatus} to {intState} {newState}", ubaDto.Address, ubaDto.Channel, ubaDto.Status, uba.A.ChannelStatus, (int)message.QueryResponse.Bpt.State, message.QueryResponse.Bpt.State);
                                             if ((message.QueryResponse.Bpt.State == (int)UBA_PROTO_BPT.STATE.Init) &&
                                                 ((uba.A.ChannelStatus == (int)UBA_PROTO_BPT.STATE.Pause) ||
                                                  (uba.A.ChannelStatus == (int)UBA_PROTO_BPT.STATE.RunStep))) {
