@@ -39,7 +39,7 @@ export default function TableView() {
 	const pollingRef = useRef(null);
 
 	const [order, setOrder] = useState('asc');
-	const [orderBy, setOrderBy] = useState('runtime');
+	const [orderBy, setOrderBy] = useState('ubaSN'); //ordered by: ubaSN, runtime, testName
 	const [page, setPage] = useState(0);
 	const [rowsPerPage, setRowsPerPage] = useState(50);
 	const [filters, setFilters] = useState(filtersInitial);

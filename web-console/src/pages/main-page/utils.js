@@ -1,4 +1,4 @@
-const logger = require('./logger');
+//const logger = require('./logger');
 import {printCelsius, } from 'src/utils/helper';
 import {category, statusCodes, getKeyByValue, UBA_CHANNEL_LIST, isTestRunning} from 'src/constants/unsystematic';
 import {getText,} from 'src/services/string-definitions';
@@ -174,7 +174,7 @@ export const getTestRuntime = ubaDevice => {
             data.rundateChnlA = currTime - data.pausedateChnlA;
 
         } else if (testState === 'Standby') {
-logger.info(`Standby reset start_Time: ${ubaDevice.ubaSN} ${ubaDevice.channel}`);
+//logger.info(`Standby reset start_Time: ${ubaDevice.ubaSN} ${ubaDevice.channel}`);
             data.runtimeChnlA = 0;
             data.startTimeA = -1;
         }

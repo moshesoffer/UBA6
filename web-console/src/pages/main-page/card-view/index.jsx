@@ -45,7 +45,7 @@ export default function CardView() {
 		if(!ubaDevices || ubaDevices.length === 0) return;
 		
 		const ubaEnriched = enrichUbaDevicesWithRunTime(ubaDevices);
-		let dataFilteredTemp = filtering(ubaEnriched, 'asc', 'runtime', filters, prepareValue, doFiltering);
+		let dataFilteredTemp = filtering(ubaEnriched, 'asc', 'ubaSN', filters, prepareValue, doFiltering); //ordered by: ubaSN, runtime, testName
 		const rowsWithErrors = dataFilteredTemp.filter((row) => row.error > 0);
 
 		const groupedData = dataFilteredTemp.reduce((acc, item) => {

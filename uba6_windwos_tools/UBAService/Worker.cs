@@ -710,6 +710,9 @@ _logger.LogInformation($"==> 2 Remove UBA: {UBAs[i]}");
 _logger.LogInformation("4.1.Pending test adr={Adress} {Channel} {Status}, set from {uba.A.ChannelStatus} to {intState} {newState}", ubaDto.Address, ubaDto.Channel, ubaDto.Status, uba.A.ChannelStatus, (int)message.QueryResponse.Bpt.State, message.QueryResponse.Bpt.State);
                                                 await wcs.ChangeRunningTestStatus(ubaDto, Bptstate2DTOstate(message.QueryResponse.Bpt.State, message.QueryResponse.Bpt.StepType));
                                                 uba.A.ChannelStatus = (int)message.QueryResponse.Bpt.State;
+                                                if (ubaDto.Channel.Equals("Ab")) {
+                                                    uba.AB.ChannelStatus = (int)message.QueryResponse.Bpt.State;
+                                                }
                                             }
                                             return;
                                          }
@@ -727,6 +730,9 @@ _logger.LogInformation("4.1.Pending test adr={Adress} {Channel} {Status}, set fr
 _logger.LogInformation("4.1.Pending test adr={Adress} {Channel} {Status}, set from {uba.B.ChannelStatus} to {newState}", ubaDto.Address, ubaDto.Channel, ubaDto.Status, uba.B.ChannelStatus, message.QueryResponse.Bpt.State);
                                                 await wcs.ChangeRunningTestStatus(ubaDto, Bptstate2DTOstate(message.QueryResponse.Bpt.State, message.QueryResponse.Bpt.StepType));
                                                 uba.B.ChannelStatus = (int)message.QueryResponse.Bpt.State;
+                                                if (ubaDto.Channel.Equals("Ab")) {
+                                                    uba.AB.ChannelStatus = (int)message.QueryResponse.Bpt.State;
+                                                }
                                             }
                                             return;
                                         }
