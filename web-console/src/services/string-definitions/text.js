@@ -164,6 +164,7 @@ export default {
 		CELL_P_N: 'Cell P/N',
 		NO_CELLS_IN_SERIAL: 'No. Cells in Serial',
 		NO_CELLS_IN_PARALLEL: 'No. Cells in Parallel',
+		SAMPLE_RATE: 'Sample Rate [msec]',
 		NEW_TEST: 'New Test',
 		stepTwo: {
 			CELLS_IN_SERIAL: 'Number of Cells in Serial',

@@ -41,7 +41,7 @@ export const initialTestRoutines = {
 		maxVoltage: null,
 		ratedBatteryCapacity: null,
 		channel: UBA_CHANNEL_LIST.A_AND_B,
-		notes: '',
+		notes: '1',
 		customer: '',
 		workOrderNumber: '',
 		approvedBy: '',

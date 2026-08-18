@@ -161,7 +161,7 @@ function ConfigurationsMandatory(props, ref) {
 	};
 
 	const handleTestNameChange = newInputValue => {
-		console.log('==> newInputValue ===================');
+		console.log('==> handleTestNameChange ===================');
 		if (newInputValue !== shadowUba.testName)
 		{
 			inputColors.current = getInputColor('testName', newInputValue, initialTestRoutine, existingTest, theme.palette.primary.main, inputColors.current);
@@ -169,6 +169,27 @@ function ConfigurationsMandatory(props, ref) {
 			validateTestName(newInputValue, testRoutines, testData?.id, setTestNameError);
 			testName = newInputValue;
 			isConfigChanged();
+		}
+		//console.log('==> isChanged', existingTest.isChanged);
+	};
+
+	const handleSampleRateChange = event => {
+		console.log('==> handleSampleRateChange ===================');
+		//if (newInputValue !== shadowUba.testName)
+		{
+		    const sampleRate = String(event.target.value);
+		    const notes = String(getInputValue(testData, 'notes') ?? '');
+
+		    const newNotes =
+		        sampleRate.padStart(3, '0') + notes.slice(3);
+
+		    handleInputChange(
+		        testRoutinesDispatch,
+		        setTestData,
+		        'notes',
+		        newNotes
+		    );
+			existingTest.isChanged = true;
 		}
 		//console.log('==> isChanged', existingTest.isChanged);
 	};
@@ -189,6 +210,7 @@ function ConfigurationsMandatory(props, ref) {
 		const cellPN = getInputValue(testData, 'cellPN');
 		const noCellSerial = getInputValue(testData, 'noCellSerial');
 		const noCellParallel = getInputValue(testData, 'noCellParallel');
+//		const sampleRate = getInputValue(testData, 'sampleRate');
 
 		const isBatteryPNValid = validateBatteryPN(batteryPN, setBatteryPNError);
 		const isBatterySNValid = validateBatterySN(batterySN, setBatterySNError);
@@ -505,6 +527,27 @@ function ConfigurationsMandatory(props, ref) {
 								{getNumberValue(testData, 'ratedBatteryCapacity') ? getNumberValue(testData, 'ratedBatteryCapacity').toLocaleString() : null}mAh
 							</Typography>
 						</Stack>
+
+						<TextField
+						    select
+						    size="small"
+						    sx={{ width: 220 }}
+						    label={getText('testEditor.SAMPLE_RATE')}
+						    value={
+						        String(getInputValue(testData, 'notes') ?? '001')
+						            .slice(0, 3)
+						            .replace(/^0+/, '') || '1'
+						    }
+						    onChange={handleSampleRateChange}
+						    disabled={!!testData?.isLocked && validateObject(currentUba, true)}
+						    required
+						>
+						    {['1', '5', '15', '30', '60', '180'].map(value => (
+						        <MenuItem key={value} value={value}>
+						            {value}
+						        </MenuItem>
+						    ))}
+						</TextField>
 					</Box>
 				</Box>
 			</CardContent>
@@ -513,13 +556,23 @@ function ConfigurationsMandatory(props, ref) {
 
 			<CardContent>
 				<TextField
-						size="small"
-						label={getText('mainPage.wizardOne.NOTES')}
-						value={getInputValue(testData, 'notes')}
-						onChange={event => handleFieldChange(event, 'notes')}
-						inputProps={{style: inputColors.current?.notes}}
-						sx={{width: '100%', mb: 3}}
-					/>
+				    size="small"
+				    label={getText('mainPage.wizardOne.NOTES')}
+				    value={String(getInputValue(testData, 'notes') ?? '').slice(3)}
+				    onChange={event => {
+				        const notes = String(getInputValue(testData, 'notes') ?? '');
+				        const prefix = notes.slice(0, 3);
+					
+				        handleInputChange(
+				            testRoutinesDispatch,
+				            setTestData,
+				            'notes',
+				            prefix + event.target.value
+				        );
+				    }}
+				    inputProps={{ style: inputColors.current?.notes }}
+				    sx={{ width: '100%', mb: 3 }}
+				/>
 				<Box
 					rowGap={3}
 					columnGap={2}
