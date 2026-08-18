@@ -135,7 +135,7 @@ namespace UBAService {
 
         //periodic received message from UBA Device
         public async Task StartPeriodicUBAUpdate(CancellationToken stoppingToken) {
-            int timeout = 500;
+            int timeout = 2000;
             var tcs = new TaskCompletionSource<Message?>();
 
             while (true) {

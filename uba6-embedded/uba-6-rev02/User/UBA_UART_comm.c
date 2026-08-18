@@ -238,9 +238,9 @@ void UBA_UART_query_BPT(UBA_PROTO_BPT_status_message *bpss, UBA_UART_QUERY_RECIP
 			return;
 	}
 //	UART_LOG("UART", "==> UART_query_BPT 0x%x", bpt_recipient_id);
-	//UBA_BPT_update_message(bpt, bpss); //handle within ISR
+	UBA_BPT_update_message(bpt, bpss); //handle within ISR
 	//read cache status message
-	UBA_BPT_get_cached_status_msg(bpt, bpss); //handle in task context
+	//UBA_BPT_get_cached_status_msg(bpt, bpss); //handle in task context
 }
 
 int UBA_UART_comm_init()
@@ -258,7 +258,7 @@ int UBA_UART_comm_init()
 int process_message(MSG_Message *message) {
 	if ((message->head.target_address & UBA_6_device_g.settings.address) != UBA_6_device_g.settings.address) {
 //Moshe	
-		UART_LOG_ERROR(COMP, "this is not my message (0x%08x) target is 0x%08x", UBA_6_device_g.settings.address, message->head.target_address);
+		//UART_LOG_ERROR(COMP, "this is not my message (0x%08x) target is 0x%08x", UBA_6_device_g.settings.address, message->head.target_address);
 		return -1;
 	}
 	switch (message->which_pyload) {
