@@ -134,9 +134,9 @@ const downloadReportsGraph = async (req, res, sampleRate) => {
 
 				previousStepIndex = currentStepIndex;
 				if (planByStepIndex[currentStepIndex]) {
-					logger.warn(`THIS IS NOT EXPECTED!!! downloadReportsGraph [${req.params?.reportID}] duplicate planIndex found: ${currentStepIndex}`);
-					return returnErrorCode(res, 404, 'Duplicate stepIndex found');
-				}
+					logger.warn(`THIS IS NOT EXPECTED(dnld)!!! downloadReportsGraph [${req.params?.reportID}] duplicate planIndex found: ${currentStepIndex}`);
+					//return returnErrorCode(res, 404, 'Duplicate stepIndex found');
+				} else {
 				planByStepIndex[currentStepIndex] = {
 					planStep,
 					planIndex: currentPlanIndex,
@@ -147,7 +147,7 @@ const downloadReportsGraph = async (req, res, sampleRate) => {
 					temperatureArr: [],
 					capacitySum: 0,
 					energySum: 0,
-				}
+				}}
 			}
 			if(testResult.temperature > maxTemperature) maxTemperature = testResult.temperature;
 
@@ -172,7 +172,7 @@ const downloadReportsGraph = async (req, res, sampleRate) => {
 			} else if (planStepWrapper.planStep.type==='delay') {
 				rowNumber = addDelayStepFromPlan(stepIndex, planStepWrapper, testData, rowNumber, reportSheet);
 			} else {
-				logger.warn(`THIS IS NOT EXPECTED!!! downloadReportsGraph [${req.params?.reportID}] unknown planStep type: ${planStepWrapper.planStep.type}`);
+				logger.warn(`THIS IS NOT EXPECTED(sort)!!! downloadReportsGraph [${req.params?.reportID}] unknown planStep type: ${planStepWrapper.planStep.type}`);
 				return returnErrorCode(res, 404, 'Unknown planStep type found');
 			}
 		});

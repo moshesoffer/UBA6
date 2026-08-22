@@ -229,12 +229,14 @@ namespace UBA6Library {
                 {
                     //Console.WriteLine($"Bad length={length}");
                     Console.WriteLine($"bad length: ParseFrom length={length} TotLength={totlength}; Position={ms.Position} Length={ms.Length}");
-                    if (ms.Position >= ms.Length) {
-                        break;
-                    } else {
-                        ms.Position = startPos + 1;
-                        continue; 
-                    }                       
+                    logs.Clear();
+                    return null;
+                    //if (ms.Position >= ms.Length) {
+                    //    break;
+                    //} else {
+                    //    ms.Position = startPos + 1;
+                    //    continue; 
+                    //}                       
                 }
 
                 // Read message bytes
@@ -250,7 +252,9 @@ namespace UBA6Library {
                     ms.Position = startPos + 1;
                     Console.WriteLine($"exception: ParseFrom Length={msgBytes?.Length} TotLength={totlength}; Position={ms.Position} Length={ms.Length}");
                     //Console.WriteLine(ex.ToString());
-                    continue;
+                    logs.Clear();
+                    return null;
+                    //continue;
                 }
 
                 // Map to struct

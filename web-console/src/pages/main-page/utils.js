@@ -4,28 +4,6 @@ import {category, statusCodes, getKeyByValue, UBA_CHANNEL_LIST, isTestRunning} f
 import {getText,} from 'src/services/string-definitions';
 import {dateFromUtc,} from 'src/utils/dateTimeHelper';
 
-const runtimeData = new Map();
-
-const createRuntimeData = () => ({
-    startTimeA: -1,
-    pausedateChnlB: 0,
-    runtimeChnlA: null,
-    rundateChnlA: 0,
-
-    startTimeB: -1,
-    pausedateChnlA: 0,
-    runtimeChnlB: null,
-    rundateChnlB: 0,
-});
-
-const getRuntimeData = ubaSN => {
-    if (!runtimeData.has(ubaSN)) {
-        runtimeData.set(ubaSN, createRuntimeData());
-    }
-    return runtimeData.get(ubaSN);
-};
-
-
 export const getTestResultTimestamps = (reports) => {
 	if (!reports) return [];
 
@@ -134,13 +112,16 @@ export const getTestRuntime1 = ubaDevice => {
         return rundateChnlB;
     }
 };
-export const getTestRuntime = ubaDevice => {
+
+export const getTestRuntime2 = ubaDevice => {
     if (!ubaDevice) return null;
     if (ubaDevice.channel !== 'A' && ubaDevice.channel !== 'B') return null;
 
     //const ubaSN = ubaDevice.ubaSN;
-	const { ubaSN } = ubaDevice;
-    const data = getRuntimeData(ubaSN);
+	//const { ubaSN } = ubaDevice;
+    //const data = getRuntimeData(ubaSN);
+    const { runtimeData } = ubaDevice;
+    if (!runtimeData) return null;
 
     let currTime;
 
@@ -162,26 +143,27 @@ export const getTestRuntime = ubaDevice => {
             testState === 'Discharge' ||
             testState === 'Pause'
         ) {
-            if (data.startTimeA === -1) {
-                data.startTimeA = ubaDevice.lastInstantResultsTimestamp;
+            if (runtimeData.startTimeA === -1) {
+console.log('getTestRuntime: set startTimeA, currently -1');
+                runtimeData.startTimeA = ubaDevice.lastInstantResultsTimestamp;
             }
 
             currTime = getRuntime(
                 ubaDevice.lastInstantResultsTimestamp,
-                data.startTimeA
+                runtimeData.startTimeA
             );
 
-            data.rundateChnlA = currTime - data.pausedateChnlA;
+            runtimeData.rundateChnlA = currTime - runtimeData.pausedateChnlA;
 
         } else if (testState === 'Standby') {
 //logger.info(`Standby reset start_Time: ${ubaDevice.ubaSN} ${ubaDevice.channel}`);
-            data.runtimeChnlA = 0;
-            data.startTimeA = -1;
+            runtimeData.runtimeChnlA = 0;
+            runtimeData.startTimeA = -1;
         }
 
-        data.runtimeChnlA = formatSeconds(data.rundateChnlA);
+        runtimeData.runtimeChnlA = formatSeconds(runtimeData.rundateChnlA);
 
-        return data.rundateChnlA;
+        return runtimeData.rundateChnlA;
     }
 
     if (ubaDevice.channel === 'B') {
@@ -190,28 +172,73 @@ export const getTestRuntime = ubaDevice => {
             testState === 'Discharge' ||
             testState === 'Pause'
         ) {
-            if (data.startTimeB === -1) {
-                data.startTimeB = ubaDevice.lastInstantResultsTimestamp;
+            if (runtimeData.startTimeB === -1) {
+                runtimeData.startTimeB = ubaDevice.lastInstantResultsTimestamp;
             }
 
             currTime = getRuntime(
                 ubaDevice.lastInstantResultsTimestamp,
-                data.startTimeB
+                runtimeData.startTimeB
             );
 
-            data.rundateChnlB = currTime - data.pausedateChnlB;
+            runtimeData.rundateChnlB = currTime - runtimeData.pausedateChnlB;
 
         } else if (testState === 'Standby') {
-            data.runtimeChnlB = 0;
-            data.startTimeB = -1;
+            runtimeData.runtimeChnlB = 0;
+            runtimeData.startTimeB = -1;
         }
 
-        data.runtimeChnlB = formatSeconds(data.rundateChnlB);
+        runtimeData.runtimeChnlB = formatSeconds(runtimeData.rundateChnlB);
 
-        return data.rundateChnlB;
+        return runtimeData.rundateChnlB;
     }
 
     return null;
+};
+export const getTestRuntime = ubaDevice => {
+	if (!ubaDevice) return null;
+	if (ubaDevice.channel !== 'A' && ubaDevice.channel !== 'B') return null;
+
+	const { runtimeData } = ubaDevice;
+	if (!runtimeData) return null;
+
+	const instant = ubaDevice.instantTestResults || [];
+
+	const lastInstantTimestamp =
+		instant.length > 0
+			? instant[instant.length - 1].lastInstantResultsTimestamp
+			: ubaDevice.lastInstantResultsTimestamp;
+
+	const testState =
+		instant.length > 0
+			? instant[instant.length - 1].testState
+			: ubaDevice.testState;
+
+	if (ubaDevice.channel === 'A') {
+		if (
+			testState === 'Charge' ||
+			testState === 'Discharge' ||
+			testState === 'Pause'
+		) {
+			return runtimeData.rundateChnlA;
+		}
+
+		return 0;
+	}
+
+	if (ubaDevice.channel === 'B') {
+		if (
+			testState === 'Charge' ||
+			testState === 'Discharge' ||
+			testState === 'Pause'
+		) {
+			return runtimeData.rundateChnlB;
+		}
+
+		return 0;
+	}
+
+	return null;
 };
 
 

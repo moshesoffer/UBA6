@@ -10,6 +10,55 @@ const { ubaChannels,} = require('../utils/constants');
 const { getLastInstantTestResult, getConnectedAmount } = require('../utils/testResultsHelper');
 const { withTimeout, AWAIT_TIMEOUT } = require('../utils/requestSync');
 
+const dateFromUtc = utcDate => {
+	const date = new Date(utcDate);
+	return new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+}
+
+const formatSeconds = seconds => [
+	parseInt(seconds / 60 / 60, 10),
+	parseInt(seconds / 60 % 60, 10),
+	parseInt(seconds % 60, 10),
+	// eslint-disable-next-line prefer-named-capture-group
+].join(':').replace(/\b(\d)\b/ug, '0$1');
+
+const getRuntime = (timestamp, startTimestamp) => {
+	const now = dateFromUtc(timestamp);
+	const start = dateFromUtc(startTimestamp);
+
+	let diff = now.getTime() - start.getTime();
+	diff = Math.round(diff / 1000);
+
+	return diff;
+};
+
+
+const runtimeDataMap = new Map();
+
+const createRuntimeData = () => ({
+	startTimeA: -1,
+	pausedateChnlA: 0,
+	runtimeChnlA: null,
+	rundateChnlA: 0,
+
+	startTimeB: -1,
+	pausedateChnlB: 0,
+	runtimeChnlB: null,
+	rundateChnlB: 0,
+});
+
+const getRuntimeData = ubaSN => {
+	if (!runtimeDataMap.has(ubaSN)) {
+		logger.debug(`RUNTIME INITIALIZE: SN=${ubaSN}`);
+		runtimeDataMap.set(ubaSN, createRuntimeData());
+	} else {
+		logger.debug(`RUNTIME EXISTING: SN=${ubaSN}`);
+	}
+
+	return runtimeDataMap.get(ubaSN);
+};
+
+
 //fetching all data for main page
 exports.getUbaDevices = async (req, res) => {
 	try {
@@ -35,6 +84,74 @@ exports.getUbaDevices = async (req, res) => {
 	} catch (error) {
 		logger.error('getUbaDevices', error);
 		res.sendStatus(500);
+	}
+};
+
+const updateRuntimeData = (ubaDevice, runtimeData, testState) => {
+	const timestamp = ubaDevice.lastInstantResultsTimestamp;
+
+		if (ubaDevice.channel === 'A') {
+logger.debug(`updateRuntimeData: testState=${testState}`);
+		if (
+			testState === 'Charge' ||
+			testState === 'Discharge' ||
+			testState === 'Pause'
+		) {
+			if (runtimeData.startTimeA === -1) {
+				//logger.debug('logger.debug(: startTimeB is -1');
+				runtimeData.startTimeA = timestamp;
+			}
+
+			const currTime = getRuntime(
+				timestamp,
+				runtimeData.startTimeA
+			);
+//logger.debug(`updateRuntimeData: ${testState}, ${currTime}, ${timestamp}, ${runtimeData.runtimeChnlA}`);
+
+			runtimeData.rundateChnlA =
+				currTime - runtimeData.pausedateChnlA;
+
+			runtimeData.runtimeChnlA =
+				formatSeconds(runtimeData.rundateChnlA);
+
+		} else if ((testState === 'Init') ||
+				   (testState === 'TestCompleate')) { 
+			//logger.debug('logger.debug(: startTimeB set to -1');
+			runtimeData.startTimeA = -1;
+			runtimeData.pausedateChnlA = 0;
+			runtimeData.runtimeChnlA = 0;
+			runtimeData.rundateChnlA = 0;
+		}
+	}
+
+	if (ubaDevice.channel === 'B') {
+		if (
+			testState === 'Charge' ||
+			testState === 'Discharge' ||
+			testState === 'Pause'
+		) {
+			if (runtimeData.startTimeB === -1) {
+				runtimeData.startTimeB = timestamp;
+			}
+
+			const currTime = getRuntime(
+				timestamp,
+				runtimeData.startTimeB
+			);
+
+			runtimeData.rundateChnlB =
+				currTime - runtimeData.pausedateChnlB;
+
+			runtimeData.runtimeChnlB =
+				formatSeconds(runtimeData.rundateChnlB);
+			
+		} else if ((testState === 'Init') ||
+				   (testState === 'TestCompleate')) { 
+			runtimeData.startTimeB = -1;
+			runtimeData.pausedateChnlB = 0;
+			runtimeData.runtimeChnlB = 0;
+			runtimeData.rundateChnlB = 0;
+		}
 	}
 };
 
@@ -77,6 +194,25 @@ const enrichUbaDevices = (ubaDevices, latestInstantTestResults) => ubaDevices.ma
 		}
 	}
 	
+	// testState is now populated
+	const runtimeData = getRuntimeData(ubaDevice.ubaSN);
+
+	updateRuntimeData(
+		{
+			...ubaDevice,
+			lastInstantResultsTimestamp: timestamp,
+		},
+		runtimeData,
+		testState
+	);
+
+	logger.debug(
+		`RUNTIME DATA: SN=${ubaDevice.ubaSN} ` +
+		`A=${runtimeData.startTimeA} ` +
+		`B=${runtimeData.startTimeB}`
+	);
+
+
 	return {
 		...ubaDevice,
 		testState,
@@ -89,6 +225,7 @@ const enrichUbaDevices = (ubaDevices, latestInstantTestResults) => ubaDevices.ma
 		lastInstantResultsTimestamp: timestamp,
 		ubaDeviceConnectedTimeAgoMs: memCreatedTime ? now - memCreatedTime.getTime() : null,
 //		ubaDeviceConnectedTimeAgoMs: memCreatedTime ? now - timestamp : null,
+		runtimeData,
 	};
 });
 

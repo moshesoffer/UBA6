@@ -278,7 +278,20 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
                 ReportPatchDTO reportPatchDTO = new ReportPatchDTO();
                 reportPatchDTO.Status = (int)RunningTestsController.Status.FINISHED;
                 reportPatchDTO.TestResults = new List<TestResultDataPointDTO>();
+
                 List<UBA_PROTO_DATA_LOG.data_log> logs = ProtoHelper.DecodeDataLogMessages(file);
+                if (logs == null) {
+                    //try again (up to 2 more times)
+                    int loops = 2;
+                    while (logs == null) {
+                        logs = ProtoHelper.DecodeDataLogMessages(file);
+                        if (loops-- <= 0) {
+                            _logger.LogInformation($"fail to DecodeDataLogMessages file");
+                            return;
+                        }
+                   }
+                }
+
                 foreach (UBA_PROTO_DATA_LOG.data_log log in logs) {
                     //_logger.LogDebug($"Log Entry {logs.Count} - Time: {log.Time}, Voltage: {log.Voltage}, Current: {log.Current}, Temp: {log.Temp}, PlanIndex: {log.PlanIndex}, StepIndex: {log.StepIndex}");
                     reportPatchDTO.TestResults.Add(new TestResultDataPointDTO(log));

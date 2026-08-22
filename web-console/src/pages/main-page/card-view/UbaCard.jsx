@@ -31,7 +31,7 @@ export default function UbaCard({row}) {
 	const pollingRef = useRef(null);
 
 	useEffect(() => {
-	console.log (`==> testData.noCellSerial: ${testData?.noCellSerial?.toString()}`);
+	//console.log (`==> testData.noCellSerial: ${testData?.noCellSerial?.toString()}`);
 	}, [testData?.testName,]);
 
 	useEffect(() => {
