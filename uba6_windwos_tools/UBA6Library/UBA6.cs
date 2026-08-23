@@ -165,7 +165,7 @@ _logger.LogInformation($"Keepalive start");
         }
 
         public void StopBPT(UBA_PROTO_CHANNEL.ID ch) {
-            _logger.LogInformation($"==> adr {Address} StartBPT", this.Address);    
+            _logger.LogInformation($"==> adr {Address} StopBPT", this.Address);    
             SentMessage(UBA_Message_Factory.CreateMessage(this.Address,
                 ProtoHelper.CreateBPTCommand(UBA_PROTO_BPT.CMD_ID.Stop, ch)), MessagePriority.BPT_STOP);
         }

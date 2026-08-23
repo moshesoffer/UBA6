@@ -224,7 +224,7 @@ export const confirmRunningTest = async (authDispatch, ubaDevicesDispatch, runni
 
 		setTimeout(() => {
     		location.reload();
-		}, 3000); // 1 seconds	} catch (error) {
+		}, 1000); // 1 seconds	} catch (error) {
 
 	} catch (error) {
 		const preparedMessage = handleRequestError(error);

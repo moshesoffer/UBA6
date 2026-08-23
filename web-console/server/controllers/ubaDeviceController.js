@@ -32,7 +32,6 @@ const getRuntime = (timestamp, startTimestamp) => {
 	return diff;
 };
 
-
 const runtimeDataMap = new Map();
 
 const createRuntimeData = () => ({
@@ -49,27 +48,20 @@ const createRuntimeData = () => ({
 
 const getRuntimeData = ubaSN => {
 	if (!runtimeDataMap.has(ubaSN)) {
-		logger.debug(`RUNTIME INITIALIZE: SN=${ubaSN}`);
+		//logger.debug(`RUNTIME INITIALIZE: SN=${ubaSN}`);
 		runtimeDataMap.set(ubaSN, createRuntimeData());
 	} else {
-		logger.debug(`RUNTIME EXISTING: SN=${ubaSN}`);
+		//logger.debug(`RUNTIME EXISTING: SN=${ubaSN}`);
 	}
 
 	return runtimeDataMap.get(ubaSN);
 };
 
-
 //fetching all data for main page
 exports.getUbaDevices = async (req, res) => {
 	try {
-		//Moshe
-		//logger.debug(`uba-devices going to call all promises`);
-		//TODO getRunningAmount might be not needed because calling getUbaDevices already returns running tests and then can see what is running
-		//TODO also getAllLatestInstantTestResults instead of calling db, go over all getUbaDevices running tests and get info from memory and 
-		//     if its not in memory then fetch from db and put in memory that way also next time it will be called we wont need to call db.
 		const [running, ubaDevices, latestInstantTestResults] = await Promise.all([getRunningAmount(), getUbaDevices(), getAllLatestInstantTestResults()]);
 		const ubaDevicesUniqueSN = [...new Map(ubaDevices.map(item => [item.ubaSN, item.ubaSN])).values()];
-		//Moshe
 		//logger.debug(`uba-devices going to enrichUbaDevices`);
 		const ubaEnriched = enrichUbaDevices(ubaDevices, latestInstantTestResults);
 		result = {
@@ -91,14 +83,12 @@ const updateRuntimeData = (ubaDevice, runtimeData, testState) => {
 	const timestamp = ubaDevice.lastInstantResultsTimestamp;
 
 		if (ubaDevice.channel === 'A') {
-logger.debug(`updateRuntimeData: testState=${testState}`);
 		if (
 			testState === 'Charge' ||
 			testState === 'Discharge' ||
 			testState === 'Pause'
 		) {
 			if (runtimeData.startTimeA === -1) {
-				//logger.debug('logger.debug(: startTimeB is -1');
 				runtimeData.startTimeA = timestamp;
 			}
 
@@ -106,7 +96,6 @@ logger.debug(`updateRuntimeData: testState=${testState}`);
 				timestamp,
 				runtimeData.startTimeA
 			);
-//logger.debug(`updateRuntimeData: ${testState}, ${currTime}, ${timestamp}, ${runtimeData.runtimeChnlA}`);
 
 			runtimeData.rundateChnlA =
 				currTime - runtimeData.pausedateChnlA;
@@ -116,7 +105,6 @@ logger.debug(`updateRuntimeData: testState=${testState}`);
 
 		} else if ((testState === 'Init') ||
 				   (testState === 'TestCompleate')) { 
-			//logger.debug('logger.debug(: startTimeB set to -1');
 			runtimeData.startTimeA = -1;
 			runtimeData.pausedateChnlA = 0;
 			runtimeData.runtimeChnlA = 0;
@@ -156,7 +144,6 @@ logger.debug(`updateRuntimeData: testState=${testState}`);
 };
 
 const enrichUbaDevices = (ubaDevices, latestInstantTestResults) => ubaDevices.map(ubaDevice => {
-
 	let testState = null;
 	let testCurrentStep = null;
 	let voltage = null;
@@ -173,7 +160,6 @@ const enrichUbaDevices = (ubaDevices, latestInstantTestResults) => ubaDevices.ma
 			let mostLatestObj = result;
 			const lastInstantFromMem = getLastInstantTestResult(result.runningTestID);
 			if (lastInstantFromMem && lastInstantFromMem.timestamp.getTime() >= result.timestamp.getTime()) {
-				//Moshe
 				//logger.debug(`==> Using last instant test result from memory for runningTestID ${lastInstantFromMem.memCreatedTime}`);
 				mostLatestObj = lastInstantFromMem;
 			}
@@ -188,7 +174,6 @@ const enrichUbaDevices = (ubaDevices, latestInstantTestResults) => ubaDevices.ma
 				timestamp,
 				memCreatedTime,
 			} = mostLatestObj);
-			//logger.debug(`==> timestamp ${timestamp}`);
 
 			break;
 		}
@@ -206,13 +191,6 @@ const enrichUbaDevices = (ubaDevices, latestInstantTestResults) => ubaDevices.ma
 		testState
 	);
 
-	logger.debug(
-		`RUNTIME DATA: SN=${ubaDevice.ubaSN} ` +
-		`A=${runtimeData.startTimeA} ` +
-		`B=${runtimeData.startTimeB}`
-	);
-
-
 	return {
 		...ubaDevice,
 		testState,
@@ -224,7 +202,6 @@ const enrichUbaDevices = (ubaDevices, latestInstantTestResults) => ubaDevices.ma
 		error,
 		lastInstantResultsTimestamp: timestamp,
 		ubaDeviceConnectedTimeAgoMs: memCreatedTime ? now - memCreatedTime.getTime() : null,
-//		ubaDeviceConnectedTimeAgoMs: memCreatedTime ? now - timestamp : null,
 		runtimeData,
 	};
 });

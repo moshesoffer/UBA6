@@ -420,8 +420,10 @@ _logger.LogInformation("9.2.Pending test {Channel} {Status}, set to {newState}",
 //                        } else if (pendingTest.Channel.Equals("B")) {
 //                            testInProgress[1] = false;                                
 //                        }
-                    
-                        _ = SaveTestAsync(pendingTest);
+
+                        await wcs.UpdateTestStatus(pendingTest.Id, pendingTest.UbaSN, pendingTest.Channel, (int)(RunningTestsController.Status.PENDING | RunningTestsController.Status.SAVED));
+
+                         _ = SaveTestAsync(pendingTest);                                
 
                     } /*else*/ if ((((RunningTestsController.Status)pendingTest.Status) & RunningTestsController.Status.ABORTED) > 0) {
                         _logger.LogInformation("==> ABORTED, adr {address} ch {channel} ...", uba.Address, pendingTest.Channel);

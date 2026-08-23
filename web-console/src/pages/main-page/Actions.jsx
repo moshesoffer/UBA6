@@ -236,15 +236,15 @@ export const getActions = (row, authDispatch, ubaDevicesDispatch, testRoutinesDi
         );
     }
 
-    else  {
-        return (
-            <ButtonGroup>
-                <Button size="small" sx={{ width: 72, p: 0.2, height: 32 }}>
-                    <Typography fontSize={11}>Unknown</Typography>
-                </Button>
-            </ButtonGroup>
-        );
-    }
+    //else  {
+    //    return (
+    //        <ButtonGroup>
+    //            <Button size="small" sx={{ width: 72, p: 0.2, height: 32 }}>
+    //                <Typography fontSize={11}>Pending</Typography>
+    //            </Button>
+    //        </ButtonGroup>
+    //    );
+    //}
 };
 
 const showWizardsZero = (selectedRow, ubaDevicesDispatch) => {
@@ -291,9 +291,13 @@ const handleNextTest = (selectedRow, authDispatch, ubaDevicesDispatch) => {
     return false;
 };
 
-const handleResumeTest = (selectedRow, authDispatch, ubaDevicesDispatch) => resumeRunningTest(authDispatch, ubaDevicesDispatch, selectedRow?.runningTestID, selectedRow?.ubaSN, selectedRow?.testRoutineChannels);
+const handleResumeTest = (selectedRow, authDispatch, ubaDevicesDispatch) => {
+    resumeRunningTest(authDispatch, ubaDevicesDispatch, selectedRow?.runningTestID, selectedRow?.ubaSN, selectedRow?.testRoutineChannels);
+};
 
-const handleConfirmTest = (selectedRow, authDispatch, ubaDevicesDispatch) => confirmRunningTest(authDispatch, ubaDevicesDispatch, selectedRow?.runningTestID, selectedRow?.ubaSN, selectedRow?.testRoutineChannels);
+const handleConfirmTest = (selectedRow, authDispatch, ubaDevicesDispatch) => {
+    confirmRunningTest(authDispatch, ubaDevicesDispatch, selectedRow?.runningTestID, selectedRow?.ubaSN, selectedRow?.testRoutineChannels);
+};
 
 const handleGraphOpening = (selectedRow, authDispatch, ubaDevicesDispatch, testRoutinesDispatch) => {
     getGraphData(authDispatch, testRoutinesDispatch, selectedRow.runningTestID);

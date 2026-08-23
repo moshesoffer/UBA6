@@ -16,6 +16,7 @@ using UBA6Library.WebServerApi.Services.WebConsole.Model;
 using System.Text.Json;
 using System.Reflection.Metadata;
 using Google.Protobuf;
+using System.Threading.Channels;
 
 namespace UBA6Library.WebServerApi.Services.WebConsole {
     public class WebConsoleService : WebService {
@@ -225,6 +226,16 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
             await RT_Controller.ChangeRunningTestStatus.Patch<object, PATCH_ChangeTR_StatusRequest>(Client, pATCH_ChangeTR_StatusRequest);
         }
 
+        public async Task UpdateTestStatus(Guid runningTestID, string UbaSN, string Channel, int Status) {
+            PATCH_ChangeTR_StatusRequest pATCH_ChangeTR_StatusRequest = new PATCH_ChangeTR_StatusRequest();
+            pATCH_ChangeTR_StatusRequest.RunningTestID = runningTestID;
+            pATCH_ChangeTR_StatusRequest.TestRoutineChannels = Channel;
+            pATCH_ChangeTR_StatusRequest.UbaSN = UbaSN;
+            pATCH_ChangeTR_StatusRequest.NewTestStatus = Status; 
+
+            await RT_Controller.ChangeRunningTestStatus.Patch<object, PATCH_ChangeTR_StatusRequest>(Client, pATCH_ChangeTR_StatusRequest);
+        }
+
         public async Task<GETPendingTasksDTO> GetPendingTasks() {
             List<KeyValuePair<string, string>> querys = new List<KeyValuePair<string, string>>();
             querys.Add(new KeyValuePair<string, string>("machineMac", GetMacAddress()));
@@ -286,7 +297,7 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
                     while (logs == null) {
                         logs = ProtoHelper.DecodeDataLogMessages(file);
                         if (loops-- <= 0) {
-                            _logger.LogInformation($"fail to DecodeDataLogMessages file");
+                            _logger.LogInformation($"fail to DecodeDataLogMessages");
                             return;
                         }
                    }
