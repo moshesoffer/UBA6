@@ -207,25 +207,22 @@ const downloadReportsGraph = async (req, res, sampleRate) => {
 		excelOutputFilePath = path.join(__dirname, 'output-' + id + '.xlsx');
 		logger.info(`downloadReportsGraph [${req.params?.reportID}] write to [${excelOutputFilePath}], exportType [${req.params?.exportType}]`);
 		await workbook.toFileAsync(excelOutputFilePath);
+
+		const pn = testData.batteryPN;
+		const sn = testData.batterySN;
+		const now = new Date();
+		const dateString =
+		    `${String(now.getDate()).padStart(2, '0')}` +
+		    `_` +
+		    `${String(now.getMonth() + 1).padStart(2, '0')}` +
+		    `_` +
+		    `${now.getFullYear()}` +
+		    `_` +
+		    `${String(now.getHours()).padStart(2, '0')}` +
+		    `${String(now.getMinutes()).padStart(2, '0')}`;
+		//  `${String(now.getSeconds()).padStart(2, '0')}`;
+
 		if(exportType === 'XSLX'){
-			// Set headers for file download filename="${resultsGraphData[0].reportID}.xlsx"
-			//const pn = testData.batteryPN;
-			//const sn = testData.batterySN;
-			//const now = new Date();
-			//const dateString = `${String(now.getDate()).padStart(2, '0')}` + `${String(now.getMonth() + 1).padStart(2, '0')}` + `${now.getFullYear()}}`;
-
-			const pn = testData.batteryPN;
-			const sn = testData.batterySN;
-			const now = new Date();
-			const dateString =
-			    `${String(now.getDate()).padStart(2, '0')}` +
-			    `${String(now.getMonth() + 1).padStart(2, '0')}` +
-			    `${now.getFullYear()}` +
-			    `-` +
-			    `${String(now.getHours()).padStart(2, '0')}` +
-			    `${String(now.getMinutes()).padStart(2, '0')}` +
-			    `${String(now.getSeconds()).padStart(2, '0')}`;
-
 			res.setHeader('Content-Disposition', `attachment; filename="${pn}__${sn}__${dateString}.xlsx"`);
 			//res.setHeader('Content-Disposition', `attachment; filename="${testData.reportID}.xlsx"`) - OLD version;
 			res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -263,7 +260,8 @@ const downloadReportsGraph = async (req, res, sampleRate) => {
 				
 				logger.info(`pdf converted ${excelOutputFilePath}    Stdout: `, stdout);
 				try {
-					res.setHeader('Content-Disposition', `attachment; filename="${testData.reportID}.pdf"`);
+					res.setHeader('Content-Disposition', `attachment; filename="${pn}__${sn}__${dateString}.pdf"`);
+					//res.setHeader('Content-Disposition', `attachment; filename="${testData.reportID}.pdf"`);
 					res.setHeader('Content-Type', 'application/pdf');
 					pdfPath = excelOutputFilePath.replace('.xlsx', '.pdf');
 					pdfFileStream = fs.createReadStream(pdfPath);
@@ -300,6 +298,7 @@ const returnErrorCode = (res, statusCode, message) => {
 
 const addChargeStepFromPlan = (stepIndex, planStepWrapper, testData, rowNumber, reportSheet) => {
 	const planStep = planStepWrapper.planStep;
+	stepIndex++;
 	reportSheet.cell(`C${rowNumber}`).value(stepIndex).style("bold", true);
 	reportSheet.cell(`D${rowNumber}`).value(generalConsts.charge).style("bold", true);
 	
@@ -366,6 +365,7 @@ const addChargeStepFromPlan = (stepIndex, planStepWrapper, testData, rowNumber, 
 
 const addDelayStepFromPlan = (stepIndex, planStepWrapper, testData, rowNumber, reportSheet) => {
 	const planStep = planStepWrapper.planStep;
+	stepIndex++;
 	reportSheet.cell(`C${rowNumber}`).value(stepIndex).style("bold", true);
 	reportSheet.cell(`D${rowNumber}`).value(generalConsts.delay).style("bold", true);
 	
@@ -386,6 +386,7 @@ const addDelayStepFromPlan = (stepIndex, planStepWrapper, testData, rowNumber, r
 
 const addDischargeStepFromPlan = (stepIndex, planStepWrapper, testData, rowNumber, reportSheet) => {
 	const planStep = planStepWrapper.planStep;
+	stepIndex++;
 	reportSheet.cell(`C${rowNumber}`).value(stepIndex).style("bold", true);
 	reportSheet.cell(`D${rowNumber}`).value(generalConsts.disCharge).style("bold", true);
 	
