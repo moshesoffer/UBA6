@@ -180,9 +180,11 @@ export default function UbaCard({row}) {
 						<span style={{ fontFamily: 'monospace', whiteSpace: 'pre' }}>
 						  	{String('step:').padEnd(9, ' ')}
 
-						  	{row?.[channelIndex]?.status !== statusCodes.STANDBY && (
-						  	  	<b>{row?.[channelIndex]?.testCurrentStep + 1} of {row?.[channelIndex]?.totalStagesAmount}</b>
-						  	)}
+							{row?.[channelIndex]?.status === statusCodes.STOPPED ? (
+								<b>{row?.[channelIndex]?.testLastStep + 1} of {row?.[channelIndex]?.totalStagesAmount}</b>
+							) : row?.[channelIndex]?.status !== statusCodes.STANDBY ? (
+								<b>{row?.[channelIndex]?.testCurrentStep + 1} of {row?.[channelIndex]?.totalStagesAmount}</b>
+							) : null}
 						</span>
 					</Box>	
 				</Stack>

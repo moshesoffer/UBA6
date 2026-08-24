@@ -44,6 +44,8 @@ const createRuntimeData = () => ({
 	pausedateChnlB: 0,
 	runtimeChnlB: null,
 	rundateChnlB: 0,
+
+	testLastStep: 0,
 });
 
 const getRuntimeData = ubaSN => {
@@ -143,6 +145,8 @@ const updateRuntimeData = (ubaDevice, runtimeData, testState) => {
 	}
 };
 
+let testLastStep = 0;
+
 const enrichUbaDevices = (ubaDevices, latestInstantTestResults) => ubaDevices.map(ubaDevice => {
 	let testState = null;
 	let testCurrentStep = null;
@@ -191,6 +195,12 @@ const enrichUbaDevices = (ubaDevices, latestInstantTestResults) => ubaDevices.ma
 		testState
 	);
 
+	//testLastStep = (testCurrentStep === 0) ? testLastStep : testCurrentStep;
+	if (testCurrentStep !== 0) {
+		runtimeData.testLastStep = testCurrentStep;
+	}
+	//logger.debug(`==> Using last ${testLastStep}`);
+
 	return {
 		...ubaDevice,
 		testState,
@@ -203,6 +213,7 @@ const enrichUbaDevices = (ubaDevices, latestInstantTestResults) => ubaDevices.ma
 		lastInstantResultsTimestamp: timestamp,
 		ubaDeviceConnectedTimeAgoMs: memCreatedTime ? now - memCreatedTime.getTime() : null,
 		runtimeData,
+		testLastStep: runtimeData.testLastStep,
 	};
 });
 
