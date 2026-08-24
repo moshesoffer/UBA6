@@ -356,6 +356,9 @@ void UBA_LCD_screen_run(UBA_LCD_screen *screen);
 void UBA_LCD_screen_event(UBA_LCD_screen *screen, UBA_LCD_SCREEN_DISPLAY_STATE next_state, UBA_LCD_SCREEN_DISPLAY_EVENT event);
 void UBA_LCD_screen_update(UBA_LCD_screen *screen);
 
+void UBA_LCD_draw_screen(UBA_LCD_screen *screen);
+void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt);
+
 bool UBA_LCD_screen_isLastStep(UBA_LCD_screen *screen);
 void UBA_LCD_screen_getRunTime(UBA_BPT *bpt, RTC_TimeTypeDef *time);
 

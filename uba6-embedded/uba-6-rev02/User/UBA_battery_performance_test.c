@@ -528,7 +528,7 @@ void UBA_BPT_step_complete(UBA_BPT *bpt) {
 	if (UBA_BPT_isChannelState(bpt->ch, UBA_CHANNEL_STATE_STANDBY)) {
 		if (bpt->current_step->next == NULL) {
 			UART_LOG_BPT_INFO("next step pointer is null , test completed");
-			bpt->state.next = UBA_BPT_STATE_TEST_COMPLETE;
+			bpt->state.next = UBA_BPT_STATE_TEST_COMPLETE;//UBA_BPT_STATE_STANDBY;//UBA_BPT_STATE_TEST_COMPLETE;
 
 		} else {
 			bpt->current_step = bpt->current_step->next;
@@ -568,13 +568,19 @@ void UBA_BPT_complete_enter(UBA_BPT *bpt) {
 	UBA_buzzer_play_melody(&buzzer_g, UBA_BUZZER_BUZZ_COMPLETE);
 
 	UART_LOG(UBA_COMP, "id %d: A: %d, B %d, AB %d", bpt->ch->id, UBA_BPT_isRunning(&UBA_6_device_g.BPT_A), UBA_BPT_isRunning(&UBA_6_device_g.BPT_B), UBA_BPT_isRunning(&UBA_6_device_g.BPT_AB));
-	if ((bpt == &UBA_6_device_g.BPT_A) && !UBA_BPT_isRunning(&UBA_6_device_g.BPT_B) ) {
+	if (bpt == &UBA_6_device_g.BPT_A) {
 		UBA_6_fan_on(&UBA_6_device_g, false);
-	} else if ((bpt == &UBA_6_device_g.BPT_B) && !UBA_BPT_isRunning(&UBA_6_device_g.BPT_A)) {
+
+	} else if (bpt == &UBA_6_device_g.BPT_B) {
+		UBA_6_fan_on(&UBA_6_device_g, false);	
+
+	} else if ((bpt == &UBA_6_device_g.BPT_AB)) {
 		UBA_6_fan_on(&UBA_6_device_g, false);		
+
 	} else if (TR_file.list[bpt->TR_selected_index].mode == UBA_PROTO_BPT_MODE_DUAL_CHANNEL) {
 		UBA_6_fan_on(&UBA_6_device_g, false);
 	}
+	//UART_LOG(UBA_COMP, "==> 5, findex %d  mode %d, isA %d isB %d, isRunA %d, isRunB %d", bpt->TR_selected_index, TR_file.list[bpt->TR_selected_index].mode,
 }
 
 void UBA_BPT_complete(UBA_BPT *bpt) {
@@ -646,8 +652,8 @@ bool UBA_BPT_stop(UBA_BPT *bpt) {
 	if (bpt != NULL) {
 		if (UBA_BPT_isRunning(bpt)) {
 			bpt->error |= UBA_PROTO_UBA6_ERROR_USER_ABORT;
-		} 
-		bpt->state.next = UBA_BPT_STATE_TEST_COMPLETE;//UBA_BPT_STATE_STANDBY;//UBA_BPT_STATE_STEP_COMPLETE
+		}
+		bpt->state.next = UBA_BPT_STATE_TEST_COMPLETE;//UBA_BPT_STATE_STANDBY;//UBA_BPT_STATE_STEP_COMPLETE 
 		bpt->current_step = bpt->head_step;
 
 		UART_LOG(UBA_COMP, "id %d: A: %d, B %d, AB %d", bpt->ch->id, UBA_BPT_isRunning(&UBA_6_device_g.BPT_A), UBA_BPT_isRunning(&UBA_6_device_g.BPT_B), UBA_BPT_isRunning(&UBA_6_device_g.BPT_AB));
@@ -671,28 +677,13 @@ bool UBA_BPT_stop(UBA_BPT *bpt) {
 			//if (bpt->ch->id == UBA_CHANNLE_ID_A) {
 				UBA_LCD_g.screen_ch_A.shadow.ch_control = UBA_LCD_g.screen_ch_A.ch_control;
 				UBA_LCD_g.screen_ch_A.ch_control = UBA_CHANNLE_ID_A;
-				UBA_LCD_g.screen_ch_A.bpt->ch->state.current = UBA_BPT_STATE_TEST_COMPLETE;
+				UBA_LCD_g.screen_ch_A.bpt->ch->state.current = UBA_CHANNEL_STATE_OFF;
 
 			//} else if (bpt->ch->id == UBA_CHANNLE_ID_B) {
 				UBA_LCD_g.screen_ch_B.shadow.ch_control = UBA_LCD_g.screen_ch_B.ch_control;
 				UBA_LCD_g.screen_ch_B.ch_control = UBA_CHANNLE_ID_B;
-				UBA_LCD_g.screen_ch_B.bpt->ch->state.current = UBA_BPT_STATE_TEST_COMPLETE;
+				UBA_LCD_g.screen_ch_B.bpt->ch->state.current = UBA_CHANNEL_STATE_OFF;
 			//}
-
-			if (bpt->ch->id == UBA_CHANNLE_ID_B) {
-				//shadow
-//				UBA_LCD_g.screen_ch_B.main_buttons.btn_up_p = UBA_LCD_g.screen_ch_A.shadow.main_buttons.btn_up_p;
-//				UBA_LCD_g.screen_ch_B.main_buttons.btn_down_p = UBA_LCD_g.screen_ch_A.shadow.main_buttons.btn_down_p;
-//				UBA_LCD_g.screen_ch_B.main_buttons.btn_select_p = UBA_LCD_g.screen_ch_A.shadow.main_buttons.btn_select_p;
-//
-//				UBA_LCD_g.screen_ch_B.secondery_buttons.btn_up_p = UBA_LCD_g.screen_ch_A.shadow.secondery_buttons.btn_up_p;
-//				UBA_LCD_g.screen_ch_B.secondery_buttons.btn_down_p = UBA_LCD_g.screen_ch_A.shadow.secondery_buttons.btn_down_p;
-//				UBA_LCD_g.screen_ch_B.secondery_buttons.btn_select_p = UBA_LCD_g.screen_ch_A.shadow.secondery_buttons.btn_select_p;
-//				
-//				memcpy (&UBA_LCD_g.screen_ch_B.pages.screen_bpt.btn_back_stop, &UBA_LCD_g.screen_ch_A.shadow.btn_back_stop, sizeof (UBA_GFX));
-//				memcpy (&UBA_LCD_g.screen_ch_B.pages.screen_bpt.btn_pause_start, &UBA_LCD_g.screen_ch_A.shadow.btn_pause_start, sizeof (UBA_GFX));
-//				memcpy (&UBA_LCD_g.screen_ch_B.pages.screen_bpt.btn_next, &UBA_LCD_g.screen_ch_A.shadow.btn_next, sizeof (UBA_GFX));
-			}
 		}
 		return true;
 
@@ -1101,10 +1092,25 @@ void UBA_BPT_save_log(UBA_BPT *bpt) {
 		uint32_t chunk_length = LOG_BUF_SIZE;
 
 		if (bpt->wr_from > 0) {
+			bpt->save_file = true;
+
+			int list_index = bpt->TR_selected_index;
+			if (TR_file.list[list_index].mode == UBA_PROTO_BPT_MODE_DUAL_CHANNEL) {
+				//draw channel A
+				UBA_LCD_screen_draw_bpt(&UBA_LCD_g.screen_ch_A, UBA_LCD_REFRESH_TYPE_ALL);
+				//draw channel B
+				UBA_LCD_screen_draw_bpt(&UBA_LCD_g.screen_ch_B, UBA_LCD_REFRESH_TYPE_ALL);
+			} else {
+				UBA_LCD_screen *current_screen = (UBA_LCD_screen *)bpt->ch->current_screen;
+				UBA_LCD_draw_screen(current_screen);
+			}
+
 			chunk_length = bpt->wr_from > chunk_length ? chunk_length : bpt->wr_from;
-UART_LOG(UBA_COMP, "==> last step complete exit: bpt->wr_from %d [%s]", chunk_length, bpt->filename);
+//UART_LOG(UBA_COMP, "==> last step complete exit: bpt->wr_from %d [%s]", chunk_length, bpt->filename);
 			UBA_FM_apppend_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, chunk_length); 
 			bpt->wr_from -= chunk_length;
+
+			bpt->save_file = false;
 		}
 	}
 }

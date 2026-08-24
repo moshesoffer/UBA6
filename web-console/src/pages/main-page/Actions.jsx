@@ -220,6 +220,10 @@ export const getActions = (row, authDispatch, ubaDevicesDispatch, testRoutinesDi
                 <Button size="small" sx={{ width: 72, p: 0.2, height: 32 }} onClick={() => showWizardsZero(row, ubaDevicesDispatch)}>
                     <Typography fontSize={11}>Pending Save</Typography>
                 </Button>
+
+                <IconButton title={getText('common.STOP')} aria-label="stop" onClick={() => handleForceStopTest(row, authDispatch, ubaDevicesDispatch)} >
+                    <StopCircleOutlinedIcon color="error" />
+                </IconButton>
             </ButtonGroup>
         );
     }
@@ -236,15 +240,19 @@ export const getActions = (row, authDispatch, ubaDevicesDispatch, testRoutinesDi
         );
     }
 
-    //else  {
-    //    return (
-    //        <ButtonGroup>
-    //            <Button size="small" sx={{ width: 72, p: 0.2, height: 32 }}>
-    //                <Typography fontSize={11}>Pending</Typography>
-    //            </Button>
-    //        </ButtonGroup>
-    //    );
-    //}
+    else  {
+        return (
+            <ButtonGroup>
+                <Button size="small" sx={{ width: 72, p: 0.2, height: 32 }}>
+                    <Typography fontSize={11}>Pending Start</Typography>
+                </Button>
+
+                <IconButton title={getText('common.STOP')} aria-label="stop" onClick={() => handleForceStopTest(row, authDispatch, ubaDevicesDispatch)} >
+                    <StopCircleOutlinedIcon color="error" />
+                </IconButton>
+            </ButtonGroup>
+        );
+    }
 };
 
 const showWizardsZero = (selectedRow, ubaDevicesDispatch) => {

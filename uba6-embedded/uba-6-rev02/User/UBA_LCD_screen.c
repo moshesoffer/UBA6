@@ -963,7 +963,15 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 	} else {
 		sprintf(lcd_bpt->btn_pause_start.elemnt.button.text, "START");
 		sprintf(lcd_bpt->btn_back_stop.elemnt.button.text, "BACK");
-		if (lcd_bpt->btn_next.effect = UBA_GFX_EFFECT_INVISIBLE) {
+//		UART_LOG(UBA_COMP, "START/BACK ch %d, state %d save_file %d", screen->bpt->ch->id, screen->bpt->state.current, screen->bpt->save_file);
+//		if (screen->bpt->save_file == true) {
+//			lcd_bpt->btn_back_stop.effect = UBA_GFX_EFFECT_VISIBLE;
+//		} else {
+//			if (lcd_bpt->btn_pause_start.effect != UBA_GFX_EFFECT_SELECTED) {
+//				lcd_bpt->btn_back_stop.effect = UBA_GFX_EFFECT_SELECTED;
+//			}
+//		}
+		if (lcd_bpt->btn_next.effect == UBA_GFX_EFFECT_INVISIBLE) {
 			sprintf(lcd_bpt->btn_next.elemnt.button.text, "     ");
 		}
 	}
@@ -1156,11 +1164,11 @@ void UBA_LCD_draw_screen(UBA_LCD_screen *screen) {
 
 	if (screen->ch_control == UBA_CHANNLE_ID_A) {
 		//draw channel B
-		UBA_LCD_screen_draw_bpt(&UBA_LCD_g.screen_ch_B, UBA_LCD_REFRESH_TYPE_ALL);
+		UBA_LCD_screen_draw_bpt(&UBA_LCD_g.screen_ch_A, UBA_LCD_REFRESH_TYPE_ALL);
 
 	} else if (screen->ch_control == UBA_CHANNLE_ID_B) {
 		//draw channel B
-		UBA_LCD_screen_draw_bpt(&UBA_LCD_g.screen_ch_A, UBA_LCD_REFRESH_TYPE_ALL);
+		UBA_LCD_screen_draw_bpt(&UBA_LCD_g.screen_ch_B, UBA_LCD_REFRESH_TYPE_ALL);
 
 	} else if (screen->ch_control == UBA_CHANNLE_ID_AB) {
 		//draw channel A

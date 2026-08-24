@@ -123,11 +123,12 @@ export default function UbaCard({row}) {
 									sx={{
 											backgroundColor: rowStatus & statusCodes.RUNNING ? '#92D051' :
 													         rowStatus & statusCodes.NEXTSTEP ? '#92D051' :
-														 	 rowStatus === statusCodes.FINISHED ? '#92D051' :
-														 	 rowStatus === statusCodes.STOPPED ? '#FFA500' :
-														 	 rowStatus === statusCodes.PAUSED ? '#FFFF00' :
-														 	 rowStatus === statusCodes.STANDBY ? '#FFFFFF' :
-														 	 rowStatus === statusCodes.ABORTED ? '#FF0000' :
+														 	 rowStatus & statusCodes.FINISHED ? '#92D051' :
+														 	 rowStatus & statusCodes.STOPPED ? '#FFA500' :
+														 	 rowStatus & statusCodes.PAUSED ? '#FFFF00' :
+														 	 rowStatus & statusCodes.STANDBY ? '#FFFFFF' :
+														 	 rowStatus & statusCodes.ABORTED ? '#FF0000' :
+														 	 rowStatus & statusCodes.SAVED ? '#FFA500' :
 														 	 'gray', // Default color if no match
 										color: rowStatus === statusCodes.RUNNING || rowStatus === statusCodes.PAUSED || rowStatus === statusCodes.FINISHED ? 'black' : 'black', // Ensuring text is visible against background
 										border: '1px solid black',
