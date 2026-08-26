@@ -34,5 +34,6 @@ void UBA_FM_command_execute(UBA_PROTO_FM_command * cmd);
 uint32_t UBA_FM_file_size(char* folder,char* file_name);
 int UBA_FM_transfer_chunk(char* folder,UBA_PROTO_FM_file_transfer* msg);
 void UBA_FM_file_list(char *folder, UBA_PROTO_FM_file_list *list, uint16_t skip);
+bool UBA_FM_limit_file_count(char *folder);
 
 #endif /* UBA_FILE_MANAGER_H_ */

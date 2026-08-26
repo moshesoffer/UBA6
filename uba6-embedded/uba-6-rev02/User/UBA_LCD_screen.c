@@ -971,9 +971,10 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 //				lcd_bpt->btn_back_stop.effect = UBA_GFX_EFFECT_SELECTED;
 //			}
 //		}
-		if (lcd_bpt->btn_next.effect == UBA_GFX_EFFECT_INVISIBLE) {
+		//if (lcd_bpt->btn_next.effect == UBA_GFX_EFFECT_INVISIBLE) {
+			lcd_bpt->btn_next.effect = UBA_GFX_EFFECT_INVISIBLE;
 			sprintf(lcd_bpt->btn_next.elemnt.button.text, "     ");
-		}
+		//}
 	}
 	
 	lcd_bpt->btn_back_stop.elemnt.button.color_bg = UBA_GFX_COLOR_WHITE;

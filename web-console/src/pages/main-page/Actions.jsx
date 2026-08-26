@@ -148,6 +148,10 @@ export const getActions = (row, authDispatch, ubaDevicesDispatch, testRoutinesDi
                 <Button size="small" sx={{ width: 72, p: 0.2, height: 32 }} onClick={() => showWizardsZero(row, ubaDevicesDispatch)}>
                     <Typography fontSize={11}>Start Test</Typography>
                 </Button>
+
+                <IconButton title={getText('common.STOP')} aria-label="stop" onClick={() => handleForceStopTest(row, authDispatch, ubaDevicesDispatch)} >
+                    <StopCircleOutlinedIcon color="error" />
+                </IconButton>
             </ButtonGroup>
         );
     } 
