@@ -515,8 +515,6 @@ void UBA_LCD_screen_draw_channel(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt
 		if (ch->error) {
 			//TODO: add EWI
 			sprintf(screen->pages.channel.EWI_msg.elemnt.text.text, "Error:%x", ch->error);
-		} else {
-			memset(screen->pages.channel.EWI_msg.elemnt.text.text, ' ', 20);//UBA_GFX_TEXT_MAX_LENGTH);
 		}
 
 		//update shadow
@@ -791,11 +789,14 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 			lcd_bpt->EWI_msg.elemnt.text.color_bg = UBA_GFX_COLOR_YELLOW;
 			lcd_bpt->EWI_msg.elemnt.text.color_text = UBA_GFX_COLOR_RED;
 			lcd_bpt->EWI_msg.effect = UBA_GFX_EFFECT_SOLID;
+			snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, "CRIT:%04u", screen->bpt->error);
+
 		} else if (screen->bpt->error & UBA_BPT_ERROR) {
 			lcd_bpt->EWI_msg.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
 			lcd_bpt->EWI_msg.elemnt.text.color_text = UBA_GFX_COLOR_RED;
 			lcd_bpt->EWI_msg.effect = UBA_GFX_EFFECT_SOLID;
 			snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, "ERR:%04u", screen->bpt->error);
+
 		} else if (screen->bpt->error & UBA_BPT_WARNNING)  {
 			lcd_bpt->EWI_msg.elemnt.text.color_bg = UBA_GFX_COLOR_YELLOW;
 			lcd_bpt->EWI_msg.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
@@ -803,7 +804,6 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 			snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, "WARN:%04u", screen->bpt->error);
 
 		} else {
-
 			if (screen->bpt->state.current == UBA_BPT_STATE_TEST_COMPLETE) {
 				if (strlen (lcd_bpt->EWI_msg.elemnt.text.text) == 0) {
 					lcd_bpt->EWI_msg.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
@@ -815,20 +815,16 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 			else if (screen->bpt->state.current == UBA_BPT_STATE_TEST_FAILED) {
 				lcd_bpt->EWI_msg.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
 				lcd_bpt->EWI_msg.elemnt.text.color_text = UBA_GFX_COLOR_RED;
+				lcd_bpt->EWI_msg.effect = UBA_GFX_EFFECT_SOLID;
 				snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, " Failed ");
 			}
-			else {
-				if (screen->refresh_msg) {
-					screen->bpt->error = UBA_PROTO_UBA6_ERROR_NO_ERROR;
-					screen->refresh_msg = false;
-				}
-
-				if ((screen->bpt->error & UBA_PROTO_UBA6_ERROR_USER_ABORT) == UBA_PROTO_UBA6_ERROR_USER_ABORT) {
+			else if ((screen->bpt->error & UBA_PROTO_UBA6_ERROR_USER_ABORT) == UBA_PROTO_UBA6_ERROR_USER_ABORT) {
 					lcd_bpt->EWI_msg.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
 					lcd_bpt->EWI_msg.elemnt.text.color_text = UBA_GFX_COLOR_GREEN;
+					lcd_bpt->EWI_msg.effect = UBA_GFX_EFFECT_SOLID;
 					snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, "Stoped by User");
-				}
-				
+			}	
+			else {
 				bool line_connected [2];
 				bool is_connected = false;
 				UBA_channel_get_lines_connected(screen->bpt->ch, line_connected);
@@ -852,12 +848,30 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 					lcd_bpt->EWI_msg.elemnt.text.color_text = UBA_GFX_COLOR_RED;
 					snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, "Battery Disconnected");
 
-				} else if (strlen (screen->bpt->complete_reason) > 0) {
-					lcd_bpt->EWI_msg.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
-					lcd_bpt->EWI_msg.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
-					snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, screen->bpt->complete_reason);
+				} else {//if (strlen (screen->bpt->complete_reason) > 0) {
+					int i;
+					for(i=0; i<20/*UBA_GFX_TEXT_MAX_LENGTH*/; i++) {
+						if (screen->bpt->complete_reason[i] != ' ') break;
+					}
+					if (i < 20/*UBA_GFX_TEXT_MAX_LENGTH*/) {
+						lcd_bpt->EWI_msg.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
+						lcd_bpt->EWI_msg.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
+						if (strlen(lcd_bpt->EWI_msg.elemnt.text.text) == 0)
+						snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, screen->bpt->complete_reason);
+
+					} else {
+						for(i=0; i < 20/*UBA_GFX_TEXT_MAX_LENGTH*/; i++) {
+							if (lcd_bpt->EWI_msg.elemnt.text.text[i] != ' ') break;
+						}
+						if (i < 20/*UBA_GFX_TEXT_MAX_LENGTH*/-1) {
+							memset(lcd_bpt->EWI_msg.elemnt.text.text, ' ', 20/*UBA_GFX_TEXT_MAX_LENGTH*/);
+						}
+					}
 				}
 			}
+			//	lcd_bpt->EWI_msg.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
+			//	lcd_bpt->EWI_msg.elemnt.text.color_text = UBA_GFX_COLOR_RED;
+			//	lcd_bpt->EWI_msg.effect = UBA_GFX_EFFECT_SOLID;
 		}
 		if ((screen == &UBA_LCD_g.screen_ch_A) &&
 			(screen->bpt->error) &&
@@ -866,6 +880,7 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 				
 			UBA_LCD_g.screen_ch_B.pages.screen_bpt.EWI_msg.elemnt.text.color_bg = lcd_bpt->EWI_msg.elemnt.text.color_bg;
 			UBA_LCD_g.screen_ch_B.pages.screen_bpt.EWI_msg.elemnt.text.color_text = lcd_bpt->EWI_msg.elemnt.text.color_text;
+			UBA_LCD_g.screen_ch_B.pages.screen_bpt.EWI_msg.effect = UBA_GFX_EFFECT_SOLID;
 			sprintf(UBA_LCD_g.screen_ch_B.pages.screen_bpt.EWI_msg.elemnt.text.text, lcd_bpt->EWI_msg.elemnt.text.text);
 		}
 	}
@@ -1105,7 +1120,6 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 	if ((rt & UBA_LCD_REFRESH_TYPE_EWI) == UBA_LCD_REFRESH_TYPE_EWI) {
 		if (strlen (lcd_bpt->EWI_msg.elemnt.text.text)) {
 			UBA_GFX_draw_text(&lcd_bpt->EWI_msg);
-			memset(lcd_bpt->EWI_msg.elemnt.text.text, ' ', 16);//UBA_GFX_TEXT_MAX_LENGTH-8);
 		}
 	}
 	//if (strlen (screen->bpt->complete_reason) > 0) {
@@ -1231,12 +1245,10 @@ bool UBA_LCD_screen_btn_press_select(UBA_LCD_screen *screen) {
 				UBA_LCD_g.screen_ch_A.tr_list_select_index = screen->tr_list_select_index;
 				UBA_TR_unpack(&TR_file.list[UBA_LCD_g.screen_ch_A.tr_list_select_index], UBA_LCD_g.screen_ch_A.bpt);
 				UBA_LCD_g.screen_ch_A.bpt->TR_selected_index = UBA_LCD_g.screen_ch_A.tr_list_select_index;
-				UBA_LCD_g.screen_ch_A.refresh_msg = true;
 
 				UBA_BPT_start(UBA_LCD_g.screen_ch_A.bpt);
 			} else {
 				screen->bpt->start_date_time.add_pause_seconds = 0;
-				screen->refresh_msg = true;
 
 				UBA_BPT_start(screen->bpt);
 			}
@@ -1743,7 +1755,7 @@ void UBA_LCD_screen_display_bpt_enter(UBA_LCD_screen *screen) {
 
 	screen->pages.screen_bpt.test_step.id = UBA_GFX_ELEMNET_TEXT;
 	screen->pages.screen_bpt.test_step.pos.x = position->start_x + BORDER_PADDING;// + ((position->width - (2 * BORDER_PADDING)) / 4) + 8;
-	screen->pages.screen_bpt.test_step.pos.y = LINE(LINE_STEP) + 23;
+	screen->pages.screen_bpt.test_step.pos.y = LINE(LINE_STEP) + 24;
 	screen->pages.screen_bpt.test_step.effect = UBA_GFX_EFFECT_SOLID;
 	screen->pages.screen_bpt.test_step.elemnt.text.size = LINE_STEP_FONT_SIZE;
 	screen->pages.screen_bpt.test_step.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;

@@ -212,13 +212,15 @@ uint32_t UBA_DCDC_bock_boost_down(UBA_DC_DC *dcdc) {
 	if (expected_vgen > MAX_EXPECTED_VOLTAGE) {
 		UART_LOG_CRITICAL(UBA_COMP, "Expected Vgen (%lu) is OOB", expected_vgen);
 		return UBA_PROTO_UBA6_ERROR_LINE_VGEN_EXPECTED_MAX_VOLTAGE;
-	}
 
-	UART_LOG_INFO(UBA_COMP, "Step Down Buck Duty Cycle:%03lu%% Boost Duty Cycle:%03lu%% Expected:%03lu mV", buck_duty_cycle, boost_duty_cycle,
-			expected_vgen);
-	if (buck_duty_cycle < (boost_duty_cycle + 5)) {
-		UART_LOG_CRITICAL(UBA_COMP, "Delta Duty Cycle is OOB");
-		return UBA_PROTO_UBA6_ERROR_LINE_VGEN_FAILED;
+	}
+	if (expected_vgen > 0) {
+		UART_LOG_INFO(UBA_COMP, "Step Down Buck Duty Cycle:%03lu%% Boost Duty Cycle:%03lu%% Expected:%03lu mV", buck_duty_cycle, boost_duty_cycle,
+				expected_vgen);
+		if (buck_duty_cycle < (boost_duty_cycle + 5)) {
+			UART_LOG_CRITICAL(UBA_COMP, "Delta Duty Cycle is OOB");
+			return UBA_PROTO_UBA6_ERROR_LINE_VGEN_FAILED;
+		}
 	}
 
 	if (boost_duty_cycle > UBA_DC_DC_BOOST_MIN_DUTY_CYCLE) {

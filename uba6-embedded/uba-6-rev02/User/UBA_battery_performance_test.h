@@ -239,7 +239,7 @@ typedef struct UBA_BPT {
 	uint8_t buffer[WR_BUFFER_LEN];
 	uint32_t wr_from;
 
-	char complete_reason[UBA_GFX_TEXT_MAX_LENGTH];
+	char complete_reason[20/*UBA_GFX_TEXT_MAX_LENGTH*/];
 
 	UBA_BPT_SHADOW shadow;
 } UBA_BPT;

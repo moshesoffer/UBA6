@@ -104,7 +104,6 @@ static const struct UBABPTSMA_rule rule_g[UBA_BPT_STATE_MAX] ={
 
 bool UBA_BPT_isChannel_error_critical(UBA_BPT *bpt) {
 	return (bpt->ch->error & UBA_CHANNEL_CRITICAL_ERROR) > 0;
-
 }
 
 void UBA_BPT_test_result_filename(UBA_BPT *bpt) {
@@ -284,7 +283,7 @@ bool UBA_BPT_isStep_completed(UBA_BPT *bpt) {
 				break;
 
 			default:
-				strcpy (bpt->complete_reason, "invalid Step Id");
+				strcpy (bpt->complete_reason, "Invalid Step Id");
 				UART_LOG_CRITICAL(UBA_COMP, "invalid step id 0x%x", bpt->current_step->type_id);
 				isCompleted |= true;
 		}
@@ -495,12 +494,12 @@ void UBA_BPT_run_step(UBA_BPT *bpt) {
 		if (bpt->ch->num_consecutive_errors >= MAX_CONSECUTIVE_ERRORS) {
 			UART_LOG_CRITICAL(UBA_COMP, "run step not completed, critical error %d on id %d %s", bpt->ch->error, bpt->ch->id, bpt->ch->name);
 			bpt->state.next = UBA_BPT_STATE_TEST_FAILED;
-		}
 
-		if (bpt->wr_from > 0) {
+			if (bpt->wr_from > 0) {
 UART_LOG(UBA_COMP, "run step err exit: bpt->wr_from %d [%s]", bpt->wr_from, bpt->filename);
-			UBA_FM_apppend_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
-			bpt->wr_from = 0;
+				UBA_FM_apppend_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
+				bpt->wr_from = 0;
+			}
 		}
 
 	} else if (UBA_channel_are_lines_connected(bpt->ch) == false) {
@@ -767,7 +766,6 @@ bool UBA_BPT_start(UBA_BPT *bpt) {
 		if (TR_file.list[list_index].mode == UBA_PROTO_BPT_MODE_DUAL_CHANNEL) {
 			//if (bpt->ch->id == UBA_CHANNLE_ID_A) {
 				UBA_LCD_g.screen_ch_A.shadow.ch_control = UBA_LCD_g.screen_ch_A.ch_control;
-UART_LOG_ERROR(UBA_COMP, "==> set both channels ocntrol to UBA_CHANNLE_ID_AB");
 				UBA_LCD_g.screen_ch_A.ch_control = UBA_CHANNLE_ID_AB;
 
 			//} else if (bpt->ch->id == UBA_CHANNLE_ID_B) {
@@ -777,13 +775,10 @@ UART_LOG_ERROR(UBA_COMP, "==> set both channels ocntrol to UBA_CHANNLE_ID_AB");
 			//}
 
 			if (bpt == &UBA_6_device_g.BPT_A) {
-UART_LOG(UBA_COMP, "1-A list_index %d", list_index);
 				UBA_6_device_g.BPT_B.TR_selected_index = bpt->TR_selected_index;
 			} else if (bpt == &UBA_6_device_g.BPT_B) {
-UART_LOG(UBA_COMP, "2-B list_index %d", list_index);
 				UBA_6_device_g.BPT_A.TR_selected_index = bpt->TR_selected_index;
 			} else if (bpt == &UBA_6_device_g.BPT_B) {
-UART_LOG(UBA_COMP, "3-AB list_index %d", list_index);
 				UBA_6_device_g.BPT_A.TR_selected_index = bpt->TR_selected_index;
 				UBA_6_device_g.BPT_B.TR_selected_index = bpt->TR_selected_index;
 			}

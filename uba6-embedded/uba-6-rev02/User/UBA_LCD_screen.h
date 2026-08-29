@@ -272,7 +272,6 @@ typedef struct UBA_LCD_screen {
 	UBA_CHANNLE_ID ch_control; // the control id of the screen
 	uint8_t tr_list_select_index;
 	uint8_t tr_step_display_index;
-	bool refresh_msg;
 	bool btn_active;
 
 	UBA_LCD_screen_shadow shadow;

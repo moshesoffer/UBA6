@@ -134,7 +134,7 @@ bool UBA_channel_lines_updated_state(UBA_channel *ch, UBA_LINE_STATE line_state)
 	for (int index = 0; index < ch->line_size; index++) {
 		line_err = UBA_line_set_next_state(ch->lines_p[index], line_state);
 		if (line_err != UBA_PROTO_UBA6_ERROR_NO_ERROR) {
-			UART_LOG("Line %d update state, err 0x%x", index, line_err);
+			UART_LOG(ch->name, "Line %d update state, err 0x%x", index, line_err);
 			return false;
 		}
 	}
@@ -567,6 +567,7 @@ bool UBA_channel_isDischarging(UBA_channel *ch) {
 
 void UBA_channel_post_error(UBA_channel *ch, UBA_PROTO_UBA6_ERROR error) {
 	ch->error |= error;
+	UART_LOG_ERROR(ch->name, "Channel %d error:%x", ch->id, error);
 }
 void UBA_channel_clear_error(UBA_channel *ch, UBA_PROTO_UBA6_ERROR error) {
 	ch->error = (ch->error & (~error));
