@@ -5,7 +5,7 @@
  *      Author: ORA
  */
 #undef UART_LOG_DISABLE
-
+#include <math.h>     // floating-point types
 #include "UBA_battery_performance_test.h"
 #include "uart_log.h"
 
@@ -225,8 +225,8 @@ bool UBA_BPT_isStop_condition_met_charge_current(UBA_BPT *bpt) {
 
 bool UBA_BPT_isStop_condition_met_charge_capacity(UBA_BPT *bpt) {
 	bool ret = false;
-	float capacity = UBA_channel_get_capacity(bpt->ch);
-	ret = (capacity * 1000/*[mAh]*/ > (float)bpt->current_step->type.charge.stop_condition.charge_limit);
+	float capacity = UBA_channel_get_capacity(bpt->ch);// * 1000/*[mAh]*/;
+	ret = (fabsf(capacity) > bpt->current_step->type.charge.stop_condition.charge_limit);
 	if (ret) {
 		strcpy (bpt->complete_reason, "Reach Charge Limit");
 

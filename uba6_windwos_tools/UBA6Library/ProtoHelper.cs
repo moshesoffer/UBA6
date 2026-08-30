@@ -17,7 +17,7 @@ namespace UBA6Library {
         public static readonly int DEFAULT_DISCHARGE_CUTOFF_VOLTAGE = Int32.MinValue;
         public static readonly UInt32 DEFAULT_MAX_TEMP = UInt32.MaxValue;
         public static readonly uint DEFAULT_MAX_TIME = uint.MaxValue;
-        public static readonly int DEFAULT_LIMIT_CAPACITY = int.MaxValue;
+        public static readonly float DEFAULT_LIMIT_CAPACITY = float.MaxValue;
 
         public static Test_Routine_Message CreateTR_Message(uint StoreIndex, Test_Routine tr) {
             Test_Routine_Message test_Routine_Message = new Test_Routine_Message();
@@ -29,7 +29,7 @@ namespace UBA6Library {
         public static UBA_PROTO_BPT.charge_stop_condition CreateChargeStopCondtion(float maxTemp = float.MaxValue,
             UInt32 maxTime = UInt32.MaxValue,
             Int32 cutOffCurrent = Int32.MinValue,
-            Int32 limitCapacity = Int32.MaxValue
+            float limitCapacity = float.MaxValue
             ) {
 
             UBA_PROTO_BPT.charge_stop_condition t = new UBA_PROTO_BPT.charge_stop_condition() {
@@ -93,7 +93,7 @@ namespace UBA6Library {
         public static UBA_PROTO_BPT.discharge_stop_condition CreateDischargeStopCondition(float maxTemp = float.MaxValue,
             UInt32 maxTime = UInt32.MaxValue,
             Int32 cutOfVoltage = Int32.MinValue,
-            Int32 limitCapacity = Int32.MaxValue
+            float limitCapacity = float.MaxValue
             ) {
             UBA_PROTO_BPT.discharge_stop_condition t = new UBA_PROTO_BPT.discharge_stop_condition() {
                 MaxTemperature = maxTemp,

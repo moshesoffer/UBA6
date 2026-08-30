@@ -102,7 +102,7 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
 
         [JsonPropertyName("chargeLimit")]
         [JsonConverter(typeof(ParseToMiliAmpsHJsonConverter))]
-        public int? ChargeLimit { get; set; }
+        public float? ChargeLimit { get; set; }
 
         [JsonPropertyName("isCollapsed")]
         public bool IsCollapsed { get; set; }
@@ -128,7 +128,7 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
 
         [JsonPropertyName("dischargeLimit")]
         [JsonConverter(typeof(ParseToMiliAmpsHJsonConverter))]
-        public int? DischargeLimit { get; set; }
+        public float? DischargeLimit { get; set; }
 
         [JsonPropertyName("isCutOffCurrent")]
         public bool IsCutOffCurrent { get; set; }
@@ -298,7 +298,7 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
             float maxTemp = ProtoHelper.DEFAULT_MAX_TEMP;
             uint maxTime = ProtoHelper.DEFAULT_MAX_TIME;
             int CutoffCurrent = ProtoHelper.DEFAULT_CHARGE_CUTOFF_CURRENT;
-            int LimitCapacity = ProtoHelper.DEFAULT_LIMIT_CAPACITY;
+            float LimitCapacity = ProtoHelper.DEFAULT_LIMIT_CAPACITY;
 
             if (ps.IsMaxTemp) {
                 maxTemp = ConvertTemp(ps.MaxTemp);
@@ -331,7 +331,7 @@ namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.
             float MaxTemp = ProtoHelper.DEFAULT_MAX_TIME;
             uint MaxTime = ProtoHelper.DEFAULT_MAX_TIME;
             int CutoffVoltage = ProtoHelper.DEFAULT_DISCHARGE_CUTOFF_VOLTAGE;
-            int LimitCapacity = ProtoHelper.DEFAULT_LIMIT_CAPACITY;
+            float LimitCapacity = ProtoHelper.DEFAULT_LIMIT_CAPACITY;
             if (ps.IsMaxTemp) {
                 MaxTemp = ps.MaxTemp ?? -273.15f;
             }

@@ -2605,8 +2605,8 @@ void UBA_LCD_screen_display_test_step_enter(UBA_LCD_screen *screen) {
 			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  charge limit: ");
 			i++;
 			screen->pages.test_info.test_info[i].elemnt.text.size = 2;
-			if ((screen->tr)->config[index].type.charge.sc.charge_limit < MAX_CHARGE) {
-				sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  %d mAh", (screen->tr)->config[index].type.charge.sc.charge_limit);
+			if ((screen->tr)->config[index].type.charge.sc.charge_limit < (float)MAX_CHARGE) {
+				sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  %f mAh", (screen->tr)->config[index].type.charge.sc.charge_limit);
 			} else {
 				sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  undef");
 			} 
@@ -2670,8 +2670,8 @@ void UBA_LCD_screen_display_test_step_enter(UBA_LCD_screen *screen) {
 			sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  discharge limit: ");
 			i++;
 			screen->pages.test_info.test_info[i].elemnt.text.size = 2;
-			if ((screen->tr)->config[index].type.discharge.sc.charge_limit < MAX_CHARGE) {
-				sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  %d mAh", (screen->tr)->config[index].type.discharge.sc.charge_limit);
+			if ((screen->tr)->config[index].type.discharge.sc.charge_limit < (float)MAX_CHARGE) {
+				sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  %f mAh", (screen->tr)->config[index].type.discharge.sc.charge_limit);
 			} else {
 				sprintf(&screen->pages.test_info.test_info[i].elemnt.text.text[from], "  undef");
 			}

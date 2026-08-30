@@ -58,7 +58,7 @@ message charge_stop_condition{
 		float max_temperature = 1; /*the max temp in c*/
 		uint32 max_time = 2; /*the max time in ms*/
 		int32 cut_off_current = 3 ; /*the current of charge that below it the step will end*/
-		int32 limit_capacity = 4; /*the capacity in mAh that above it the step will end*/
+		float limit_capacity = 4; /*the capacity in mAh that above it the step will end*/
 }
 
 message charge {
@@ -73,7 +73,7 @@ message discharge_stop_condition{
 		float max_temperature = 1;/*the max temp in c*/
 		uint32 max_time = 2;/*the max time in ms*/
 		int32 cut_off_voltag = 3; /*the voltage that the battery will reatch that stop the step*/
-		int32 limit_capacity = 4; /*the capacity in mAh that above it the step will end*/
+		float limit_capacity = 4; /*the capacity in mAh that above it the step will end*/
 }; 
 
 message discharge {

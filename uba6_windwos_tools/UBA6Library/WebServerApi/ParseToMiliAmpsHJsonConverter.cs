@@ -6,39 +6,48 @@ using System.Text.Json.Serialization;
 
 namespace UBA6Library.WebServerApi.Services.WebConsole.Controllers.RunningTests.Models
 {
-    public class ParseToMiliAmpsHJsonConverter : JsonConverter<int?>
+    public class ParseToMiliAmpsHJsonConverter : JsonConverter<float?> 
     {
-        public override int? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-        {
+        public override float? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
+            // Accept both string and number
+            if (reader.TokenType == JsonTokenType.String) {
+                var str = reader.GetString();
 
-            var input = reader.GetString();
+                if (string.IsNullOrWhiteSpace(str)) {
+                    Exception e = new JsonException("Input is null or empty");
+                }
+                var parts = str.Split(':');
+                if (parts.Length != 2)
+                    throw new JsonException($"Invalid format: {str}");
 
-            if (string.IsNullOrWhiteSpace(input)) {
-                Exception e = new JsonException("Input is null or empty");
-            }
+                if (float.TryParse(parts[0], out var value)) {
+                    string unit = parts[1].ToLowerInvariant();
 
-            var parts = input.Split(':');
-            if (parts.Length != 2)
-                throw new JsonException($"Invalid format: {input}");
-
-            if (!double.TryParse(parts[0], out double value))
+                    switch (unit) {
+                        case "absoluteah":
+                            return (float)(value * 1_000); // Ah to mAh
+                        case "absolutemah":
+                            return (float)(value);    // mAh
+                        default:
+                            Console.WriteLine($"Unsupported unit: {unit}");
+                            return 0;
+                            // Or: throw new JsonException($"Unsupported unit: {unit}");
+                    }
+                    return null;
+                }
                 return null;
-
-            string unit = parts[1].ToLowerInvariant();
-
-            switch (unit) {
-                case "absoluteah":
-                    return (int)(value * 1_000); // Ah to mAh
-                case "absolutemah":
-                    return (int)(value);    // mAh
-                default:
-                    Console.WriteLine($"Unsupported unit: {unit}");
-                    return 0;
-                    // Or: throw new JsonException($"Unsupported unit: {unit}");
             }
+            if (reader.TokenType == JsonTokenType.Number) {
+                return reader.GetSingle();
+            }
+            if (reader.TokenType == JsonTokenType.Null) {
+                return null;
+            }
+            return null;
+            //throw new JsonException("Unexpected token type for float?");
         }
 
-        public override void Write(Utf8JsonWriter writer, int? value, JsonSerializerOptions options)
+        public override void Write(Utf8JsonWriter writer, float? value, JsonSerializerOptions options)
         {
             // Write as mAh string (e.g., "1000:absolutemAh")
             writer.WriteStringValue($"{value}:absolutemAh");

@@ -97,7 +97,7 @@ namespace UBA6_Controller_App.ViewModel {
             List<object> list = new List<object>();
             UBA_PROTO_BPT.charge  step = ProtoHelper.CreateChargeStep(SelectedSource, ChargeCurrent, ChargeVoltage,
                 ProtoHelper.CreateChargeStopCondtion(cutOffCurrent: CutOffCurrent,
-                                                    limitCapacity: DischargeLimit,
+                                                    limitCapacity: ChargeLimit,
                                                     maxTime: MaxTime,
                                                     maxTemp: MaxTemp),
                 MinTemp);
