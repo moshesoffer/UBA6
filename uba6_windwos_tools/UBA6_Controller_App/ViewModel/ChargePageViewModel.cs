@@ -49,9 +49,9 @@ namespace UBA6_Controller_App.ViewModel {
         uint maxTime = uint.MaxValue;
 
         [ObservableProperty]
-        bool isDischargeLimit;
+        bool isChargeLimit;
         [ObservableProperty]
-        int dischargeLimit = int.MaxValue;
+        int chargeLimit = int.MaxValue;
         [ObservableProperty]
         byte storeIndex ;
         [ObservableProperty]
@@ -86,8 +86,8 @@ namespace UBA6_Controller_App.ViewModel {
         partial void OnMaxTimeChanged(uint value) {
             IsMaxTime = value != uint.MaxValue;
         }
-        partial void OnDischargeLimitChanged(int value) {
-            IsDischargeLimit = value != int.MaxValue;
+        partial void OnChargeLimitChanged(int value) {
+            IsChargeLimit = value != int.MaxValue;
         }
 
 
