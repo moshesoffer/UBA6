@@ -49,9 +49,9 @@ namespace UBA6_Controller_App.ViewModel {
         uint maxTime = uint.MaxValue;
 
         [ObservableProperty]
-        bool isChargeLimit;
+        bool isDischargeLimit;
         [ObservableProperty]
-        int chargeLimit = int.MaxValue;
+        int dischargeLimit = int.MaxValue;
         [ObservableProperty]
         byte storeIndex ;
         [ObservableProperty]
@@ -86,8 +86,8 @@ namespace UBA6_Controller_App.ViewModel {
         partial void OnMaxTimeChanged(uint value) {
             IsMaxTime = value != uint.MaxValue;
         }
-        partial void OnChargeLimitChanged(int value) {
-            IsChargeLimit = value != int.MaxValue;
+        partial void OnDischargeLimitChanged(int value) {
+            IsDischargeLimit = value != int.MaxValue;
         }
 
 
@@ -97,7 +97,7 @@ namespace UBA6_Controller_App.ViewModel {
             List<object> list = new List<object>();
             UBA_PROTO_BPT.charge  step = ProtoHelper.CreateChargeStep(SelectedSource, ChargeCurrent, ChargeVoltage,
                 ProtoHelper.CreateChargeStopCondtion(cutOffCurrent: CutOffCurrent,
-                                                    limitCapacity: ChargeLimit,
+                                                    limitCapacity: DischargeLimit,
                                                     maxTime: MaxTime,
                                                     maxTemp: MaxTemp),
                 MinTemp);

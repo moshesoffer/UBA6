@@ -52,8 +52,8 @@ ui:ControlHelper.PlaceholderText="Select Source" ItemsSource="{Binding SourceOpt
                         <ui:NumberBox Value ="{Binding MaxTime}" Style="{StaticResource NumberBox_Discharge}" Minimum="-273.0" PlaceholderText="0000 sec" />
                     </ui:SimpleStackPanel>
                     <ui:SimpleStackPanel Style="{StaticResource SimpleStackPanel_Discharge_SC}" HorizontalAlignment="Stretch" >
-                        <CheckBox IsChecked="{Binding IsChargeLimit}" Content="Charge Limit:"   Style="{StaticResource ChackBox_charge}" d:IsChecked="True" />
-                        <ui:NumberBox Value="{Binding ChargeLimit}" Style="{StaticResource NumberBox_charge}" HorizontalAlignment="Right" Minimum="-273.0" PlaceholderText="0000"  LargeChange="10" SmallChange="0.5"/>
+                        <CheckBox IsChecked="{Binding IsDischargeLimit}" Content="Discharge Limit:"   Style="{StaticResource ChackBox_discharge}" d:IsChecked="True" />
+                        <ui:NumberBox Value="{Binding DischargeLimit}" Style="{StaticResource NumberBox_Discharge}" HorizontalAlignment="Right" Minimum="-273.0" PlaceholderText="0000"  LargeChange="10" SmallChange="0.5"/>
                     </ui:SimpleStackPanel>
                 </ui:SimpleStackPanel>
             </Expander>
