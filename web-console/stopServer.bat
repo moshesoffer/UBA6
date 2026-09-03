@@ -13,7 +13,7 @@ netstat -ano | findstr ":3306" >nul
 if %errorlevel%==0 (
     echo MySQL is RUNNING
 
-echo kill mysql
+    echo kill mysql
     taskkill /F /IM mysqld.exe >nul 2>&1
     timeout /t 1 /nobreak >nul
 ) 
@@ -54,4 +54,6 @@ if %errorlevel%==0 (
 
     timeout /t 1 /nobreak >nul
 )
+
+REM pause
 
