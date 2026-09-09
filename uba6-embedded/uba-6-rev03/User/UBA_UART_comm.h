@@ -1,0 +1,44 @@
+/*
+ * UBA_.UART_comm.h
+ *
+ *  Created on: Feb 6, 2025
+ *      Author: ORA
+ */
+
+#ifndef UBA_UART_COMM_H_
+#define UBA_UART_COMM_H_
+#include "usart.h"
+#include "UBA_PROTO_QUERY.pb.h"
+#define COMM_CH huart1
+
+#define FRAME_START  0x7E
+#define FRAME_END    0x7F
+
+int UBA_UART_comm_init();
+void UBA_UART_comm_run();
+void UBA_UART_comm_channel_query(int id);
+
+typedef enum UBA_UART_QUERY_RECIPIENT{
+	UBA_UART_QUERY_RECIPIENT_NONE= UBA_PROTO_QUERY_RECIPIENT_NONE,
+	UBA_UART_QUERY_RECIPIENT_DEVICE = UBA_PROTO_QUERY_RECIPIENT_DEVICE,
+	UBA_UART_QUERY_RECIPIENT_LINE_A = UBA_PROTO_QUERY_RECIPIENT_LINE_A,
+	UBA_UART_QUERY_RECIPIENT_LINE_B = UBA_PROTO_QUERY_RECIPIENT_LINE_B,
+	UBA_UART_QUERY_RECIPIENT_CHANNEL_A = UBA_PROTO_QUERY_RECIPIENT_CHANNEL_A,
+	UBA_UART_QUERY_RECIPIENT_CHANNEL_B = UBA_PROTO_QUERY_RECIPIENT_CHANNEL_B,
+	UBA_UART_QUERY_RECIPIENT_CHANNEL_AB = UBA_PROTO_QUERY_RECIPIENT_CHANNEL_AB,
+	UBA_UART_QUERY_RECIPIENT_BPT_A = UBA_PROTO_QUERY_RECIPIENT_BPT_A,
+	UBA_UART_QUERY_RECIPIENT_BPT_B = UBA_PROTO_QUERY_RECIPIENT_BPT_B,
+	UBA_UART_QUERY_RECIPIENT_BPT_AB = UBA_PROTO_QUERY_RECIPIENT_BPT_AB,
+
+}UBA_UART_QUERY_RECIPIENT;
+
+void UBA_UART_qeury_pending_post(UBA_UART_QUERY_RECIPIENT new_query_request, uint32_t query_id) ;
+void UBA_UART_qeury_pending_clear(UBA_UART_QUERY_RECIPIENT clear_query_request);
+void UBA_UART_query_response_message(UBA_UART_QUERY_RECIPIENT id);
+void UBA_UART_transfer_file(char* folder,char* filename, uint32_t chunk_index);
+void UBA_UART_transfer_file_list(char *folder, uint16_t skip);
+void UBA_UART_transfer_single_file_name(uint8_t *filename);
+
+void UBA_UART_Idle_callback(UART_HandleTypeDef *huart);
+
+#endif /* UBA_UART_COMM_H_ */
