@@ -162,36 +162,47 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
             InstantTestResultsDTO instantTestResultsDTO = new InstantTestResultsDTO();
             instantTestResultsDTO.RunningTestID = runningTestID;
             
-            //_logger.LogInformation($"==> voltage: {msg.ChannelStatus.Data.Voltage}");
-            uint timestamp = msg.StartTime;
+            if (msg != null) {
+                //_logger.LogInformation($"==> voltage: {msg.ChannelStatus.Data.Voltage}");
+                uint timestamp = msg.StartTime;
 //_logger.LogInformation($"==> timestamp: {timestamp} msg.State: {msg.State}");
 
-            DateTime dateTime = timestamp == 0
-                ? DateTime.MinValue
-                : DateTimeOffset.FromUnixTimeSeconds(timestamp).DateTime;
-            //DateTime dateTime = DateTimeOffset.FromUnixTimeSeconds(msg.StartTime).DateTime;     
-            instantTestResultsDTO.Timestamp = DateTime.Now; //UtcNow;
-            //_logger.LogInformation($"==> DateTime: {msg.StartTime} {instantTestResultsDTO.Timestamp}");
+                DateTime dateTime = timestamp == 0
+                    ? DateTime.MinValue
+                    : DateTimeOffset.FromUnixTimeSeconds(timestamp).DateTime;
+                //DateTime dateTime = DateTimeOffset.FromUnixTimeSeconds(msg.StartTime).DateTime;     
+                instantTestResultsDTO.Timestamp = DateTime.Now; //UtcNow;
+                //_logger.LogInformation($"==> DateTime: {msg.StartTime} {instantTestResultsDTO.Timestamp}");
+    
+                if (msg.State == UBA_PROTO_BPT.STATE.RunStep) {
+                    instantTestResultsDTO.TestState = ((UBA_PROTO_CHANNEL.STATE)msg.ChannelStatus.State).ToString();                
+                } else { 
+                    instantTestResultsDTO.TestState = msg.State.ToString();
+                }
+                instantTestResultsDTO.TestCurrentStep =(int) msg.CurrentStep;
+                
+                if (msg.ChannelStatus.Data != null) {
+                    //_logger.LogInformation($"==> date: {instantTestResultsDTO.Timestamp} state: {instantTestResultsDTO.TestState}");
+                    //_logger.LogInformation($"==> volt: {msg.ChannelStatus.Data.Voltage}, crnt: {msg.ChannelStatus.Data.Current}, temp: {msg.ChannelStatus.Data.Temperature}, cap: {msg.ChannelStatus.Data.Capacity}");
+                    instantTestResultsDTO.Voltage = msg.ChannelStatus.Data.Voltage;
+                    instantTestResultsDTO.Current = msg.ChannelStatus.Data.Current/1000.0f;
+                    instantTestResultsDTO.Temp = msg.ChannelStatus.Data.Temperature;
+                    instantTestResultsDTO.Capacity = msg.ChannelStatus.Data.Capacity;
+                    instantTestResultsDTO.Error = ((int)msg.Error ) | ((int)msg.ChannelStatus.Error) | ((int)msg.ChannelStatus.LineStatus[0].Error);
+                    instantTestResultsDTO.IsLogData = isLog ? 1:0;
+                    List<InstantTestResultsDTO> sadas = new List<InstantTestResultsDTO>() { instantTestResultsDTO };
+                    await RT_Controller.InstantTestResults.Post<object, List<InstantTestResultsDTO>>(Client, sadas); 
+                } 
 
-            if (msg.State == UBA_PROTO_BPT.STATE.RunStep) {
-                instantTestResultsDTO.TestState = ((UBA_PROTO_CHANNEL.STATE)msg.ChannelStatus.State).ToString();                
-            } else { 
-                instantTestResultsDTO.TestState = msg.State.ToString();
-            }
-            instantTestResultsDTO.TestCurrentStep =(int) msg.CurrentStep;
-            
-            if (msg.ChannelStatus.Data != null) {
-                //_logger.LogInformation($"==> date: {instantTestResultsDTO.Timestamp} state: {instantTestResultsDTO.TestState}");
-                //_logger.LogInformation($"==> volt: {msg.ChannelStatus.Data.Voltage}, crnt: {msg.ChannelStatus.Data.Current}, temp: {msg.ChannelStatus.Data.Temperature}, cap: {msg.ChannelStatus.Data.Capacity}");
-                instantTestResultsDTO.Voltage = msg.ChannelStatus.Data.Voltage;
-                instantTestResultsDTO.Current = msg.ChannelStatus.Data.Current/1000.0f;
-                instantTestResultsDTO.Temp = msg.ChannelStatus.Data.Temperature;
-                instantTestResultsDTO.Capacity = msg.ChannelStatus.Data.Capacity;
-                instantTestResultsDTO.Error = ((int)msg.Error ) | ((int)msg.ChannelStatus.Error) | ((int)msg.ChannelStatus.LineStatus[0].Error);
+            } else {
+                instantTestResultsDTO.Timestamp = DateTime.Now; //UtcNow;
+                instantTestResultsDTO.TestState = "Standby";
+
+                instantTestResultsDTO.Error = (int)1;//UBA_PROTO_UBA6.ERROR.ChannelError;
                 instantTestResultsDTO.IsLogData = isLog ? 1:0;
                 List<InstantTestResultsDTO> sadas = new List<InstantTestResultsDTO>() { instantTestResultsDTO };
-                await RT_Controller.InstantTestResults.Post<object, List<InstantTestResultsDTO>>(Client, sadas); 
-            }          
+                await RT_Controller.InstantTestResults.Post<object, List<InstantTestResultsDTO>>(Client, sadas);                     
+            }
         }
 
         public async Task UpdateTestStatus(Guid runningTestID, UBA_PROTO_BPT.status_message msg, bool isLog = false) {

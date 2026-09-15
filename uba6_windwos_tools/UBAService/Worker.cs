@@ -827,6 +827,8 @@ _logger.LogInformation("4.1.Pending test adr={Adress} {Channel} {Status}, set fr
 //_logger.LogInformation("4.1.1. Pending test adr={Adress} {Channel}, set from {uba.B.ChannelStatus} to {intState} {newState}", ubaDto.Address, ubaDto.Channel, uba.B.ChannelStatus, (int)message.QueryResponse.Bpt.State, message.QueryResponse.Bpt.State);
 //                                    uba.B.ChannelStatus = (int)message.QueryResponse.Bpt.State;
 //                                }
+                            } else {
+                                await wcs.UpdateTestReadingData(ubaDto.RunningTestID, null, true);                                
                             }
 
                         } catch (Exception ex) {

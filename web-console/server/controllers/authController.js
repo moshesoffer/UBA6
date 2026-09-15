@@ -8,7 +8,7 @@ exports.login = async (req, res) => {
 		name: 'Natasha Cherkover'
 	};
 
-	await new Promise(resolve);
+	//await new Promise(resolve); - not neccesary 
 
 	if (req.body?.username === username && req.body?.password === password) {
 		res.json(displayName);

@@ -587,7 +587,7 @@ _logger.LogInformation($"==> Remove Interface:");
         }
 
 
-        public async Task<Message?> GetMessage(UBA_PROTO_QUERY.RECIPIENT recipient, UInt32 targateAddress = 0xffffffff, int timeout = 10000) {
+        public async Task<Message?> GetMessage(UBA_PROTO_QUERY.RECIPIENT recipient, UInt32 targateAddress = 0xffffffff, int timeout = 3000) {
           /*  if (sp == null || !sp.IsOpen) {
                 _logger.LogError("Serial port is not open.");
                 failes++;
@@ -635,19 +635,22 @@ _logger.LogInformation($"==> Remove Interface:");
                             if (completedTask == tcs.Task) {
                                 //_logger.LogDebug($"Received response for Message ID: {originalId} taskID: {completedTask.Id}-{tcs.Task.Id}");// in {stopwatch.ElapsedMilliseconds} ms");
                                 return tcs.Task.Result;
-                            } else if (completedTask == delayTask) {
-                                _logger.LogInformation($"1-Timeout waiting for response with Message ID: {originalId} taskID: {completedTask.Id}-{tcs.Task.Id}");/// after {stopwatch.ElapsedMilliseconds} ms");
+                            } //else if (completedTask == delayTask) {
+                                _logger.LogInformation($"1-Timeout (Device) waiting for response with Message ID: {originalId} taskID: {completedTask.Id}-{tcs.Task.Id}");/// after {stopwatch.ElapsedMilliseconds} ms");
                                 return null;
-                            }                             
-                         }
+                            //}                             
+                        }
                         else if (priority == MessagePriority.QUERY_MESSAGE) {
                             if (completedTask == tcs.Task) {
                                 //_logger.LogDebug($"Received response for Message ID: {originalId} taskID: {completedTask.Id}-{tcs.Task.Id}");// in {stopwatch.ElapsedMilliseconds} ms");
                                 return tcs.Task.Result;
-                            } else if (completedTask == delayTask) {
-                                _logger.LogInformation($"1-Timeout waiting for response with Message ID: {originalId} taskID: {completedTask.Id}-{tcs.Task.Id}");/// after {stopwatch.ElapsedMilliseconds} ms");
+                            } //else if (completedTask == delayTask) {
+                                //tcs.Task = completedTask;
+                                //tcs.SetResult(message);
+                                //tcs.Task.Result.QueryResponse.Bpt.ChannelStatus.Error = UBA_PROTO_UBA6.ERROR.ChannelError;
+                                //return tcs.Task.Result;
                                 return null;
-                            }                             
+                            //}                             
                         }
                         else if ((priority == MessagePriority.BPT_QUERY) ||
                             (priority == MessagePriority.FILE_NAME_REQUEST) || (priority == MessagePriority.FILE_DATA_REQUEST))
@@ -655,10 +658,10 @@ _logger.LogInformation($"==> Remove Interface:");
                             if (completedTask == tcs.Task) {
                                 //_logger.LogDebug($"Received response for Message ID: {originalId} taskID: {completedTask.Id}-{tcs.Task.Id}");// in {stopwatch.ElapsedMilliseconds} ms");
                                 return tcs.Task.Result;
-                            } else if (completedTask == delayTask) {
-                                _logger.LogInformation($"1-Timeout waiting for response with Message ID: {originalId} taskID: {completedTask.Id}-{tcs.Task.Id}");/// after {stopwatch.ElapsedMilliseconds} ms");
+                            } //else if (completedTask == delayTask) {
+                                _logger.LogInformation($"1-Timeout (Bpt/FileName/FileData) waiting for response with Message ID: {originalId} taskID: {completedTask.Id}-{tcs.Task.Id}");/// after {stopwatch.ElapsedMilliseconds} ms");
                                 return null;
-                            } 
+                            //} 
                         }
                         else if (priority == MessagePriority.TEST_ROUTINE) {
                             return null;                            
