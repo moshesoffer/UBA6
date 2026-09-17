@@ -196,9 +196,9 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
 
             } else {
                 instantTestResultsDTO.Timestamp = DateTime.Now; //UtcNow;
-                instantTestResultsDTO.TestState = "Standby";
+                instantTestResultsDTO.TestState = "Off";
 
-                instantTestResultsDTO.Error = (int)1;//UBA_PROTO_UBA6.ERROR.ChannelError;
+                instantTestResultsDTO.Error = (int)UBA_PROTO_UBA6.ERROR.LineNotAvailable;
                 instantTestResultsDTO.IsLogData = isLog ? 1:0;
                 List<InstantTestResultsDTO> sadas = new List<InstantTestResultsDTO>() { instantTestResultsDTO };
                 await RT_Controller.InstantTestResults.Post<object, List<InstantTestResultsDTO>>(Client, sadas);                     
