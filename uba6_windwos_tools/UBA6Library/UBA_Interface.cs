@@ -681,7 +681,7 @@ _logger.LogInformation($"==> Remove Interface:");
             return null;
         }
 
-        public async Task<Message?> EnqueueMessageAndWaitFileChunkAsync(Message message, MessagePriority priority = MessagePriority.FILE_DATA_REQUEST, int timeout = 8000) {
+        public async Task<Message?> EnqueueMessageAndWaitFileChunkAsync(Message message, MessagePriority priority = MessagePriority.FILE_DATA_REQUEST, int timeout = 12000) {
             if (message == null) throw new ArgumentNullException(nameof(message));
 
             var tcs = new TaskCompletionSource<Message?>();
@@ -723,7 +723,7 @@ _logger.LogInformation($"==> Remove Interface:");
             }            
         }
 
-        public async Task<Message?> EnqueueMessageAndWaitFileList(Message message, MessagePriority priority = MessagePriority.FILE_NAME_REQUEST, int timeout = 3000) {
+        public async Task<Message?> EnqueueMessageAndWaitFileList(Message message, MessagePriority priority = MessagePriority.FILE_NAME_REQUEST, int timeout = 8000) {
             if (message == null) throw new ArgumentNullException(nameof(message));
           
 //_logger.LogInformation($"==> await EnqueueMessageAndWaitFileList {timeout}");

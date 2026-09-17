@@ -311,13 +311,13 @@ _logger.LogInformation("9.2.Pending test {Channel} {Status}, set to {newState}",
 
                 byte[] file = await uba.FeatchFileToByteArray(filename);
                 await wcs.TestResultUpload(pendingTest.ReportId, file);
-            }
-            finally
-            {
+
+            } finally {
+                _logger.LogError("Test Result upload end from UBA Device: {pendingTest.UbaSN}");
                 _semaphore.Release();
             }
 
-            uba.ClearBPT(util.GetChannelFormDTO(pendingTest));
+            //uba.ClearBPT(util.GetChannelFormDTO(pendingTest));
 
             if (pendingTest.Channel == "A" || pendingTest.Channel == "Ab")
                 testInProgress[0] = false;
@@ -715,6 +715,10 @@ _logger.LogInformation("4.1.Pending test adr={Adress} {Channel} {Status}, set fr
                                                 if (ubaDto.Channel.Equals("Ab")) {
                                                     uba.AB.ChannelStatus = (int)message.QueryResponse.Bpt.State;
                                                 }
+
+                                                if (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.TestCompleate) {
+                                                    uba.ClearBPT((UBA_PROTO_CHANNEL.ID)1);
+                                                }
                                             }
                                             return;
                                          }
@@ -734,6 +738,10 @@ _logger.LogInformation("4.1.Pending test adr={Adress} {Channel} {Status}, set fr
                                                 uba.B.ChannelStatus = (int)message.QueryResponse.Bpt.State;
                                                 if (ubaDto.Channel.Equals("Ab")) {
                                                     uba.AB.ChannelStatus = (int)message.QueryResponse.Bpt.State;
+                                                }
+
+                                                if (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.TestCompleate) {
+                                                    uba.ClearBPT((UBA_PROTO_CHANNEL.ID)2);
                                                 }
                                             }
                                             return;
