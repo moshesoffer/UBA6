@@ -161,8 +161,6 @@ void UBA_channel_get_lines_connected(UBA_channel *ch, bool *line_connected) {
 	for (int index = 0; index < 2; index++) {
 		if (index < ch->line_size) {
 			line_connected[index] = ch->lines_p[index]->isBattery_connected;
-		} else {
-			line_connected[index] = false;
 		}
 	}
 }

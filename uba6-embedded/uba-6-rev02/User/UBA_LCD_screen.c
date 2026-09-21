@@ -856,15 +856,17 @@ void UBA_LCD_screen_draw_bpt(UBA_LCD_screen *screen, UBA_LCD_REFRESH_TYPE rt) {
 					if (i < 20/*UBA_GFX_TEXT_MAX_LENGTH*/) {
 						lcd_bpt->EWI_msg.elemnt.text.color_bg = UBA_GFX_COLOR_WHITE;
 						lcd_bpt->EWI_msg.elemnt.text.color_text = UBA_GFX_COLOR_BLACK;
-						if (strlen(lcd_bpt->EWI_msg.elemnt.text.text) == 0)
-						snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, screen->bpt->complete_reason);
+						if (strlen(lcd_bpt->EWI_msg.elemnt.text.text) == 0) {
+							snprintf(lcd_bpt->EWI_msg.elemnt.text.text, UBA_GFX_TEXT_MAX_LENGTH, screen->bpt->complete_reason);
+						}
 
 					} else {
 						for(i=0; i < 20/*UBA_GFX_TEXT_MAX_LENGTH*/; i++) {
 							if (lcd_bpt->EWI_msg.elemnt.text.text[i] != ' ') break;
 						}
 						if (i < 20/*UBA_GFX_TEXT_MAX_LENGTH*/-1) {
-							memset(lcd_bpt->EWI_msg.elemnt.text.text, ' ', 20/*UBA_GFX_TEXT_MAX_LENGTH*/);
+							if (strcmp(lcd_bpt->EWI_msg.elemnt.text.text, "Battery Disconnected") == 0)
+								memset(lcd_bpt->EWI_msg.elemnt.text.text, ' ', 20/*UBA_GFX_TEXT_MAX_LENGTH*/);
 						}
 					}
 				}

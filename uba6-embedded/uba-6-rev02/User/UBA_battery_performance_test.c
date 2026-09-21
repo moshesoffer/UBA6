@@ -454,6 +454,9 @@ void UBA_BPT_run_step_enter(UBA_BPT *bpt) {
 		if (bpt->current_step == bpt->head_step) {
 //			HAL_RTC_GetDate(&hrtc, &bpt->start_date_time.date, RTC_FORMAT_BIN);
 			HAL_RTC_GetTime(&hrtc, &bpt->start_date_time.ref_run_time, RTC_FORMAT_BIN);
+
+			UBA_LCD_screen *screen = (UBA_LCD_screen*)bpt->ch->current_screen;
+			memset(screen->pages.screen_bpt.EWI_msg.elemnt.text.text, ' ', 20/*UBA_GFX_TEXT_MAX_LENGTH*/);
 		}
 
 		memset(bpt->complete_reason, ' ', 20);//UBA_GFX_TEXT_MAX_LENGTH);
@@ -606,7 +609,7 @@ void UBA_BPT_complete_exit(UBA_BPT *bpt) {
 	memset(bpt->complete_reason, ' ', 20);//UBA_GFX_TEXT_MAX_LENGTH);
 
 	//limit file systen number os save files
-	UBA_FM_limit_file_count(UBA_FM_FOLDER_TEST_RESULTS);
+	//UBA_FM_limit_file_count(UBA_FM_FOLDER_TEST_RESULTS);
 }
 
 //=================================================public  functions========================================================//
@@ -907,27 +910,8 @@ UBA_STATUS_CODE UBA_BPT_begin(UBA_BPT *bpt, uint8_t list_index) {
 				((UBA_LCD_screen*)bpt->ch->current_screen)->tr_list_select_index = bpt->TR_selected_index;
 			}
 
-			int list_index = bpt->TR_selected_index;
-			if (TR_file.list[list_index].mode == UBA_PROTO_BPT_MODE_DUAL_CHANNEL) {
-				if (bpt == &UBA_6_device_g.BPT_A) {
-					//UBA_6_device_g.BPT_A.TR_selected_index = bpt->TR_selected_index;
-					//UBA_6_device_g.BPT_B.TR_selected_index = bpt->TR_selected_index;
-					HAL_RTC_GetDate(&hrtc, &UBA_6_device_g.BPT_A.start_date_time.date, RTC_FORMAT_BIN);
-					HAL_RTC_GetTime(&hrtc, &UBA_6_device_g.BPT_A.start_date_time.time, RTC_FORMAT_BIN);
-					
-				} else if (bpt == &UBA_6_device_g.BPT_B) {
-					HAL_RTC_GetDate(&hrtc, &UBA_6_device_g.BPT_B.start_date_time.date, RTC_FORMAT_BIN);
-					HAL_RTC_GetTime(&hrtc, &UBA_6_device_g.BPT_B.start_date_time.time, RTC_FORMAT_BIN);
-
-				} else if (bpt == &UBA_6_device_g.BPT_AB) {
-					HAL_RTC_GetDate(&hrtc, &UBA_6_device_g.BPT_A.start_date_time.date, RTC_FORMAT_BIN);
-					HAL_RTC_GetTime(&hrtc, &UBA_6_device_g.BPT_A.start_date_time.time, RTC_FORMAT_BIN);
-					HAL_RTC_GetDate(&hrtc, &UBA_6_device_g.BPT_B.start_date_time.date, RTC_FORMAT_BIN);
-					HAL_RTC_GetTime(&hrtc, &UBA_6_device_g.BPT_B.start_date_time.time, RTC_FORMAT_BIN);
-					HAL_RTC_GetDate(&hrtc, &UBA_6_device_g.BPT_AB.start_date_time.date, RTC_FORMAT_BIN);
-					HAL_RTC_GetTime(&hrtc, &UBA_6_device_g.BPT_AB.start_date_time.time, RTC_FORMAT_BIN);
-				}
-			}
+			HAL_RTC_GetDate(&hrtc, &bpt->start_date_time.date, RTC_FORMAT_BIN);
+			HAL_RTC_GetTime(&hrtc, &bpt->start_date_time.time, RTC_FORMAT_BIN);
 
 			bpt->start_bpt = true;
 			bpt->start_date_time.add_pause_seconds = 0;
