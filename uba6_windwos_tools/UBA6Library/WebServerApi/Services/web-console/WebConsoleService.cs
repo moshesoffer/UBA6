@@ -303,15 +303,7 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
 
                 List<UBA_PROTO_DATA_LOG.data_log> logs = ProtoHelper.DecodeDataLogMessages(file);
                 if (logs == null) {
-                    //try again (up to 2 more times)
-                    int loops = 2;
-                    while (logs == null) {
-                        logs = ProtoHelper.DecodeDataLogMessages(file);
-                        if (loops-- <= 0) {
-                            _logger.LogInformation($"fail to DecodeDataLogMessages");
-                            return;
-                        }
-                   }
+                    _logger.LogInformation($"fail to DecodeDataLogMessages");
                 }
 
                 foreach (UBA_PROTO_DATA_LOG.data_log log in logs) {
@@ -344,8 +336,5 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
             }
 
         }
-
-
-
     }
 }

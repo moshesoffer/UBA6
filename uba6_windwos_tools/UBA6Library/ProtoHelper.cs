@@ -215,7 +215,7 @@ namespace UBA6Library {
         }
 
 
-        public static List<UBA_PROTO_DATA_LOG.data_log> DecodeDataLogMessages(byte[] data) {
+        public static List<UBA_PROTO_DATA_LOG.data_log> DecodeDataLogMessages_ORG(byte[] data) {
             List<UBA_PROTO_DATA_LOG.data_log> logs = new List<UBA_PROTO_DATA_LOG.data_log>();
             using var ms = new MemoryStream(data);
             ulong totlength = 0;
@@ -266,7 +266,7 @@ namespace UBA6Library {
             }
             return logs;
         }
-        public static List<UBA_PROTO_DATA_LOG.data_log> DecodeDataLogMessages_NEW(byte[] data) {
+        public static List<UBA_PROTO_DATA_LOG.data_log> DecodeDataLogMessages_TRY(byte[] data) {
             List<UBA_PROTO_DATA_LOG.data_log> logs = new List<UBA_PROTO_DATA_LOG.data_log>();
             using var ms = new MemoryStream(data);
             ulong totlength = 0;
@@ -320,5 +320,113 @@ namespace UBA6Library {
             }
             return logs;
         }
+    }
+
+    public static List<UBA_PROTO_DATA_LOG.data_log> DecodeDataLogMessages(byte[] data)
+    {
+        List<UBA_PROTO_DATA_LOG.data_log> logs = new();
+    
+        using var ms = new MemoryStream(data);
+    
+        ulong totlength = 0;
+    
+        while (ms.Position < ms.Length)
+        {
+            long messageStart = ms.Position;
+    
+            // Decode varint (message length)
+            ulong encodedLength;
+    
+            try
+            {
+                encodedLength = DecodeVarint(ms);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(
+                    $"DecodeVarint exception: " +
+                    $"Pos={messageStart}, " +
+                    $"CurrentPos={ms.Position}, " +
+                    $"Remaining={ms.Length - ms.Position}, " +
+                    $"TotLength={totlength}, " +
+                    $"Error={ex.Message}");
+    
+                // Cannot determine where the next message starts.
+                break;
+            }
+    
+            if (encodedLength == 0)
+            {
+                Console.WriteLine(
+                    $"Invalid zero message length at position {messageStart}");
+    
+                break;
+            }
+    
+            if (encodedLength > int.MaxValue)
+            {
+                Console.WriteLine(
+                    $"Message too large: {encodedLength} bytes " +
+                    $"at position {messageStart}");
+    
+                break;
+            }
+    
+            int length = (int)encodedLength;
+    
+            // Check that the complete message exists
+            if (length > ms.Length - ms.Position)
+            {
+                Console.WriteLine(
+                    $"Incomplete message: " +
+                    $"Pos={messageStart}, " +
+                    $"Length={length}, " +
+                    $"Remaining={ms.Length - ms.Position}");
+    
+                break;
+            }
+    
+            // Read message bytes
+            byte[] msgBytes = new byte[length];
+    
+            int bytesRead = ms.Read(msgBytes, 0, length);
+    
+            if (bytesRead != length)
+            {
+                Console.WriteLine(
+                    $"Short read: expected {length}, got {bytesRead}");
+    
+                break;
+            }
+    
+            totlength += (ulong)length;
+    
+            // Parse protobuf message
+            try
+            {
+                var dataLog =
+                    UBA_PROTO_DATA_LOG.data_log.Parser.ParseFrom(msgBytes);
+    
+                logs.Add(dataLog);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(
+                    $"ParseFrom exception: " +
+                    $"MessageStart={messageStart}, " +
+                    $"Length={length}, " +
+                    $"AfterRead={ms.Position}, " +
+                    $"Remaining={ms.Length - ms.Position}, " +
+                    $"TotLength={totlength}, " +
+                    $"Error={ex.Message}");
+    
+                // IMPORTANT:
+                // Do NOT restore ms.Position here.
+                // The bad message has already been consumed.
+                continue;
+            }
+        }
+    
+        return logs;
     }
 }
