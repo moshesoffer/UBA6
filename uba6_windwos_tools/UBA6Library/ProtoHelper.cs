@@ -320,23 +320,23 @@ namespace UBA6Library {
             }
             return logs;
         }
-    }
+    
 
     public static List<UBA_PROTO_DATA_LOG.data_log> DecodeDataLogMessages(byte[] data)
     {
         List<UBA_PROTO_DATA_LOG.data_log> logs = new();
-    
+
         using var ms = new MemoryStream(data);
-    
+
         ulong totlength = 0;
-    
+
         while (ms.Position < ms.Length)
         {
             long messageStart = ms.Position;
-    
+
             // Decode varint (message length)
             ulong encodedLength;
-    
+
             try
             {
                 encodedLength = DecodeVarint(ms);
@@ -350,30 +350,30 @@ namespace UBA6Library {
                     $"Remaining={ms.Length - ms.Position}, " +
                     $"TotLength={totlength}, " +
                     $"Error={ex.Message}");
-    
+
                 // Cannot determine where the next message starts.
                 break;
             }
-    
+
             if (encodedLength == 0)
             {
                 Console.WriteLine(
                     $"Invalid zero message length at position {messageStart}");
-    
+
                 break;
             }
-    
+
             if (encodedLength > int.MaxValue)
             {
                 Console.WriteLine(
                     $"Message too large: {encodedLength} bytes " +
                     $"at position {messageStart}");
-    
+
                 break;
             }
-    
+
             int length = (int)encodedLength;
-    
+
             // Check that the complete message exists
             if (length > ms.Length - ms.Position)
             {
@@ -382,31 +382,31 @@ namespace UBA6Library {
                     $"Pos={messageStart}, " +
                     $"Length={length}, " +
                     $"Remaining={ms.Length - ms.Position}");
-    
+
                 break;
             }
-    
+
             // Read message bytes
             byte[] msgBytes = new byte[length];
-    
+
             int bytesRead = ms.Read(msgBytes, 0, length);
-    
+
             if (bytesRead != length)
             {
                 Console.WriteLine(
                     $"Short read: expected {length}, got {bytesRead}");
-    
+
                 break;
             }
-    
+
             totlength += (ulong)length;
-    
+
             // Parse protobuf message
             try
             {
                 var dataLog =
                     UBA_PROTO_DATA_LOG.data_log.Parser.ParseFrom(msgBytes);
-    
+
                 logs.Add(dataLog);
             }
             catch (Exception ex)
@@ -419,14 +419,17 @@ namespace UBA6Library {
                     $"Remaining={ms.Length - ms.Position}, " +
                     $"TotLength={totlength}, " +
                     $"Error={ex.Message}");
-    
+
                 // IMPORTANT:
                 // Do NOT restore ms.Position here.
                 // The bad message has already been consumed.
-                continue;
+                break;
+            //    continue;
             }
         }
-    
+
         return logs;
     }
+    }
 }
+
