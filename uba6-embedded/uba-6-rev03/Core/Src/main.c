@@ -1,20 +1,20 @@
 /* USER CODE BEGIN Header */
 /**
- ******************************************************************************
- * @file           : main.c
- * @brief          : Main program body
- ******************************************************************************
- * @attention
- *
- * Copyright (c) 2024 STMicroelectronics.
- * All rights reserved.
- *
- * This software is licensed under terms that can be found in the LICENSE file
- * in the root directory of this software component.
- * If no LICENSE file comes with this software, it is provided AS-IS.
- *
- ******************************************************************************
- */
+  ******************************************************************************
+  * @file           : main.c
+  * @brief          : Main program body
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2026 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -72,6 +72,7 @@ static FATFS fs;
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -131,6 +132,8 @@ int main(void)
   MX_TIM8_Init();
   MX_RTC_Init();
   MX_TIM5_Init();
+  HAL_Delay(10);
+	
   /* USER CODE BEGIN 2 */
   //	uart_printf("Starting UBA6 {d.%d}\n", BL_Version[0], BL_Version[1]);
 	//HAL_TIM_PWM_Start(&htim4,TIM_CHANNEL_2);
@@ -150,8 +153,6 @@ int main(void)
 	UBA_UART_comm_init();
 	HAL_Delay(10);
 
-  Buzzer_Init();
-	HAL_Delay(10);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -204,7 +205,7 @@ uint32_t lcd_refresh_last_time = 0;
           lcd_refresh_last_time = sample_time;
 			}
 #endif/*LCD_REFRESH*/
-    }
+  }
   /* USER CODE END 3 */
 }
 
@@ -313,10 +314,11 @@ void Error_Handler(void)
   /* USER CODE BEGIN Error_Handler_Debug */
 
 	UART_LOG_CRITICAL(UBA_COMP, "Enter Error Handler, IRQ will be Disable");
-	/* User can add his own implementation to report the HAL error return state */
-	__disable_irq();
-	while (1) {
-	}
+  /* User can add his own implementation to report the HAL error return state */
+  __disable_irq();
+  while (1)
+  {
+  }
   /* USER CODE END Error_Handler_Debug */
 }
 #ifdef USE_FULL_ASSERT

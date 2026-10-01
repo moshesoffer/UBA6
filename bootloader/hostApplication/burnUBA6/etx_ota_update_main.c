@@ -307,7 +307,7 @@ int main(int argc, char *argv[])
     if( argc <= 2 )
     {
       printf("Please feed the COM PORT number and the Application Image....!!!\n");
-      printf("Example: .\\etx_ota_app.exe 8 ..\\..\\Application\\Debug\\Blinky.bin");
+      printf("Example: .\\burnUBA6.exe 8 ..\\uba6-embedded-rev2\\UBA_6_Rev2.srec");
       ex = -1;
       break;
     }

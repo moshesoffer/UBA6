@@ -7,7 +7,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2025 STMicroelectronics.
+  * Copyright (c) 2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -62,7 +62,7 @@ void MX_RTC_Init(void)
   	if (__HAL_RCC_GET_FLAG(RCC_FLAG_BORRST) != RESET ||
   			__HAL_RCC_GET_FLAG(RCC_FLAG_PINRST) != RESET)
   			{
-  		/* System reset occurred â€” DO NOT reset RTC */
+  		/* System reset occurred — DO NOT reset RTC */
   		if (HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR1) == MAGIC_NUMBER){
   			/* Already configured, just return */
   			return;

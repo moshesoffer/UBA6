@@ -143,6 +143,8 @@ typedef enum UBA_LINE_CHARGE_DELTA {
 #define ENABLE (true)
 #define DISABLE (false)
 
+#define ADC_CHNNEL_MAX 6
+
 //#define VIRTUAL_BAT 1
 //#define AUTO_QUERY 1
 //==========================================================state machine private functions==============================
@@ -303,18 +305,22 @@ void UBA_line_print_reading(UBA_line *line) {
 //			line->data.amb_temperature
 //			);
 
-//	UART_LOG(line->name, "VIN:%05d mV VBat:%05d mV VGen:%05dmV CC:%04d mA DC:%04d mA BAT Temp:%+07.2f C AMB Temp:%+07.2f C",
-//			line->data.vps,
-//			line->data.voltage,
-//			line->data.gen_voltage,
-//			line->data.charge_current,
-//			line->data.discharge_current,
-//			line->data.bat_temperature,
-//			line->data.amb_temperature
-//			);
+	UART_LOG(line->name, "VIN:%05d mV VBat:%05d mV VGen:%05dmV CC:%04d mA DC:%04d mA BAT Temp:%+07.2f C AMB Temp:%+07.2f C",
+			line->data.vps,
+			line->data.voltage,
+			line->data.gen_voltage,
+			line->data.charge_current,
+			line->data.discharge_current,
+			line->data.bat_temperature,
+			line->data.amb_temperature
+			);
 
 	#ifdef PRINT_A2D
 	UART_LOG_LINE_DEBUG("VIN:%04d     VBat:%04u    VGen:%04u  CC:%04u    DC:%04u    BAT Temp:%04u    AMB Temp:%04u",
+			line->ADC_raw_data[ADC_CHNNEL_VPS], line->ADC_raw_data[ADC_CHNNEL_VBAT], line->ADC_raw_data[ADC_CHNNEL_VGEN], line->EX_ADC_raw_data,
+			line->ADC_raw_data[ADC_CHNNEL_DSCH_CURR], line->ADC_raw_data[ADC_CHNNEL_NTC_BAT], line->ADC_raw_data[ADC_CHNNEL_AMB_TEMP]
+	);
+	UART_LOG(line->name, "VIN:%04d     VBat:%04u    VGen:%04u  CC:%04u    DC:%04u    BAT Temp:%04u    AMB Temp:%04u",
 			line->ADC_raw_data[ADC_CHNNEL_VPS], line->ADC_raw_data[ADC_CHNNEL_VBAT], line->ADC_raw_data[ADC_CHNNEL_VGEN], line->EX_ADC_raw_data,
 			line->ADC_raw_data[ADC_CHNNEL_DSCH_CURR], line->ADC_raw_data[ADC_CHNNEL_NTC_BAT], line->ADC_raw_data[ADC_CHNNEL_AMB_TEMP]
 	);
