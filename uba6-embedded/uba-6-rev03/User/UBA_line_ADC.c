@@ -100,19 +100,19 @@ void UBA_line_ADC_print_reading(UBA_line *line) {
 		UART_LOG_LINE_DEBUG("ADC[VPS]     :%05u voltage:%05u mV", line->ADC_raw_data[i], UBA_LINE_ADC_ADC2MV(line->ADC_raw_data[i]));
 	}
 
-	UART_LOG(line->name, "ADC[VBAT]    :%05u voltage:%05u mV", line->ADC_raw_data[i], UBA_LINE_ADC_ADC2MV(line->ADC_raw_data[i]));
-	i = ADC_CHNNEL_VGEN;
-	UART_LOG(line->name, "ADC[VGEN]    :%05u voltage:%05u mV", line->ADC_raw_data[i], UBA_LINE_ADC_ADC2MV(line->ADC_raw_data[i]));
-	i = ADC_CHNNEL_AMB_TEMP;
-	UART_LOG(line->name, "ADC[AMB_TEMP]:%05u voltage:%05u mV", line->ADC_raw_data[i], UBA_LINE_ADC_ADC2MV(line->ADC_raw_data[i]));
-	i = ADC_CHNNEL_NTC_BAT;
-	UART_LOG(line->name, "ADC[NTC_BAT] :%05u voltage:%05u mV", line->ADC_raw_data[i], UBA_LINE_ADC_ADC2MV(line->ADC_raw_data[i]));
-	i = ADC_CHNNEL_DSCH_CURR;
-	UART_LOG(line->name, "ADC[DSCH]    :%05u voltage:%05u mV", line->ADC_raw_data[i], UBA_LINE_ADC_ADC2MV(line->ADC_raw_data[i]));
-	if (line->ADC_DMA_SIZE > ADC_CHNNEL_VPS) {
-		i = ADC_CHNNEL_VPS;
-		UART_LOG(line->name, "ADC[VPS]     :%05u voltage:%05u mV", line->ADC_raw_data[i], UBA_LINE_ADC_ADC2MV(line->ADC_raw_data[i]));
-	}
+//	UART_LOG(line->name, "ADC[VBAT]    :%05u voltage:%05u mV", line->ADC_raw_data[i], UBA_LINE_ADC_ADC2MV(line->ADC_raw_data[i]));
+//	i = ADC_CHNNEL_VGEN;
+//	UART_LOG(line->name, "ADC[VGEN]    :%05u voltage:%05u mV", line->ADC_raw_data[i], UBA_LINE_ADC_ADC2MV(line->ADC_raw_data[i]));
+//	i = ADC_CHNNEL_AMB_TEMP;
+//	UART_LOG(line->name, "ADC[AMB_TEMP]:%05u voltage:%05u mV", line->ADC_raw_data[i], UBA_LINE_ADC_ADC2MV(line->ADC_raw_data[i]));
+//	i = ADC_CHNNEL_NTC_BAT;
+//	UART_LOG(line->name, "ADC[NTC_BAT] :%05u voltage:%05u mV", line->ADC_raw_data[i], UBA_LINE_ADC_ADC2MV(line->ADC_raw_data[i]));
+//	i = ADC_CHNNEL_DSCH_CURR;
+//	UART_LOG(line->name, "ADC[DSCH]    :%05u voltage:%05u mV", line->ADC_raw_data[i], UBA_LINE_ADC_ADC2MV(line->ADC_raw_data[i]));
+//	if (line->ADC_DMA_SIZE > ADC_CHNNEL_VPS) {
+//		i = ADC_CHNNEL_VPS;
+//		UART_LOG(line->name, "ADC[VPS]     :%05u voltage:%05u mV", line->ADC_raw_data[i], UBA_LINE_ADC_ADC2MV(line->ADC_raw_data[i]));
+//	}
 }
 
 #if 1
