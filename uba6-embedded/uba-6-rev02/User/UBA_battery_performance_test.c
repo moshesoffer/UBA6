@@ -491,6 +491,10 @@ void UBA_BPT_run_step(UBA_BPT *bpt) {
 	if (UBA_BPT_isStep_completed(bpt)) {
 		bpt->state.next = UBA_BPT_STATE_STEP_COMPLETE;
 		bpt->ch->num_consecutive_errors  = 0;
+		
+		if (bpt->current_step->next == NULL) {
+			bpt->error = UBA_PROTO_UBA6_ERROR_TEST_TIMEOUT;
+		}
 
 	} else if (UBA_BPT_isChannel_error_critical(bpt)) {
 		bpt->ch->num_consecutive_errors += 1;
@@ -1000,6 +1004,7 @@ void UBA_BPT_update_message(UBA_BPT *bpt, UBA_PROTO_BPT_status_message *msg) {
 	RTC_TimeTypeDef time;
 
 	msg->error = UBA_channel_get_lines_errors(bpt->ch);
+	msg->error |= bpt->error;
 	if (((UBA_LCD_screen*)bpt->ch->current_screen)->ch_control == UBA_CHANNLE_ID_AB) {
     	msg->state = (&UBA_6_device_g.BPT_A)->state.current;
 	} else {

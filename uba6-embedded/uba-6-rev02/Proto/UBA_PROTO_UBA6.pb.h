@@ -48,7 +48,8 @@ typedef enum _UBA_PROTO_UBA6_ERROR {
     UBA_PROTO_UBA6_ERROR_CHANNEL_MULTI_LINE_CURRENT_MISMATCH = 134217728, /* the lines in the channel have different currents */
     UBA_PROTO_UBA6_ERROR_SD_CARD = 268435456, /* SD card error */
     UBA_PROTO_UBA6_ERROR_USER_ABORT = 536870912, /* the user has aborted the operation */
-    UBA_PROTO_UBA6_ERROR_CHANNEL_ERROR = 1073741824 /* generic channel error */
+    UBA_PROTO_UBA6_ERROR_TEST_TIMEOUT = 1073741824, /* test timeout */
+    UBA_PROTO_UBA6_ERROR_CHANNEL_ERROR = 2147483647 /* generic channel error */
 } UBA_PROTO_UBA6_ERROR;
 
 typedef enum _UBA_PROTO_UBA6_CMD_ID {

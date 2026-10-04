@@ -366,6 +366,7 @@ _logger.LogInformation("9.2.Pending test {Channel} {Status}, set to {newState}",
 
 //_logger.LogInformation("2.Pending test {Channel} {Status}, set to {Status}", pendingTest.Channel, pendingTest.Status, pendingTest.Status & ~((uint)RunningTestsController.Status.PENDING));
                         await wcs.ChangeRunningTestStatus(pendingTest, (int)((uint)pendingTest.Status & ~((uint)RunningTestsController.Status.PENDING)));
+                    
                     } /*else*/ if ((((RunningTestsController.Status)pendingTest.Status) & RunningTestsController.Status.RUNNING) > 0) {
                         _logger.LogInformation("==> RUNNING, adr {address} ch {channel} ...", uba.Address, pendingTest.Channel);
                         await uba.UpdatedTime();
@@ -427,6 +428,8 @@ _logger.LogInformation("9.2.Pending test {Channel} {Status}, set to {newState}",
                         isTestSaving++;
                          _ = SaveTestAsync(pendingTest);
                         isTestSaving--;                              
+
+                        uba.ClearBPT((UBA_PROTO_CHANNEL.ID)1);
 
                     } /*else*/ if ((((RunningTestsController.Status)pendingTest.Status) & RunningTestsController.Status.ABORTED) > 0) {
                         _logger.LogInformation("==> ABORTED, adr {address} ch {channel} ...", uba.Address, pendingTest.Channel);
@@ -725,7 +728,11 @@ _logger.LogInformation("4.1.Pending test adr={Adress} {Channel} {Status}, set fr
                                                 }
 
                                                 if (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.TestCompleate) {
-                                                    uba.ClearBPT((UBA_PROTO_CHANNEL.ID)1);
+                                                    if ((message.QueryResponse.Bpt.Error & UBA_PROTO_UBA6.ERROR.TestTimeout) == UBA_PROTO_UBA6.ERROR.TestTimeout) {
+                                                        _logger.LogInformation("==> test complete");
+                                                    } else {
+                                                        uba.ClearBPT((UBA_PROTO_CHANNEL.ID)1);
+                                                    }
                                                 }
                                             }
                                             return;
@@ -749,7 +756,11 @@ _logger.LogInformation("4.1.Pending test adr={Adress} {Channel} {Status}, set fr
                                                 }
 
                                                 if (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.TestCompleate) {
-                                                    uba.ClearBPT((UBA_PROTO_CHANNEL.ID)2);
+                                                    if ((message.QueryResponse.Bpt.Error & UBA_PROTO_UBA6.ERROR.TestTimeout) == UBA_PROTO_UBA6.ERROR.TestTimeout) {
+                                                        _logger.LogInformation("==> test complete");
+                                                    } else {
+                                                        uba.ClearBPT((UBA_PROTO_CHANNEL.ID)2);
+                                                    }
                                                 }
                                             }
                                             return;
