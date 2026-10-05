@@ -313,6 +313,12 @@ _logger.LogInformation("9.2.Pending test {Channel} {Status}, set to {newState}",
                 byte[] file = await uba.FeatchFileToByteArray(filename);
                 await wcs.TestResultUpload(pendingTest.ReportId, file);
 
+                if (pendingTest.Channel.Equals("A")) {
+                    uba.ClearBPT((UBA_PROTO_CHANNEL.ID)1);
+                } else if (pendingTest.Channel.Equals("B")) {
+                    uba.ClearBPT((UBA_PROTO_CHANNEL.ID)2);
+                }
+
             } finally {
                 _logger.LogError("Test Result upload end from UBA Device: {pendingTest.UbaSN}");
                 _semaphore.Release();
@@ -429,7 +435,7 @@ _logger.LogInformation("9.2.Pending test {Channel} {Status}, set to {newState}",
                          _ = SaveTestAsync(pendingTest);
                         isTestSaving--;                              
 
-                        uba.ClearBPT((UBA_PROTO_CHANNEL.ID)1);
+//                        uba.ClearBPT((UBA_PROTO_CHANNEL.ID)1);
 
                     } /*else*/ if ((((RunningTestsController.Status)pendingTest.Status) & RunningTestsController.Status.ABORTED) > 0) {
                         _logger.LogInformation("==> ABORTED, adr {address} ch {channel} ...", uba.Address, pendingTest.Channel);
