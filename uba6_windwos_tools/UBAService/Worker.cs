@@ -733,7 +733,8 @@ _logger.LogInformation("4.1.Pending test adr={Adress} {Channel} {Status}, set fr
                                                     uba.AB.ChannelStatus = (int)message.QueryResponse.Bpt.State;
                                                 }
 
-                                                if (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.TestCompleate) {
+                                                if ((message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.TestCompleate) ||
+                                                    (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.TestFailed)) {
                                                     if ((message.QueryResponse.Bpt.Error & UBA_PROTO_UBA6.ERROR.TestTimeout) == UBA_PROTO_UBA6.ERROR.TestTimeout) {
                                                         _logger.LogInformation("==> test complete");
                                                     } else {
@@ -761,7 +762,8 @@ _logger.LogInformation("4.1.Pending test adr={Adress} {Channel} {Status}, set fr
                                                     uba.AB.ChannelStatus = (int)message.QueryResponse.Bpt.State;
                                                 }
 
-                                                if (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.TestCompleate) {
+                                                if ((message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.TestCompleate) ||
+                                                    (message.QueryResponse.Bpt.State == UBA_PROTO_BPT.STATE.TestFailed)) {
                                                     if ((message.QueryResponse.Bpt.Error & UBA_PROTO_UBA6.ERROR.TestTimeout) == UBA_PROTO_UBA6.ERROR.TestTimeout) {
                                                         _logger.LogInformation("==> test complete");
                                                     } else {

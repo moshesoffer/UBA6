@@ -134,7 +134,7 @@ float UBA_line_calc_calibrate(UBA_line *line, uint16_t adc_voltage, liner_equati
 float UBA_line_calc_calibrate(UBA_line *line, uint16_t adc_voltage, liner_equation *le)
 {
 	//no calibration
-	//return adc_voltage;
+	return adc_voltage;
 
 	float ret = (float)adc_voltage;
 
@@ -173,7 +173,7 @@ float UBA_line_calc_calibrate_float(UBA_line *line, float value, liner_equation 
 float UBA_line_calc_calibrate_float(UBA_line *line, float value, liner_equation *le)
 {
 	//no calibration
-	return value;
+	//return value;
 
     if (!le) return value;
 
