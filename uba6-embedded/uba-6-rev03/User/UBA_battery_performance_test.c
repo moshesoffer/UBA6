@@ -452,8 +452,8 @@ void UBA_BPT_run_step_enter(UBA_BPT *bpt) {
 		bpt->force_step_stop = false;
 
 		if (bpt->current_step == bpt->head_step) {
-//			HAL_RTC_GetDate(&hrtc, &bpt->start_date_time.date, RTC_FORMAT_BIN);
-			HAL_RTC_GetTime(&hrtc, &bpt->start_date_time.ref_run_time, RTC_FORMAT_BIN);
+			HAL_RTC_GetDate(&hrtc, &bpt->start_date_time.date, RTC_FORMAT_BIN);
+//			HAL_RTC_GetTime(&hrtc, &bpt->start_date_time.ref_run_time, RTC_FORMAT_BIN);
 		}
 
 		memset(bpt->complete_reason, ' ', 20);//UBA_GFX_TEXT_MAX_LENGTH);
@@ -1066,7 +1066,7 @@ bool UBA_BPT_save_data_log(UBA_BPT *bpt, bool is_first) {
 		return false;
 	}
 	//if (message_size > sizeof(buffer)) {
-	if (message_size > (WR_BUFFER_LEN - bpt->wr_from)) {
+	if (message_size >= (WR_BUFFER_LEN - bpt->wr_from)) {
 		UART_LOG_ERROR(UBA_COMP, "Message Size:%u is to Big to the buffer:%u", message_size, (WR_BUFFER_LEN - bpt->wr_from));
 
 UART_LOG(UBA_COMP, "save log: length %d [%s]", bpt->wr_from, bpt->filename);
