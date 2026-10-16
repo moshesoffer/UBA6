@@ -24,13 +24,14 @@ void PLI74HC166_init(PLI74HC166 *driver) {
 	driver->load_pin.GPIO_Pin = BUTTON_LD_Pin;
 	driver->serial_pin.GPIOx = BUTTON_SER_GPIO_Port;
 	driver->serial_pin.GPIO_Pin = BUTTON_SER_Pin;
-
+#ifdef UBA6_VER2
+	driver->clock_pin.GPIOx = BCLK_GPIO_Port;
+	driver->clock_pin.GPIO_Pin = BCLK_Pin;
+#endif
+#ifdef UBA6_VER3
 	driver->clock_pin.GPIOx = SH_SCL_GPIO_Port;
 	driver->clock_pin.GPIO_Pin = SH_SCL_Pin;
-
-//	driver->clock_pin.GPIOx = BCLK_GPIO_Port;
-//	driver->clock_pin.GPIO_Pin = BCLK_Pin;
-
+#endif
 }
 
 uint8_t PLI74HC166_read(PLI74HC166 *driver) {

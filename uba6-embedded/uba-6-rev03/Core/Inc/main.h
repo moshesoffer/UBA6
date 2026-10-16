@@ -31,7 +31,7 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#define UBA6_VER3
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
