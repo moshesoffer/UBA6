@@ -29,4 +29,16 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>User</name>
+			<type>2</type>
+			<location>C:/work/DEV/UBA6/uba6-embedded/uba-6-common/User</location>
+		</link>
+		<link>
+			<name>uba-6-common</name>
+			<type>2</type>
+			<locationURI>$%7BPARENT-1-PROJECT_LOC%7D/uba-6-common</locationURI>
+		</link>
+	</linkedResources>
 </projectDescription>
