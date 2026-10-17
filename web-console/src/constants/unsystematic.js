@@ -133,16 +133,19 @@ export const errorCodes = {
   0x08000000: 'CHANNEL_MULTI_LINE_CURRENT_MISMATCH',
   0x10000000: 'SD_CARD',
   0x20000000: 'USER_ABORT',
-  0x40000000: 'CHANNEL_ERROR',
+  0x40000000: 'TEST-TIMEOUT',
+  0x7fffffff: 'CHANNEL_ERROR',
 };
 
 export const getErrorMessage = (errorCode) => {
 	if (errorCode === 0) return 'No Error';
+	if (errorCode === 0x7fffffff/*CHANNEL_ERROR*/) return 'Channel Error';
 
 	const messages = [];
 	for (const [flag, message] of Object.entries(errorCodes)) {
 		if (errorCode & parseInt(flag,10)) {
 			messages.push(message);
+			break;
 		}
 	}
 

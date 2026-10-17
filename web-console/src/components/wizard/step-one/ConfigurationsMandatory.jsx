@@ -177,6 +177,9 @@ function ConfigurationsMandatory(props, ref) {
 		console.log('==> handleSampleRateChange ===================');
 		//if (newInputValue !== shadowUba.testName)
 		{
+	console.log('==> notes: ' + getInputValue(testData, 'notes'));//testData.notes);
+			
+
 		    const sampleRate = String(event.target.value);
 		    const notes = String(getInputValue(testData, 'notes') ?? '');
 

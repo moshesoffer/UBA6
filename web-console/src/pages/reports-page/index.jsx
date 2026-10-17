@@ -49,6 +49,8 @@ export default function ReportsPage() {
 //	    'REPORT ROWS:',
 //	    reports?.rows?.map(row => ({
 //	        id: row.id,
+//	        name: row.testName,
+//	        notes: row.notes,
 //	        timestampStart: row.timestampStart,
 //	        timestampEnd: row.timestampEnd,
 //	        timeOfTest: row.timeOfTest,

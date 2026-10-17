@@ -135,7 +135,7 @@ export default function UbaCard({row}) {
 										fontSize: '2px',
 										}}
 								/>
-								{row?.[channelIndex].error > 0 ? <Tooltip title={getErrorMessage(row?.[channelIndex].error)}><ErrorOutlineIcon color="error" sx={{ width: 20, height: 20, marginTop:0.2, paddingLeft: 0 }} /></Tooltip> : null}
+								{row?.[channelIndex].error > 0 && row?.[channelIndex].error !== 0x40000000/*TEST-TIMEOUT*/ ? <Tooltip title={getErrorMessage(row?.[channelIndex].error)}><ErrorOutlineIcon color="error" sx={{ width: 20, height: 20, marginTop:0.2, paddingLeft: 0 }} /></Tooltip> : null}
 							</Stack>
 						</Stack>
 

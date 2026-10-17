@@ -21,6 +21,9 @@ import { useState } from 'react';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 
+import { useTestRoutines } from 'src/store/TestRoutinesProvider';
+import { getInputValue } from 'src/utils/helper';
+
 export default function CustomTableRow(props) {
 	const {metadata,} = props;
 
@@ -29,6 +32,8 @@ export default function CustomTableRow(props) {
 	const authDispatch = useAuthDispatch();
 	const reportsDispatch = useReportsDispatch();
 	const settingsDispatch = useSettingsDispatch();
+
+	const testData = useTestRoutines();
 
 	const handleEditClick = () => {
 		reportsDispatch(setCurrentReport(row));
@@ -77,8 +82,9 @@ export default function CustomTableRow(props) {
 		return false;
 	}
 
-	const [sampleRate, setSampleRate] = useState(row?.sampleRate ?? 1);
-
+	const [sampleRate, setSampleRate] = useState(
+	    row?.sampleRate ?? (row?.notes == null ? 1 : parseInt(row.notes, 10))
+	);
 	const handleSampleRateChange = (event) => {
 	    setSampleRate(Number(event.target.value));
 	};
