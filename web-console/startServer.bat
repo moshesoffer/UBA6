@@ -26,7 +26,8 @@ echo CMD mode: %CMD_OPTION% %START_OPTION%
 REM ========================================
 REM UBA6 Frontend / DB startup
 REM ========================================
-start "" cmd %CMD_OPTION% ".\stopServer.bat"
+REM start "MySQL Server" cmd /k "C:\work\DEV\UBA6\uba6_windwos_tools\UBAService\bin\Debug\net8.0\UBAService.exe"
+REM start "" /B "C:\work\DEV\UBA6\uba6_windwos_tools\UBAService\bin\Debug\net8.0\UBAService.exe"
 
 REM ----------------------------------------
 REM MySQL
@@ -44,10 +45,12 @@ echo MySQL is NOT running
 echo Start DB
 if "%START_OPTION%" == "debug" (
     echo start MYSQL debug
-    start "" cmd %CMD_OPTION% ""C:\Program Files\MySQL\MySQL Server 8.0\bin\mysqld.exe" --defaults-file=".\my.ini" --console"
+    start ""cmd %CMD_OPTION% ""C:\Program Files\MySQL\MySQL Server 8.0\bin\mysqld.exe" --defaults-file=".\my.ini" --console"
 ) else (
-    powershell -NoProfile -WindowStyle Hidden -Command ^
-        "Start-Process -FilePath 'C:\Program Files\MySQL\MySQL Server 8.0\bin\mysqld.exe' -ArgumentList '--defaults-file=\"%~dp0my.ini\"' -WindowStyle Hidden"
+REM    powershell -NoProfile -WindowStyle Hidden -Command ^
+REM        "Start-Process -FilePath 'C:\Program Files\MySQL\MySQL Server 8.0\bin\mysqld.exe' -ArgumentList '--defaults-file=\"%~dp0my.ini\"' -WindowStyle Hidden"
+REM start "MySQL Server" cmd /k ""C:\Program Files\MySQL\MySQL Server 8.0\bin\mysqld.exe" --defaults-file="%~dp0my.ini" --console"
+start "" /B "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysqld.exe" --defaults-file="%~dp0my.ini" --console
 )
 
 REM ----------------------------------------
@@ -74,15 +77,15 @@ REM     )
 REM 
 REM     timeout /t 2 /nobreak >nul
 REM )
-
-echo Frontend is NOT running
 echo Starting front-end...
 if "%START_OPTION%" == "debug" (
-    echo nmp run debug
-    start ""  cmd %CMD_OPTION% "npm run dev"
+   echo nmp run debug
+   start ""  cmd %CMD_OPTION% "npm run dev"
 ) else (
-    powershell -NoProfile -WindowStyle Hidden -Command ^
-        "Start-Process -FilePath 'cmd.exe' -ArgumentList '/c','npm run dev' -WindowStyle Hidden"
+REM    powershell -NoProfile -WindowStyle Hidden -Command ^
+REM		"Start-Process -FilePath 'cmd.exe' -ArgumentList '/c','npm run dev' -WindowStyle Hidden"
+REM start cmd /k "npm run dev"
+start "" /B cmd /c "npm run dev"
 )
 REM Wait a bit to make sure the front-end starts (optional)
 timeout /t 5
