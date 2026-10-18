@@ -99,23 +99,9 @@ void UBA_line_ADC_print_reading(UBA_line *line) {
 		i = ADC_CHNNEL_VPS;
 		UART_LOG_LINE_DEBUG("ADC[VPS]     :%05u voltage:%05u mV", line->ADC_raw_data[i], UBA_LINE_ADC_ADC2MV(line->ADC_raw_data[i]));
 	}
-
-//	UART_LOG(line->name, "ADC[VBAT]    :%05u voltage:%05u mV", line->ADC_raw_data[i], UBA_LINE_ADC_ADC2MV(line->ADC_raw_data[i]));
-//	i = ADC_CHNNEL_VGEN;
-//	UART_LOG(line->name, "ADC[VGEN]    :%05u voltage:%05u mV", line->ADC_raw_data[i], UBA_LINE_ADC_ADC2MV(line->ADC_raw_data[i]));
-//	i = ADC_CHNNEL_AMB_TEMP;
-//	UART_LOG(line->name, "ADC[AMB_TEMP]:%05u voltage:%05u mV", line->ADC_raw_data[i], UBA_LINE_ADC_ADC2MV(line->ADC_raw_data[i]));
-//	i = ADC_CHNNEL_NTC_BAT;
-//	UART_LOG(line->name, "ADC[NTC_BAT] :%05u voltage:%05u mV", line->ADC_raw_data[i], UBA_LINE_ADC_ADC2MV(line->ADC_raw_data[i]));
-//	i = ADC_CHNNEL_DSCH_CURR;
-//	UART_LOG(line->name, "ADC[DSCH]    :%05u voltage:%05u mV", line->ADC_raw_data[i], UBA_LINE_ADC_ADC2MV(line->ADC_raw_data[i]));
-//	if (line->ADC_DMA_SIZE > ADC_CHNNEL_VPS) {
-//		i = ADC_CHNNEL_VPS;
-//		UART_LOG(line->name, "ADC[VPS]     :%05u voltage:%05u mV", line->ADC_raw_data[i], UBA_LINE_ADC_ADC2MV(line->ADC_raw_data[i]));
-//	}
 }
 
-#if 0
+#if 1
 float UBA_line_calc_calibrate(UBA_line *line, uint16_t adc_voltage, liner_equation *le) {
 	//no calibration
 	return adc_voltage;
@@ -133,14 +119,15 @@ float UBA_line_calc_calibrate(UBA_line *line, uint16_t adc_voltage, liner_equati
 #else
 float UBA_line_calc_calibrate(UBA_line *line, uint16_t adc_voltage, liner_equation *le)
 {
+	//no calibration
+	//return adc_voltage;
+
 	float ret = (float)adc_voltage;
 
     if (line->calibration.isCalibrated && le != NULL) {
-		if (le->slope > 0)
-        ret = le->slope * ret + le->y_intercept;
+        ret = le->slope * adc_voltage + le->y_intercept;
     }
 
-    //UART_LOG(line->name,
     UART_LOG_LINE_DEBUG(
         "Calibrated:%s adc=%u slope=%f offset=%f result=%f",
         line->calibration.isCalibrated ? "True" : "False",
@@ -154,7 +141,7 @@ float UBA_line_calc_calibrate(UBA_line *line, uint16_t adc_voltage, liner_equati
 }
 #endif
 
-#if 0
+#if 1
 float UBA_line_calc_calibrate_float(UBA_line *line, float value, liner_equation *le) {
 	//no calibration
 	return value;
@@ -171,14 +158,17 @@ float UBA_line_calc_calibrate_float(UBA_line *line, float value, liner_equation 
 #else
 float UBA_line_calc_calibrate_float(UBA_line *line, float value, liner_equation *le)
 {
+	//no calibration
+	return value;
+
+    if (!le) return value;
+
     float ret = value;
 
-    if (line->calibration.isCalibrated && le != NULL) {
-		if (le->slope > 0)
-        ret = le->slope * ret + le->y_intercept;
+    if (line->calibration.isCalibrated) {
+        ret = le->slope * value + le->y_intercept;
     }
 
-    //UART_LOG(line->name,
     UART_LOG_LINE_DEBUG(
         "Calibrated:%s value=%f slope=%f offset=%f result=%f",
         line->calibration.isCalibrated ? "True" : "False",
