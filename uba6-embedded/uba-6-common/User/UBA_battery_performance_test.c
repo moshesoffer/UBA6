@@ -1051,6 +1051,11 @@ bool UBA_BPT_save_data_log(UBA_BPT *bpt, bool is_first) {
 	bool status;
 	UBA_PROTO_DATA_LOG_data_log msg = UBA_PROTO_DATA_LOG_data_log_init_zero;
 
+	if (is_first == true) {
+		HAL_RTC_GetDate(&hrtc, &bpt->start_date_time.date, RTC_FORMAT_BIN);
+		HAL_RTC_GetTime(&hrtc, &bpt->start_date_time.time, RTC_FORMAT_BIN);
+	}
+	
 	msg.time = get_RTC_unix_timestamp() - RTC_datetime2unix_timestamp(&bpt->start_date_time.date, &bpt->start_date_time.time); // store only the time from start of the test
 //	msg.time = RTC_datetime2unix_timestamp(&bpt->last_get_runtime.date, &bpt->last_get_runtime.time) - 
 //			   RTC_datetime2unix_timestamp(&bpt->start_date_time.date, &bpt->start_date_time.time); // store only the time from start of the test
