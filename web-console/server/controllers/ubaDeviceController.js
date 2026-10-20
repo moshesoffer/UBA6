@@ -90,9 +90,10 @@ const updateRuntimeData = (ubaDevice, runtimeData, testState) => {
 			testState === 'Discharge' ||
 			testState === 'Pause'
 		) {
-			if (runtimeData.startTimeA === -1) {
-				runtimeData.startTimeA = timestamp;
-			}
+			//if (runtimeData.startTimeA === -1) {
+				runtimeData.startTimeA = ubaDevice.timestampStart;//timestamp;
+			//}
+		    console.log('updateRuntimeData, ubaDevice.timestampStart:', ubaDevice.timestampStart, runtimeData.startTimeA, timestamp);
 
 			const currTime = getRuntime(
 				timestamp,
@@ -120,9 +121,9 @@ const updateRuntimeData = (ubaDevice, runtimeData, testState) => {
 			testState === 'Discharge' ||
 			testState === 'Pause'
 		) {
-			if (runtimeData.startTimeB === -1) {
-				runtimeData.startTimeB = timestamp;
-			}
+			//if (runtimeData.startTimeB === -1) {
+				runtimeData.startTimeB = ubaDevice.timestampStart;//timestamp;;
+			//}
 
 			const currTime = getRuntime(
 				timestamp,

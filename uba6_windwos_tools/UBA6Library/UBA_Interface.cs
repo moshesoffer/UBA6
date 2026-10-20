@@ -68,8 +68,8 @@ namespace UBA6Library {
             sp = new SerialPort(portName, baudRate);
             sp.ReadBufferSize = 2048;
             sp.Parity = Parity.None;
-            sp.ReadTimeout = 3000;
-            sp.WriteTimeout = 300;
+            sp.ReadTimeout = 4000;
+            sp.WriteTimeout = 4000;
 
             // sp.DataReceived += SerialPort_DataReceived;
 
@@ -159,8 +159,8 @@ _logger.LogInformation($"==> Remove Interface:");
             sp = new SerialPort(newComPort, 115200);
             sp.ReadBufferSize = 2048;
             sp.Parity = Parity.None;
-            sp.ReadTimeout = 3000;
-            sp.WriteTimeout = 300;
+            sp.ReadTimeout = 4000;
+            sp.WriteTimeout = 4000;
 //            sp.DataReceived += SerialPort_DataReceived;
             try {
                 sp.Open();
@@ -196,8 +196,8 @@ _logger.LogInformation($"==> Remove Interface:");
                     {
                         ReadBufferSize = 2048,
                         Parity = Parity.None,
-                        ReadTimeout = 3000,
-                        WriteTimeout = 300
+                        ReadTimeout = 4000,
+                        WriteTimeout = 4000
                     };
 
                     sp.Open();
@@ -378,6 +378,8 @@ _logger.LogInformation($"==> Remove Interface:");
                     {
                         Thread.Sleep(500);
                         SafeReset();
+                        _logger.LogError(ex, "SwitchCom");
+                        this.SwitchCom(sp.PortName, true);
                     });
                 }
             }
