@@ -93,7 +93,7 @@ const updateRuntimeData = (ubaDevice, runtimeData, testState) => {
 			//if (runtimeData.startTimeA === -1) {
 				runtimeData.startTimeA = ubaDevice.timestampStart;//timestamp;
 			//}
-		    console.log('updateRuntimeData, ubaDevice.timestampStart:', ubaDevice.timestampStart, runtimeData.startTimeA, timestamp);
+		    //console.log('updateRuntimeData, ubaDevice.timestampStart:', ubaDevice.timestampStart, runtimeData.startTimeA, timestamp);
 
 			const currTime = getRuntime(
 				timestamp,

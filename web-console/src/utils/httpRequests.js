@@ -73,30 +73,65 @@ const prepareResponse = async response => {
 	throw new Error('An error occurred.');
 }
 
+//export const postData = async (authDispatch, pathname, method, data) => {
+//	const options = createRequestOptions(method, data);
+//	const url = `${import.meta.env.VITE_API_URL}/${pathname}`;
+//
+//    //console.log('========== postData ==========');
+//    //console.log('URL:', url);
+//    //console.log('METHOD:', method);
+//    //console.log('DATA:', data);
+//    //console.log('OPTIONS:', options);
+//    //console.log('BODY:', options.body);
+//    //console.log('==============================');
+//
+//	if (validateFunction(authDispatch)) {
+//		//console.log('postData authDispatch', pathname,method, authDispatch);
+//		authDispatch(setAjaxLoader(true));
+//	}
+//	try {
+//		const response = await fetch(url, options);
+//		return await prepareResponse(response);
+//	} finally {
+//		if (validateFunction(authDispatch)) {
+//			authDispatch(setAjaxLoader(false));
+//		}
+//	}
+//}
 export const postData = async (authDispatch, pathname, method, data) => {
-	const options = createRequestOptions(method, data);
-	const url = `${import.meta.env.VITE_API_URL}/${pathname}`;
+    const options = createRequestOptions(method, data);
+    const url = `${import.meta.env.VITE_API_URL}/${pathname}`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(
+        () => controller.abort(),
+        AWAIT_TIMEOUT
+    );
 
-    //console.log('========== postData ==========');
-    //console.log('URL:', url);
-    //console.log('METHOD:', method);
-    //console.log('DATA:', data);
-    //console.log('OPTIONS:', options);
-    //console.log('BODY:', options.body);
-    //console.log('==============================');
+    options.signal = controller.signal;
 
-	if (validateFunction(authDispatch)) {
-		//console.log('postData authDispatch', pathname,method, authDispatch);
-		authDispatch(setAjaxLoader(true));
-	}
-	try {
-		const response = await fetch(url, options);
-		return await prepareResponse(response);
-	} finally {
-		if (validateFunction(authDispatch)) {
-			authDispatch(setAjaxLoader(false));
-		}
-	}
+    if (validateFunction(authDispatch)) {
+        authDispatch(setAjaxLoader(true));
+    }
+
+    try {
+        const response = await fetch(url, options);
+        return await prepareResponse(response);
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            throw new Error(
+                `Request timed out after ${AWAIT_TIMEOUT} ms: ${pathname}`,
+                { cause: error }
+            );
+        }
+
+        throw error;
+    } finally {
+        clearTimeout(timeoutId);
+
+        if (validateFunction(authDispatch)) {
+            authDispatch(setAjaxLoader(false));
+        }
+    }
 }
 
 export const postData2 = async (authDispatch, pathname, method, data) => {
