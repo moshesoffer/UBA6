@@ -1003,6 +1003,8 @@ void UBA_BPT_command_execute(UBA_BPT *bpt, UBA_PROTO_BPT_command *cmd) {
 
 void UBA_BPT_update_message(UBA_BPT *bpt, UBA_PROTO_BPT_status_message *msg) {
 	RTC_TimeTypeDef time;
+	RTC_TimeTypeDef sTime;
+	RTC_TimeTypeDef start_time;
 
 	msg->error = UBA_channel_get_lines_errors(bpt->ch);
 	msg->error |= bpt->error;
@@ -1018,6 +1020,10 @@ void UBA_BPT_update_message(UBA_BPT *bpt, UBA_PROTO_BPT_status_message *msg) {
 	//msg->start_time = RTC_datetime2unix_timestamp(&bpt->start_date_time.date, &time);
 //	msg->start_time = time.Seconds;
 	msg->start_time = bpt->start_date_time.time.Seconds + 60 * bpt->start_date_time.time.Minutes + 3600 * bpt->start_date_time.time.Hours;
+
+	HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+	start_time = bpt->start_date_time.time;
+	msg->start_time = TimeToSeconds(&sTime) - TimeToSeconds(&start_time);
 
 	//update step
 	if (((UBA_LCD_screen*)bpt->ch->current_screen)->ch_control == UBA_CHANNLE_ID_AB) {

@@ -172,7 +172,8 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
                     : DateTimeOffset.FromUnixTimeSeconds(timestamp).DateTime;
                 //DateTime dateTime = DateTimeOffset.FromUnixTimeSeconds(msg.StartTime).DateTime;     
                 instantTestResultsDTO.Timestamp = DateTime.Now; //UtcNow;
-                //_logger.LogInformation($"==> DateTime: {msg.StartTime} {instantTestResultsDTO.Timestamp}");
+                instantTestResultsDTO.Timestamp = dateTime;
+                //_logger.LogInformation($"==> DateTime: {instantTestResultsDTO.Timestamp}");
     
                 if (msg.State == UBA_PROTO_BPT.STATE.RunStep) {
                     instantTestResultsDTO.TestState = ((UBA_PROTO_CHANNEL.STATE)msg.ChannelStatus.State).ToString();                
