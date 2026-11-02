@@ -348,7 +348,7 @@ UART_LOG(COMPONENT, "f_write.. %s, data_length %d", file_name, data_length);
 UART_LOG(COMPONENT, "f_close.. %s", file_name);
 
 				f_stat(filepath, &fno);
-UART_LOG(COMPONENT, "f_stat.. fsize %d [%s][%s]", fno.fsize, fno.fname, filepath);
+UART_LOG(COMPONENT, "f_stat.. fsize %d %s", fno.fsize, fno.fname);
 			} else if (res == FR_NO_PATH) {
 				UART_FM_ERROR("Failed to Append to file:%s - 0x%02x - Path not found", filepath, res);
 			} else {

@@ -366,10 +366,14 @@ void UBA_BPT_pause_enter(UBA_BPT *bpt) {
 	UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_STANDBY);
 
 	UART_LOG(UBA_COMP, "id %d: A: %d, B %d, AB %d", bpt->ch->id, UBA_BPT_isRunning(&UBA_6_device_g.BPT_A), UBA_BPT_isRunning(&UBA_6_device_g.BPT_B), UBA_BPT_isRunning(&UBA_6_device_g.BPT_AB));
-	if ((bpt == &UBA_6_device_g.BPT_A) && (!UBA_BPT_isRunning(&UBA_6_device_g.BPT_B) || (UBA_BPT_isPause(&UBA_6_device_g.BPT_B)))) {
+	if ((bpt == &UBA_6_device_g.BPT_A) && 
+		(!UBA_BPT_isRunning(&UBA_6_device_g.BPT_B) || (UBA_BPT_isPause(&UBA_6_device_g.BPT_B)))) {
 		UBA_6_fan_on(&UBA_6_device_g, false);
-	} else if ((bpt == &UBA_6_device_g.BPT_B) && (!UBA_BPT_isRunning(&UBA_6_device_g.BPT_A) || (UBA_BPT_isPause(&UBA_6_device_g.BPT_B)))) {
-		UBA_6_fan_on(&UBA_6_device_g, false);		
+
+	} else if ((bpt == &UBA_6_device_g.BPT_B) && 
+			   (!UBA_BPT_isRunning(&UBA_6_device_g.BPT_A) || (UBA_BPT_isPause(&UBA_6_device_g.BPT_A)))) {
+		UBA_6_fan_on(&UBA_6_device_g, false);	
+
 	} else if (TR_file.list[bpt->TR_selected_index].mode == UBA_PROTO_BPT_MODE_DUAL_CHANNEL) {
 		UBA_6_fan_on(&UBA_6_device_g, false);
 	}
@@ -402,7 +406,18 @@ void UBA_BPT_pause_exit(UBA_BPT *bpt) {
 				break;
 			case UBA_BPT_STEP_TYPE_DELAY:
 				UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_DELAY);
-				UBA_6_fan_on(&UBA_6_device_g, false);
+				//UBA_6_fan_on(&UBA_6_device_g, false);
+				if ((bpt == &UBA_6_device_g.BPT_A) && 
+					(!UBA_BPT_isRunning(&UBA_6_device_g.BPT_B) || (UBA_BPT_isPause(&UBA_6_device_g.BPT_B)))) {
+					UBA_6_fan_on(&UBA_6_device_g, false);
+					
+				} else if ((bpt == &UBA_6_device_g.BPT_B) && 
+						   (!UBA_BPT_isRunning(&UBA_6_device_g.BPT_A) || (UBA_BPT_isPause(&UBA_6_device_g.BPT_A)))) {
+					UBA_6_fan_on(&UBA_6_device_g, false);	
+						
+				} else if (TR_file.list[bpt->TR_selected_index].mode == UBA_PROTO_BPT_MODE_DUAL_CHANNEL) {
+					UBA_6_fan_on(&UBA_6_device_g, false);
+				}
 				break;
 			default:
 				UART_LOG_ERROR(UBA_COMP, "Step Type id is unknown:%u", bpt->current_step->type_id);
@@ -439,7 +454,18 @@ void UBA_BPT_run_step_enter(UBA_BPT *bpt) {
 			case UBA_BPT_STEP_TYPE_DELAY:
 				UART_LOG_BPT_INFO("Start Step ==> Delay");
 				UBA_channel_set_next_state(bpt->ch, UBA_CHANNEL_STATE_DELAY);
-				UBA_6_fan_on(&UBA_6_device_g, false);
+				//UBA_6_fan_on(&UBA_6_device_g, false);
+				if ((bpt == &UBA_6_device_g.BPT_A) && 
+					(!UBA_BPT_isRunning(&UBA_6_device_g.BPT_B) || (UBA_BPT_isPause(&UBA_6_device_g.BPT_B)))) {
+					UBA_6_fan_on(&UBA_6_device_g, false);
+					
+				} else if ((bpt == &UBA_6_device_g.BPT_B) && 
+						   (!UBA_BPT_isRunning(&UBA_6_device_g.BPT_A) || (UBA_BPT_isPause(&UBA_6_device_g.BPT_A)))) {
+					UBA_6_fan_on(&UBA_6_device_g, false);	
+						
+				} else if (TR_file.list[bpt->TR_selected_index].mode == UBA_PROTO_BPT_MODE_DUAL_CHANNEL) {
+					UBA_6_fan_on(&UBA_6_device_g, false);
+				}
 				break;
 
 			case UBA_BPT_STEP_TYPE_LOOP:
@@ -591,10 +617,12 @@ UART_LOG(UBA_COMP, "2-B DUAL, Aidx %d Bidx %d ABidx %d", UBA_6_device_g.BPT_A.TR
 	}
 
 	UART_LOG(UBA_COMP, "complete: id %d: A: %d, B %d, AB %d, TR_selected_index %d", bpt->ch->id, UBA_BPT_isRunning(&UBA_6_device_g.BPT_A), UBA_BPT_isRunning(&UBA_6_device_g.BPT_B), UBA_BPT_isRunning(&UBA_6_device_g.BPT_AB),bpt->TR_selected_index);
-	if ((bpt == &UBA_6_device_g.BPT_A) && !UBA_BPT_isRunning(&UBA_6_device_g.BPT_B)) {
+	if ((bpt == &UBA_6_device_g.BPT_A) && 
+		(!UBA_BPT_isRunning(&UBA_6_device_g.BPT_B) || (UBA_BPT_isPause(&UBA_6_device_g.BPT_B)))) {
 		UBA_6_fan_on(&UBA_6_device_g, false);
 
-	} else if ((bpt == &UBA_6_device_g.BPT_B) && !UBA_BPT_isRunning(&UBA_6_device_g.BPT_A)) {
+	} else if ((bpt == &UBA_6_device_g.BPT_B) && 
+			   (!UBA_BPT_isRunning(&UBA_6_device_g.BPT_A) || (UBA_BPT_isPause(&UBA_6_device_g.BPT_A)))) {
 		UBA_6_fan_on(&UBA_6_device_g, false);	
 
 	} else if (TR_file.list[bpt->TR_selected_index].mode == UBA_PROTO_BPT_MODE_DUAL_CHANNEL) {
@@ -689,12 +717,14 @@ UART_LOG(UBA_COMP, "2-B DUAL, Aidx %d Bidx %d ABidx %d", UBA_6_device_g.BPT_A.TR
 		}
 
 		UART_LOG(UBA_COMP, "stop: id %d: A: %d, B %d, AB %d, TR_selected_index %d", bpt->ch->id, UBA_BPT_isRunning(&UBA_6_device_g.BPT_A), UBA_BPT_isRunning(&UBA_6_device_g.BPT_B), UBA_BPT_isRunning(&UBA_6_device_g.BPT_AB),bpt->TR_selected_index);
-		if ((bpt == &UBA_6_device_g.BPT_A) && !UBA_BPT_isRunning(&UBA_6_device_g.BPT_B)) {
+		if ((bpt == &UBA_6_device_g.BPT_A) && 
+			(!UBA_BPT_isRunning(&UBA_6_device_g.BPT_B) || (UBA_BPT_isPause(&UBA_6_device_g.BPT_B)))) {
 			UBA_6_fan_on(&UBA_6_device_g, false);
-
-		} else if ((bpt == &UBA_6_device_g.BPT_B) && !UBA_BPT_isRunning(&UBA_6_device_g.BPT_A)) {
+			
+		} else if ((bpt == &UBA_6_device_g.BPT_B) && 
+				   (!UBA_BPT_isRunning(&UBA_6_device_g.BPT_A) || (UBA_BPT_isPause(&UBA_6_device_g.BPT_A)))) {
 			UBA_6_fan_on(&UBA_6_device_g, false);	
-
+				
 		} else if (TR_file.list[bpt->TR_selected_index].mode == UBA_PROTO_BPT_MODE_DUAL_CHANNEL) {
 			UBA_6_fan_on(&UBA_6_device_g, false);
 		}
@@ -843,6 +873,7 @@ bool UBA_BPT_pause_test(UBA_BPT *bpt) {
 	}
 	return false;
 }
+
 bool UBA_BPT_isUnpacked(UBA_BPT *bpt) {
 	if (bpt != NULL) {
 		return (bpt->head_step != NULL);
@@ -1109,7 +1140,7 @@ bool UBA_BPT_save_data_log(UBA_BPT *bpt, bool is_first) {
 
 	if (bpt->wr_from >= WR_BUFFER_LEN) {
 		uint32_t len_mod = bpt->wr_from % 4;
-UART_LOG(UBA_COMP, "save log: length %d [%s]", bpt->wr_from, bpt->filename);
+UART_LOG(UBA_COMP, "save log: length %d (-%d) %s", bpt->wr_from, len_mod, bpt->filename);
 		UBA_FM_apppend_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from - len_mod);
 
 		for (uint32_t i=0; i < len_mod; i++) {
