@@ -339,6 +339,11 @@ namespace UBA6Library {
 
             try
             {
+//                Console.WriteLine(
+//                    $"Pos={messageStart}, " +
+//                    $"CurrentPos={ms.Position}, " +
+//                    $"Remaining={ms.Length - ms.Position}, " +
+//                    $"TotLength={totlength}");
                 encodedLength = DecodeVarint(ms);
             }
             catch (Exception ex)
@@ -352,7 +357,8 @@ namespace UBA6Library {
                     $"Error={ex.Message}");
 
                 // Cannot determine where the next message starts.
-                break;
+                //break;
+                continue;
             }
 
             if (encodedLength == 0)
@@ -360,7 +366,8 @@ namespace UBA6Library {
                 Console.WriteLine(
                     $"Invalid zero message length at position {messageStart}");
 
-                break;
+                //break;
+                continue;
             }
 
             if (encodedLength > int.MaxValue)
@@ -369,7 +376,8 @@ namespace UBA6Library {
                     $"Message too large: {encodedLength} bytes " +
                     $"at position {messageStart}");
 
-                break;
+                //break;
+                continue;
             }
 
             int length = (int)encodedLength;
@@ -383,7 +391,8 @@ namespace UBA6Library {
                     $"Length={length}, " +
                     $"Remaining={ms.Length - ms.Position}");
 
-                break;
+                //break;
+                continue;
             }
 
             // Read message bytes
@@ -397,6 +406,7 @@ namespace UBA6Library {
                     $"Short read: expected {length}, got {bytesRead}");
 
                 break;
+                continue;
             }
 
             totlength += (ulong)length;
@@ -423,8 +433,9 @@ namespace UBA6Library {
                 // IMPORTANT:
                 // Do NOT restore ms.Position here.
                 // The bad message has already been consumed.
-                break;
-            //    continue;
+                //break;
+                // goto try_again;
+                continue;
             }
         }
 

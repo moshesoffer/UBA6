@@ -235,8 +235,8 @@ typedef struct UBA_BPT {
 	bool start_bpt;
 	bool save_file;
 
-#define WR_BUFFER_LEN (512)
-	uint8_t buffer[WR_BUFFER_LEN];
+#define WR_BUFFER_LEN (2048)
+	uint8_t buffer[WR_BUFFER_LEN+128];
 	uint32_t wr_from;
 
 	char complete_reason[20/*UBA_GFX_TEXT_MAX_LENGTH*/];

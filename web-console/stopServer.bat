@@ -1,6 +1,16 @@
 REM web control batch file
 
 @echo off
+echo Closing all Console Host processes...
+taskkill /F /T /IM UBAService.exe
+taskkill /F /T /IM UBA6_Controller_App.exe
+taskkill /F /T /IM cmd.exe
+for /f "tokens=2" %%P in ('tasklist /FI "IMAGENAME eq conhost.exe" /NH') do (
+     echo Killing conhost.exe PID %%P
+     taskkill /F /PID %%P >nul 2>&1
+     timeout /t 1
+)
+echo Cleanup completed.
 
 REM ========================================
 REM UBA6 Frontend / DB startup

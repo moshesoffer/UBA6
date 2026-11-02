@@ -453,7 +453,7 @@ void UBA_BPT_run_step_enter(UBA_BPT *bpt) {
 
 		if (bpt->current_step == bpt->head_step) {
 //			HAL_RTC_GetDate(&hrtc, &bpt->start_date_time.date, RTC_FORMAT_BIN);
-			HAL_RTC_GetTime(&hrtc, &bpt->start_date_time.ref_run_time, RTC_FORMAT_BIN);
+//			HAL_RTC_GetTime(&hrtc, &bpt->start_date_time.ref_run_time, RTC_FORMAT_BIN);
 
 			UBA_LCD_screen *screen = (UBA_LCD_screen*)bpt->ch->current_screen;
 			memset(screen->pages.screen_bpt.EWI_msg.elemnt.text.text, ' ', 20/*UBA_GFX_TEXT_MAX_LENGTH*/);
@@ -467,7 +467,8 @@ void UBA_BPT_run_step_enter(UBA_BPT *bpt) {
 		//init stablization error mechanism
 		bpt->ch->num_consecutive_errors = 0;
 
-		if (bpt->current_step == bpt->head_step) {
+		if ((bpt->current_step == bpt->head_step) &&
+			(bpt->state.pre != UBA_BPT_STATE_PAUSE)) {
 			//first test measurements
 			UBA_BPT_save_data_log(bpt, /*is_first=*/true);
 		}
@@ -1019,7 +1020,7 @@ void UBA_BPT_update_message(UBA_BPT *bpt, UBA_PROTO_BPT_status_message *msg) {
 	//UART_LOG_INFO("====> (msgUpdate) ch: %s, time: %d:%d:%d", bpt->ch->name, time.Hours, time.Minutes, time.Seconds);
 	//msg->start_time = RTC_datetime2unix_timestamp(&bpt->start_date_time.date, &time);
 //	msg->start_time = time.Seconds;
-	msg->start_time = bpt->start_date_time.time.Seconds + 60 * bpt->start_date_time.time.Minutes + 3600 * bpt->start_date_time.time.Hours;
+//	msg->start_time = bpt->start_date_time.time.Seconds + 60 * bpt->start_date_time.time.Minutes + 3600 * bpt->start_date_time.time.Hours;
 
 	HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
 	start_time = bpt->start_date_time.time;
@@ -1058,8 +1059,8 @@ bool UBA_BPT_save_data_log(UBA_BPT *bpt, bool is_first) {
 	UBA_PROTO_DATA_LOG_data_log msg = UBA_PROTO_DATA_LOG_data_log_init_zero;
 
 	if (is_first == true) {
-		HAL_RTC_GetDate(&hrtc, &bpt->start_date_time.date, RTC_FORMAT_BIN);
-		HAL_RTC_GetTime(&hrtc, &bpt->start_date_time.time, RTC_FORMAT_BIN);
+//		HAL_RTC_GetDate(&hrtc, &bpt->start_date_time.date, RTC_FORMAT_BIN);
+//		HAL_RTC_GetTime(&hrtc, &bpt->start_date_time.time, RTC_FORMAT_BIN);
 	}
 	
 	msg.time = get_RTC_unix_timestamp() - RTC_datetime2unix_timestamp(&bpt->start_date_time.date, &bpt->start_date_time.time); // store only the time from start of the test
@@ -1088,13 +1089,13 @@ bool UBA_BPT_save_data_log(UBA_BPT *bpt, bool is_first) {
 		return false;
 	}
 	//if (message_size > sizeof(buffer)) {
-	if (message_size > (WR_BUFFER_LEN - bpt->wr_from)) {
-		UART_LOG_ERROR(UBA_COMP, "Message Size:%u is to Big to the buffer:%u", message_size, (WR_BUFFER_LEN - bpt->wr_from));
-
-UART_LOG(UBA_COMP, "save log: length %d [%s]", bpt->wr_from, bpt->filename);
-		UBA_FM_apppend_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
-		bpt->wr_from = 0;
-	}
+//	if (message_size > (WR_BUFFER_LEN - bpt->wr_from)) {
+//		UART_LOG_ERROR(UBA_COMP, "Message Size:%u is to Big to the buffer:%u", message_size, (WR_BUFFER_LEN - bpt->wr_from));
+//
+//UART_LOG(UBA_COMP, "save log: length %d [%s]", bpt->wr_from, bpt->filename);
+//		UBA_FM_apppend_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
+//		bpt->wr_from = 0;
+//	}
 
 	index = UBA_PROTO_helper_encode_varint(message_size, &bpt->buffer[bpt->wr_from]);
 	//pb_ostream_t stream = pb_ostream_from_buffer(&buffer[index], sizeof(buffer) - index);
@@ -1107,9 +1108,14 @@ UART_LOG(UBA_COMP, "save log: length %d [%s]", bpt->wr_from, bpt->filename);
 	}
 
 	if (bpt->wr_from >= WR_BUFFER_LEN) {
+		uint32_t len_mod = bpt->wr_from % 4;
 UART_LOG(UBA_COMP, "save log: length %d [%s]", bpt->wr_from, bpt->filename);
-		UBA_FM_apppend_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from); 
-		bpt->wr_from = 0;
+		UBA_FM_apppend_data(UBA_FM_FOLDER_TEST_RESULTS, (char*) bpt->filename, bpt->buffer, (uint32_t) bpt->wr_from - len_mod);
+
+		for (uint32_t i=0; i < len_mod; i++) {
+			bpt->buffer[i] = bpt->buffer[bpt->wr_from - len_mod + i];
+		}
+		bpt->wr_from = len_mod;
 	}
 	return true;
 }

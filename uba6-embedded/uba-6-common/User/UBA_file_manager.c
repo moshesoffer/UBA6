@@ -321,67 +321,41 @@ bool UBA_FM_apppend_data_OLD(char *folder, char *file_name, uint8_t *data, uint3
 }
 bool UBA_FM_apppend_data(char *folder, char *file_name, uint8_t *data, uint32_t data_length) {
 	bool ret = false;
-	bool created = false;
     UBA_PROTO_FM_file_list fm_list;
+	FILINFO fno; /* file information */
 UART_LOG(COMPONENT, "UBA_FM_apppend_data");
 
 	if (UBA_FM_SD_mount()) {
 		if (create_filepath(folder, file_name, filepath, UBA_FM_MAX_FILE_NAMEPATH) && UBA_FM_FF_create_folder(folder)) {
-//			UBA_FM_file_list(folder, &fm_list, 0/*skip*/);
-//UART_LOG(COMPONENT, "f_count %d ", fm_list.filenames_count);
-//			while (fm_list.filenames_count > UBA_FM_MAX_FILE_PER_FOLDER) {
-//		  		for (int i=fm_list.filenames_count-UBA_FM_MAX_FILE_PER_FOLDER-1; i >= 0; i--) {
-//					create_filepath(folder, fm_list.filenames[i], filepath, UBA_FM_MAX_FILE_NAMEPATH);
-//					ret = UBA_FM_delete_file (filepath);
-//					if (res != FR_OK) {
-//						UART_FM_DEBUG(COMP, "Max files per folder: Failed to Delete");
-//					}
-//UART_LOG(COMPONENT, "delete.. count %d res %x  i %d", fm_list.filenames_count, res, i);
-//				}
-//				UBA_FM_file_list(folder, &fm_list, 0/*skip*/);
-//UART_LOG(COMPONENT, "count %d ", fm_list.filenames_count);
-//			}
-
-//UART_LOG(COMPONENT, "f_open3.. %s", filepath);
-//			FILINFO file_info;
-//			res = f_stat((char *)filepath, &file_info);
-//			if (res == FR_OK) {
-//UART_LOG(COMPONENT, "File exists: %s", filepath);
-//				res = f_open(&file, (char *)filepath, FA_OPEN_APPEND | FA_WRITE);
-//			} else if (res == FR_NO_FILE) {
-//UART_LOG(COMPONENT, "File does not exist: %s", filepath);
-//				res = UBA_FM_create_file(folder, file_name, /*close=*/false);
-//			} else {
-//				UART_LOG(COMPONENT, "f_stat failed: %s, res=%d", filepath, res);
-//			}
-
+			memset(&file, 0, sizeof(FIL));
 			res = f_open(&file, (char*) filepath, FA_OPEN_APPEND | FA_WRITE);
+UART_LOG(COMPONENT, "after f_open1.. res %d flag %x, %s", res, file.flag, filepath);
 			if (res != FR_OK) {
 			    UART_LOG(COMPONENT, "File does not exist: %s", filepath);
-//UART_LOG(COMPONENT, "after f_open.. res %d flag %x, %s", res, file.flag, filepath);
 				res = UBA_FM_create_file(folder, file_name, /*close=*/false);
+UART_LOG(COMPONENT, "after f_open/create.. res %d flag %x, %s", res, file.flag, filepath);
+			}
+
+			if (res == FR_OK) {
+				res = f_write(&file, data, data_length, &bw); // Write at the end of the file
+				if (res == FR_OK && bw == data_length) {
+					UART_FM_DEBUG("Successfully Append to file %s Data size : %lu", filepath, data_length);
+				} else {
+					UART_FM_ERROR("Failed to Append to file:%s - 0x%02x", filepath, res);
+				}
+UART_LOG(COMPONENT, "f_write.. %s, data_length %d", file_name, data_length);
+				f_close(&file);
+UART_LOG(COMPONENT, "f_close.. %s", file_name);
+
+				f_stat(filepath, &fno);
+UART_LOG(COMPONENT, "f_stat.. fsize %d [%s][%s]", fno.fsize, fno.fname, filepath);
+			} else if (res == FR_NO_PATH) {
+				UART_FM_ERROR("Failed to Append to file:%s - 0x%02x - Path not found", filepath, res);
+			} else {
+				UART_FM_ERROR("Failed to Append to file:%s - 0x%02x", filepath, res);
+				// Handle open error
 			}
 		}
-	}
-
-	if (res == FR_OK) {
-		res = f_write(&file, data, data_length, &bw); // Write at the end of the file
-		if (res == FR_OK && bw == data_length) {
-			UART_FM_DEBUG("Successfully Append to file %s Data size : %lu", filepath, data_length);
-		} else {
-			UART_FM_ERROR("Failed to Append to file:%s - 0x%02x", filepath, res);
-		}
-UART_LOG(COMPONENT, "f_write.. %s, data_length %d", file_name, data_length);
-		f_close(&file);
-UART_LOG(COMPONENT, "f_close.. %s", file_name);
-	} else if (res == FR_NO_PATH) {
-		UART_FM_ERROR("Failed to Append to file:%s - 0x%02x - Path not found", filepath, res);
-	} else {
-		UART_FM_ERROR("Failed to Append to file:%s - 0x%02x", filepath, res);
-		// Handle open error
-	}
-
-	if (created == true) {
 		UBA_FM_SD_unmount();
 	}
 	return ret;

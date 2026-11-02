@@ -75,7 +75,7 @@ namespace UBAService {
 
         private CancellationTokenSource? _cts;
         public async Task StartPeriodicRunningTestUpdate(CancellationToken stoppingToken) {
-            int timeout = 100;
+            int timeout = 300;
             var tcs = new TaskCompletionSource<Message?>();
 
             while (true) {
@@ -136,7 +136,7 @@ namespace UBAService {
 
         //periodic received message from UBA Device
         public async Task StartPeriodicUBAUpdate(CancellationToken stoppingToken) {
-            int timeout = 2000;
+            int timeout = 1000;
             var tcs = new TaskCompletionSource<Message?>();
 
             while (true) {
@@ -157,10 +157,10 @@ namespace UBAService {
                             if (pt?.PendingConnectionUbaDevices?.Count > 0) {
                                 //handle received message from UBA Device (PendingConnectionUbaDevice, uba.ComPort)
                                 await resolvePendingUBA(pt?.PendingConnectionUbaDevices);
-                            }
 
-                            //add UBA device to UBAs list (GETPendingTestResponse)
-                            await updateUBA2List(pt?.PendingRunningTests);
+                                //add UBA device to UBAs list (GETPendingTestResponse)
+                                await updateUBA2List(pt?.PendingRunningTests);
+                            }
                         }
                         _semaphore.Release();
                     }
@@ -523,7 +523,8 @@ _logger.LogInformation("==> 1-Add Interface {address} {comPort}", pendingDevice.
                             }
 
                             if (!pendingDevice.Action.Equals("removeFromWatchList")) {
-                                Message? t = await UbaComInterface.GetMessage(UBA_PROTO_QUERY.RECIPIENT.Device, Convert.ToUInt32(pendingDevice.Address));
+                                int refresh_timeout = 2000;
+                                Message? t = await UbaComInterface.GetMessage(UBA_PROTO_QUERY.RECIPIENT.Device, Convert.ToUInt32(pendingDevice.Address), refresh_timeout);
                                 if (t != null) {
                                     _logger.LogInformation($"2 Received message from UBA Device '{t?.QueryResponse.Recipient}' {t?.QueryResponse.Device.Settings}");
                                     await wcs.DeviceFound(t.QueryResponse, pendingDevice.ComPort);

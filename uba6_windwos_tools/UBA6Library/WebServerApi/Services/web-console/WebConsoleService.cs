@@ -172,8 +172,10 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
                     : DateTimeOffset.FromUnixTimeSeconds(timestamp).DateTime;
                 //DateTime dateTime = DateTimeOffset.FromUnixTimeSeconds(msg.StartTime).DateTime;     
                 instantTestResultsDTO.Timestamp = DateTime.Now; //UtcNow;
-                instantTestResultsDTO.Timestamp = dateTime;
-                //_logger.LogInformation($"==> DateTime: {instantTestResultsDTO.Timestamp}");
+            //    DateTime dateTime0 = DateTimeOffset.FromUnixTimeSeconds(0).LocalDateTime;
+            //    instantTestResultsDTO.Timestamp = dateTime0.AddSeconds(timestamp);
+                //instantTestResultsDTO.Timestamp = dateTime;
+                //_logger.LogInformation($"==> DateTime: {msg.StartTime} {instantTestResultsDTO.Timestamp}");
     
                 if (msg.State == UBA_PROTO_BPT.STATE.RunStep) {
                     instantTestResultsDTO.TestState = ((UBA_PROTO_CHANNEL.STATE)msg.ChannelStatus.State).ToString();                
@@ -192,6 +194,7 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
                     instantTestResultsDTO.Error = ((int)msg.Error ) | ((int)msg.ChannelStatus.Error) | ((int)msg.ChannelStatus.LineStatus[0].Error);
                     instantTestResultsDTO.IsLogData = isLog ? 1:0;
                     List<InstantTestResultsDTO> sadas = new List<InstantTestResultsDTO>() { instantTestResultsDTO };
+//_logger.LogInformation($"==> {runningTestID} timestamp: {timestamp} msg.State: {instantTestResultsDTO.TestState} {instantTestResultsDTO.TestCurrentStep}");
                     await RT_Controller.InstantTestResults.Post<object, List<InstantTestResultsDTO>>(Client, sadas); 
                 } 
 
@@ -202,6 +205,7 @@ namespace UBA6Library.WebServerApi.Services.WebConsole {
                 instantTestResultsDTO.Error = (int)UBA_PROTO_UBA6.ERROR.LineNotAvailable;
                 instantTestResultsDTO.IsLogData = isLog ? 1:0;
                 List<InstantTestResultsDTO> sadas = new List<InstantTestResultsDTO>() { instantTestResultsDTO };
+//_logger.LogInformation($"==> TestState {instantTestResultsDTO.TestState}");
                 await RT_Controller.InstantTestResults.Post<object, List<InstantTestResultsDTO>>(Client, sadas);                     
             }
         }

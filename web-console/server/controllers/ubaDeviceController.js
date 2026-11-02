@@ -24,11 +24,9 @@ const formatSeconds = seconds => [
 
 const getRuntime = (timestamp, startTimestamp) => {
 	const now = dateFromUtc(timestamp);
-	//const start = dateFromUtc(startTimestamp);
-	const start = dateFromUtc(0);
+	const start = dateFromUtc(startTimestamp);
 
 	let diff = now.getTime() - start.getTime();
-//logger.debug(`time: ${now.getTime()}, ${start.getTime()}, ${diff}`);
 	diff = Math.round(diff / 1000);
 
 	return diff;

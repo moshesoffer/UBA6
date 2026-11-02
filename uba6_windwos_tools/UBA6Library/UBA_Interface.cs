@@ -747,7 +747,7 @@ _logger.LogInformation($"==> Remove Interface:");
                     EnqueueMessage(message, priority);
                     using (timeoutCts) {
 ////_logger.LogInformation($"==> await Task.WhenAny 3 task ID: {tcs.Task} pri {priority}");
-_logger.LogInformation($"EnqueueMessageAndWaitFileList: timeout= {timeout}");
+////_logger.LogInformation($"EnqueueMessageAndWaitFileList: timeout= {timeout}");
                         var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
 ////_logger.LogInformation($"==> response Task.WhenAny 3 taskID: {completedTask.Id}");
                         if (completedTask == tcs.Task) {
@@ -783,7 +783,7 @@ _logger.LogInformation($"EnqueueMessageAndWaitFileList: timeout= {timeout}");
                 try { 
                     using (timeoutCts) {
                         var delayTask = Task.Delay(timeout);
-_logger.LogInformation($"ResolvePendingUBAAsync: timeout= {timeout}");
+//_logger.LogInformation($"ResolvePendingUBAAsync: timeout= {timeout}");
                        var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeout, timeoutCts.Token));
 //_logger.LogInformation($"==> ResolvePendingUBAAsync: after {stopwatch.ElapsedMilliseconds} ms");
                         stopwatch.Stop();
